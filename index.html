@@ -42,9 +42,21 @@
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased flex items-center justify-center px-4 py-10">
   <main id="access-app" class="w-full max-w-xl space-y-6"></main>
 
-  <script>
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
     // Chiave condivisa tra accesso, pagina giocatore e pagina master
     const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
+    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
+    const DEFAULT_APP_ID = 'ombre-al-tavolo-default';
+
+    let db = null;
+    let auth = null;
+    let appId = DEFAULT_APP_ID;
+    let cloudReady = false;
+    let roomUnsubscribe = null;
 
     // Crea lo stato iniziale della schermata di accesso
     function createInitialAccessState() {
@@ -52,6 +64,7 @@
         roomCode: 'TAVOLO1',
         playerName: '',
         role: 'player', // 'player' | 'master'
+        syncStatus: 'Locale',
         banner: null
       };
     }
@@ -66,6 +79,7 @@
           roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
           playerName: String(parsed.playerName || '').trim(),
           role: parsed.role === 'master' ? 'master' : 'player',
+          syncStatus: String(parsed.syncStatus || 'Locale'),
           banner: parsed.banner || null
         };
       } catch (err) {
@@ -83,11 +97,225 @@
           roomCode: accessState.roomCode,
           playerName: accessState.playerName,
           role: accessState.role,
+          syncStatus: accessState.syncStatus,
           banner: accessState.banner
         }));
       } catch (err) {
         console.error('Errore salvataggio stato accesso:', err);
       }
+    }
+
+    // Restituisce il riferimento al documento Firestore della stanza condivisa
+    function getRoomDocRef(roomCode) {
+      if (!db) return null;
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      return doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
+    }
+
+    // Legge i dati stanza salvati in locale
+    function readLocalRoomRecord(roomCode) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      try {
+        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
+        if (!raw) {
+          return {
+            roomCode: cleanRoom,
+            players: [],
+            roleCounts: {
+              investigatore: 1,
+              guardia: 1,
+              cacciatore: 1,
+              martire: 0,
+              assassino: 1,
+              sabotatore: 1
+            },
+            updatedAt: Date.now()
+          };
+        }
+        const parsed = JSON.parse(raw);
+        return {
+          roomCode: cleanRoom,
+          players: Array.isArray(parsed.players) ? parsed.players : [],
+          roleCounts: parsed.roleCounts && typeof parsed.roleCounts === 'object'
+            ? parsed.roleCounts
+            : {
+                investigatore: 1,
+                guardia: 1,
+                cacciatore: 1,
+                martire: 0,
+                assassino: 1,
+                sabotatore: 1
+              },
+          updatedAt: Number(parsed.updatedAt || Date.now())
+        };
+      } catch (err) {
+        console.error('Errore lettura stanza locale:', err);
+        return {
+          roomCode: cleanRoom,
+          players: [],
+          roleCounts: {
+            investigatore: 1,
+            guardia: 1,
+            cacciatore: 1,
+            martire: 0,
+            assassino: 1,
+            sabotatore: 1
+          },
+          updatedAt: Date.now()
+        };
+      }
+    }
+
+    // Salva i dati stanza in locale e su Firestore se disponibile
+    async function persistRoomRecord(record) {
+      const cleanRoom = String(record.roomCode || accessState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const normalizedRecord = {
+        roomCode: cleanRoom,
+        players: Array.isArray(record.players) ? record.players : [],
+        roleCounts: record.roleCounts && typeof record.roleCounts === 'object' ? record.roleCounts : {},
+        updatedAt: Date.now()
+      };
+
+      try {
+        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(normalizedRecord));
+      } catch (err) {
+        console.error('Errore salvataggio locale stanza:', err);
+      }
+
+      if (cloudReady && db) {
+        try {
+          await setDoc(getRoomDocRef(cleanRoom), normalizedRecord, { merge: true });
+        } catch (err) {
+          console.error('Errore scrittura Firestore stanza:', err);
+        }
+      }
+    }
+
+    // Avvia l'ascolto in tempo reale della stanza su Firestore e storage
+    function subscribeToRoomSync(roomCode) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      if (typeof roomUnsubscribe === 'function') {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+
+      if (cloudReady && db) {
+        try {
+          roomUnsubscribe = onSnapshot(getRoomDocRef(cleanRoom), snap => {
+            if (snap.exists()) {
+              const data = snap.data();
+              try {
+                localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify({
+                  roomCode: cleanRoom,
+                  players: Array.isArray(data.players) ? data.players : [],
+                  roleCounts: data.roleCounts || {},
+                  updatedAt: Number(data.updatedAt || Date.now())
+                }));
+              } catch (err) {
+                console.error('Errore aggiornamento cache stanza:', err);
+              }
+            }
+          }, err => {
+            console.error('Errore listener Firestore stanza:', err);
+          });
+        } catch (err) {
+          console.error('Errore sottoscrizione Firestore:', err);
+        }
+      }
+    }
+
+    // Inizializza Firebase/Firestore se configurato nell'ambiente
+    async function initCloudSync() {
+      try {
+        const cfgRaw = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
+        if (!cfgRaw) {
+          accessState.syncStatus = 'Locale (Stesso dispositivo)';
+          saveAccessState();
+          renderAccessPage();
+          return;
+        }
+
+        const firebaseConfig = typeof cfgRaw === 'string' ? JSON.parse(cfgRaw) : cfgRaw;
+        if (!firebaseConfig || !firebaseConfig.apiKey) {
+          accessState.syncStatus = 'Locale (Stesso dispositivo)';
+          saveAccessState();
+          renderAccessPage();
+          return;
+        }
+
+        if (typeof window.__app_id === 'string' && window.__app_id.trim()) {
+          appId = window.__app_id.trim();
+        }
+
+        const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+
+        if (typeof window.__initial_auth_token === 'string' && window.__initial_auth_token.trim()) {
+          await signInWithCustomToken(auth, window.__initial_auth_token.trim());
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        cloudReady = true;
+        accessState.syncStatus = 'Cloud Attivo (Multi-dispositivo)';
+        saveAccessState();
+        subscribeToRoomSync(accessState.roomCode);
+        renderAccessPage();
+      } catch (err) {
+        console.error('Errore inizializzazione sincronizzazione cloud:', err);
+        cloudReady = false;
+        accessState.syncStatus = 'Locale (Fallback)';
+        saveAccessState();
+        renderAccessPage();
+      }
+    }
+
+    // Registra l'ingresso di un giocatore nella stanza condivisa così il Master lo vede in automatico
+    async function registerPlayerInRoom(roomCode, playerName) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const cleanName = String(playerName || '').trim();
+      if (!cleanName) return;
+
+      let currentRecord = readLocalRoomRecord(cleanRoom);
+      if (cloudReady && db) {
+        try {
+          const snap = await getDoc(getRoomDocRef(cleanRoom));
+          if (snap.exists()) {
+            const d = snap.data();
+            currentRecord = {
+              roomCode: cleanRoom,
+              players: Array.isArray(d.players) ? d.players : currentRecord.players,
+              roleCounts: d.roleCounts || currentRecord.roleCounts,
+              updatedAt: Number(d.updatedAt || Date.now())
+            };
+          }
+        } catch (err) {
+          console.error('Errore lettura remota stanza prima della registrazione:', err);
+        }
+      }
+
+      const normalizedName = cleanName.toLowerCase();
+      const existingIndex = currentRecord.players.findIndex(
+        p => String(p.name || '').trim().toLowerCase() === normalizedName
+      );
+
+      if (existingIndex === -1) {
+        currentRecord.players.push({
+          id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          name: cleanName,
+          assignedRoleKey: null,
+          joinedAt: Date.now()
+        });
+      } else {
+        currentRecord.players[existingIndex] = {
+          ...currentRecord.players[existingIndex],
+          name: cleanName,
+          joinedAt: Date.now()
+        };
+      }
+
+      await persistRoomRecord(currentRecord);
     }
 
     // Imposta un messaggio di feedback nella pagina di accesso
@@ -102,6 +330,7 @@
       accessState.roomCode = String(value || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
       accessState.banner = null;
       saveAccessState();
+      subscribeToRoomSync(accessState.roomCode || 'TAVOLO1');
       renderAccessPage();
     }
 
@@ -142,8 +371,8 @@
       }
     }
 
-    // Valida i dati e apre direttamente giocatore.html o master.html in base alla scelta
-    function proceedToSelectedPage() {
+    // Valida i dati, sincronizza la stanza e apre direttamente giocatore.html o master.html
+    async function proceedToSelectedPage() {
       const cleanRoom = String(accessState.roomCode || '').trim().toUpperCase();
       const cleanName = String(accessState.playerName || '').trim();
 
@@ -162,6 +391,13 @@
       accessState.banner = null;
       saveAccessState();
 
+      if (accessState.role === 'player') {
+        await registerPlayerInRoom(cleanRoom, cleanName);
+      } else {
+        const existingRoom = readLocalRoomRecord(cleanRoom);
+        await persistRoomRecord(existingRoom);
+      }
+
       const targetFile = accessState.role === 'master' ? 'master.html' : 'giocatore.html';
       const isIsolatedPreview =
         window.location.protocol === 'blob:' ||
@@ -179,7 +415,7 @@
 
       const roleLabel = accessState.role === 'master' ? 'Master' : 'Giocatore';
       setAccessBanner(
-        `Accesso salvato come ${roleLabel} ("${cleanName}") nella stanza ${cleanRoom}. Nell'anteprima isolata apri la scheda "${targetFile}" oppure carica index.html, giocatore.html e master.html insieme.`,
+        `Accesso salvato come ${roleLabel} ("${cleanName}") nella stanza ${cleanRoom}. Nell'anteprima isolata apri la scheda "${targetFile}" oppure carica i file insieme.`,
         'success'
       );
     }
@@ -248,9 +484,10 @@
                 placeholder="Es. TAVOLO1"
                 class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm font-mono uppercase tracking-wider text-white focus:outline-none focus:border-gold"
               />
-              <p class="text-[11px] text-gray-400">
-                ID Sincronizzazione: <span class="font-mono text-emerald font-semibold">${escapeHtml(syncId)}</span>
-              </p>
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400">
+                <span>ID Sincronizzazione: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong></span>
+                <span>Stato: <strong class="text-gray-200">${escapeHtml(accessState.syncStatus)}</strong></span>
+              </div>
             </div>
 
             <div class="space-y-2">
@@ -332,6 +569,7 @@
     window.proceedToSelectedPage = proceedToSelectedPage;
 
     renderAccessPage();
+    initCloudSync();
   </script>
 </body>
 </html>
