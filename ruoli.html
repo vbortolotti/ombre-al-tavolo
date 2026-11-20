@@ -42,54 +42,78 @@
   <div id="roles-catalog-app" class="max-w-5xl mx-auto px-4 py-8 space-y-6"></div>
 
   <script>
-    const CUSTOM_ROLES_STORAGE_KEY = 'ombre_catalogo_tutti_ruoli_v1';
+    const CUSTOM_ROLES_STORAGE_KEY = 'ombre_catalogo_tutti_ruoli_v2';
 
-    // Elenco base di ruoli consultabili e personalizzabili in questa pagina dedicata
+    // Elenco ufficiale degli 8 ruoli di Ombre al Tavolo
     const DEFAULT_ROLES = [
-      {
-        id: 'investigatore',
-        name: 'Investigatore',
-        faction: 'Cittadini',
-        description: 'Indaga su un giocatore vivo per scoprire il suo ruolo o la sua fazione.'
-      },
-      {
-        id: 'guardia',
-        name: 'Guardia',
-        faction: 'Cittadini',
-        description: 'Protegge un giocatore dagli attacchi durante il turno corrente.'
-      },
-      {
-        id: 'cacciatore',
-        name: 'Cacciatore',
-        faction: 'Cittadini',
-        description: 'Può eliminare un bersaglio sospetto rischiando il contraccolpo.'
-      },
-      {
-        id: 'martire',
-        name: 'Martire',
-        faction: 'Cittadini',
-        description: 'Lascia una testimonianza pubblica sul ruolo di un giocatore.'
-      },
       {
         id: 'assassino',
         name: 'Assassino',
         faction: 'Traditori',
-        description: 'Elimina silenziosamente un bersaglio entro le regole del turno.'
+        description: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore. (5 missioni, 3 ripetibili, prevalentemente di contatto; non può fare missioni con altri Traditori tranne il Traditore Segreto).'
       },
       {
         id: 'sabotatore',
         name: 'Sabotatore',
         faction: 'Traditori',
-        description: 'Ostacola o blocca l’azione di un avversario.'
+        description: 'Può bloccare l’attivazione di un altro giocatore per il turno. (5 missioni, 3 ripetibili, prevalentemente di contatto; non può fare missioni con altri Traditori tranne il Traditore Segreto).'
+      },
+      {
+        id: 'traditore_segreto',
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        description: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori. (5 missioni, 3 ripetibili, prevalentemente di contatto; può fare missioni anche con gli altri Traditori).'
+      },
+      {
+        id: 'investigatore',
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        description: 'Può scoprire una delle missioni dei Traditori. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      {
+        id: 'guardia',
+        name: 'Guardia',
+        faction: 'Fedeli',
+        description: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      {
+        id: 'martire',
+        name: 'Martire',
+        faction: 'Fedeli',
+        description: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo presente in partita e, se è in gioco, sblocca la Voce dell’Aldilà per proteggere un giocatore con uno Scudo.'
+      },
+      {
+        id: 'mediatore',
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        description: 'Ha un voto extra (+1) alla Tavola Rotonda. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      {
+        id: 'cacciatore',
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        description: 'Usa i punti missione per fare la domanda "giocatore X è ruolo Y?" e può sempre (0 punti) indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato. (5 missioni, 3 ripetibili, prevalentemente di confronto).'
       }
     ];
+
+    function normalizeFaction(rawFaction) {
+      if (rawFaction === 'Traditori') return 'Traditori';
+      if (rawFaction === 'Neutro') return 'Neutro';
+      return 'Fedeli';
+    }
 
     function loadAllRoles() {
       try {
         const raw = localStorage.getItem(CUSTOM_ROLES_STORAGE_KEY);
         if (!raw) return DEFAULT_ROLES.slice();
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_ROLES.slice();
+        if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_ROLES.slice();
+        return parsed.map(item => ({
+          id: String(item.id || ('role_' + Math.random().toString(36).slice(2, 7))),
+          name: String(item.name || '').trim() || 'Ruolo',
+          faction: normalizeFaction(item.faction),
+          description: String(item.description || '').trim()
+        }));
       } catch (err) {
         console.error('Errore lettura catalogo ruoli:', err);
         return DEFAULT_ROLES.slice();
@@ -107,247 +131,3 @@
         localStorage.setItem(CUSTOM_ROLES_STORAGE_KEY, JSON.stringify(rolesState.roles));
       } catch (err) {
         console.error('Errore salvataggio catalogo ruoli:', err);
-      }
-    }
-
-    function setFilter(nextFilter) {
-      rolesState.filter = nextFilter;
-      renderRolesCatalog();
-    }
-
-    function addCustomRole(name, faction, description) {
-      const cleanName = String(name || '').trim();
-      const cleanDesc = String(description || '').trim();
-      if (!cleanName || !cleanDesc) {
-        rolesState.banner = { text: 'Inserisci sia il nome del ruolo sia la sua descrizione.', type: 'error' };
-        renderRolesCatalog();
-        return;
-      }
-      rolesState.roles.push({
-        id: 'role_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        name: cleanName,
-        faction: faction === 'Traditori' ? 'Traditori' : 'Cittadini',
-        description: cleanDesc
-      });
-      rolesState.banner = { text: `Ruolo "${cleanName}" aggiunto al catalogo.`, type: 'success' };
-      saveAllRoles();
-      renderRolesCatalog();
-    }
-
-    function removeRoleItem(roleId) {
-      rolesState.roles = rolesState.roles.filter(r => r.id !== roleId);
-      rolesState.banner = { text: 'Ruolo rimosso dal catalogo.', type: 'info' };
-      saveAllRoles();
-      renderRolesCatalog();
-    }
-
-    function restoreDefaultRoles() {
-      rolesState.roles = DEFAULT_ROLES.slice();
-      rolesState.banner = { text: 'Catalogo ruoli ripristinato ai valori predefiniti.', type: 'info' };
-      saveAllRoles();
-      renderRolesCatalog();
-    }
-
-    function goToPage(target) {
-      try {
-        window.location.href = target;
-      } catch (err) {
-        console.error('Errore navigazione:', err);
-      }
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function renderRolesCatalog() {
-      const container = document.getElementById('roles-catalog-app');
-      if (!container) return;
-
-      try {
-        const filtered = rolesState.roles.filter(r => {
-          if (rolesState.filter === 'tutti') return true;
-          return r.faction === rolesState.filter;
-        });
-
-        const bannerHtml = rolesState.banner
-          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
-              rolesState.banner.type === 'success'
-                ? 'bg-emerald/15 border-emerald/40 text-emerald'
-                : rolesState.banner.type === 'error'
-                ? 'bg-crimson/15 border-crimson/40 text-crimson'
-                : 'bg-indigo/15 border-indigo/40 text-indigo'
-            }">${escapeHtml(rolesState.banner.text)}</div>`
-          : '';
-
-        container.innerHTML = `
-          <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <span class="text-xs font-bold uppercase tracking-widest text-gold">Archivio Completo</span>
-              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tutti i Ruoli del Gioco</h1>
-              <p class="text-xs text-gray-400 mt-1">
-                Consulta l’elenco completo dei ruoli e aggiungi o rimuovi quelli che vuoi tenere sempre a portata di mano.
-              </p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onclick="goToPage('master.html')"
-                class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-              >
-                Torna al Master
-              </button>
-              <button
-                type="button"
-                onclick="goToPage('index.html')"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-              >
-                Accesso
-              </button>
-              <button
-                type="button"
-                onclick="restoreDefaultRoles()"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-              >
-                Ripristina Base
-              </button>
-            </div>
-          </header>
-
-          ${bannerHtml}
-
-          <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
-            <h2 class="font-serif text-lg font-bold text-white">Aggiungi un Ruolo all’Elenco</h2>
-            <form
-              onsubmit="event.preventDefault(); const n = document.getElementById('role-name-input'); const f = document.getElementById('role-faction-select'); const d = document.getElementById('role-desc-input'); addCustomRole(n.value, f.value, d.value); n.value = ''; d.value = '';"
-              class="grid grid-cols-1 sm:grid-cols-3 gap-3"
-            >
-              <input
-                id="role-name-input"
-                type="text"
-                maxlength="32"
-                placeholder="Nome ruolo..."
-                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
-              />
-              <select
-                id="role-faction-select"
-                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
-              >
-                <option value="Cittadini">Cittadini</option>
-                <option value="Traditori">Traditori</option>
-              </select>
-              <input
-                id="role-desc-input"
-                type="text"
-                maxlength="160"
-                placeholder="Effetto o potere del ruolo..."
-                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
-              />
-              <div class="sm:col-span-3 flex justify-end">
-                <button
-                  type="submit"
-                  class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
-                >
-                  Salva Ruolo nell’Elenco
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <section class="space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs text-gray-400">Ruoli visualizzati: <strong class="text-white">${filtered.length}</strong></span>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  onclick="setFilter('tutti')"
-                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                    rolesState.filter === 'tutti'
-                      ? 'bg-gold text-bgdark border-gold'
-                      : 'bg-surface text-gray-300 border-white/15'
-                  }"
-                >
-                  Tutti
-                </button>
-                <button
-                  type="button"
-                  onclick="setFilter('Cittadini')"
-                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                    rolesState.filter === 'Cittadini'
-                      ? 'bg-emerald text-bgdark border-emerald'
-                      : 'bg-surface text-gray-300 border-white/15'
-                  }"
-                >
-                  Cittadini
-                </button>
-                <button
-                  type="button"
-                  onclick="setFilter('Traditori')"
-                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                    rolesState.filter === 'Traditori'
-                      ? 'bg-crimson text-white border-crimson'
-                      : 'bg-surface text-gray-300 border-white/15'
-                  }"
-                >
-                  Traditori
-                </button>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              ${filtered.map(role => {
-                const isTraitor = role.faction === 'Traditori';
-                const badgeClass = isTraitor
-                  ? 'bg-crimson/15 text-crimson border-crimson/40'
-                  : 'bg-emerald/15 text-emerald border-emerald/40';
-                return `
-                  <article class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-col justify-between gap-4">
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between gap-2">
-                        <h3 class="font-serif text-lg font-bold text-white">${escapeHtml(role.name)}</h3>
-                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${badgeClass}">
-                          ${escapeHtml(role.faction)}
-                        </span>
-                      </div>
-                      <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(role.description)}</p>
-                    </div>
-                    <div class="flex justify-end pt-2 border-t border-white/10">
-                      <button
-                        type="button"
-                        onclick="removeRoleItem('${role.id}')"
-                        class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
-                      >
-                        Rimuovi
-                      </button>
-                    </div>
-                  </article>
-                `;
-              }).join('')}
-            </div>
-          </section>
-        `;
-      } catch (err) {
-        console.error('Errore rendering catalogo ruoli:', err);
-        container.innerHTML = `
-          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
-            Errore durante il caricamento dell’archivio ruoli.
-          </div>
-        `;
-      }
-    }
-
-    window.setFilter = setFilter;
-    window.addCustomRole = addCustomRole;
-    window.removeRoleItem = removeRoleItem;
-    window.restoreDefaultRoles = restoreDefaultRoles;
-    window.goToPage = goToPage;
-
-    renderRolesCatalog();
-  </script>
-</body>
-</html>
