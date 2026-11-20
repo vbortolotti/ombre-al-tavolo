@@ -1404,5 +1404,334 @@
     render();
     subscribeToRoomCloud();
   </script>
+
+
+
+<script>
+(function () {
+  var ROOM_PREFIX = 'ombre_stanza_sync_';
+  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+
+  var ROLE_FACTION = {
+    assassino: 'Traditori',
+    sabotatore: 'Traditori',
+    traditore_segreto: 'Traditori',
+    investigatore: 'Fedeli',
+    guardia: 'Fedeli',
+    martire: 'Fedeli',
+    mediatore: 'Fedeli',
+    cacciatore: 'Neutro'
+  };
+
+  var DEFAULT_MISSIONS = [
+    { id: 'TR-01', faction: 'Traditori', title: 'Sussurro Avvelenato', repeatable: true, type: 'Contatto', active: true, points: 1, desc: 'Chiedi in prestito un oggetto a un giocatore non Traditore e restituiscilo con una frase ambigua.' },
+    { id: 'TR-02', faction: 'Traditori', title: 'Brindisi delle Ombre', repeatable: true, type: 'Contatto', active: true, points: 1, desc: 'Fai brindare insieme a te un giocatore Fedele o Neutro senza pronunciare "brindisi".' },
+    { id: 'TR-03', faction: 'Traditori', title: 'Scambio d’Inchiostro', repeatable: true, type: 'Contatto', active: true, points: 1, desc: 'Passa un biglietto o piccolo oggetto a un giocatore non Traditore senza farti notare.' },
+    { id: 'TR-04', faction: 'Traditori', title: 'Doppio Sguardo', repeatable: false, type: 'Contatto', active: true, points: 1, desc: 'Ottieni uno sguardo d’intesa da due giocatori non Traditori nello stesso round.' },
+    { id: 'TR-05', faction: 'Traditori', title: 'Patto Silenzioso', repeatable: false, type: 'Contatto', active: true, points: 1, desc: 'Conferma un segnale convenuto con il Traditore Segreto senza alzare la voce.' },
+    { id: 'TR-06', faction: 'Traditori', title: 'Devianza alla Tavola', repeatable: false, type: 'Verbale', active: true, points: 1, desc: 'Induci un giocatore Fedele a sospettare o votare un altro Fedele.' },
+    { id: 'TR-07', faction: 'Traditori', title: 'Alibi Spezzato', repeatable: true, type: 'Verbale', active: true, points: 1, desc: 'Smentisci pubblicamente un dettaglio del racconto di un altro giocatore.' },
+    { id: 'TR-08', faction: 'Traditori', title: 'Falsa Rassicurazione', repeatable: false, type: 'Verbale', active: true, points: 1, desc: 'Difendi a parole un giocatore sospetto per deviare l’attenzione.' },
+    { id: 'FD-01', faction: 'Fedeli', title: 'Testimonianza Chiara', repeatable: true, type: 'Verbale', active: true, points: 1, desc: 'Riassumi in modo accurato quanto detto da due giocatori durante il confronto.' },
+    { id: 'FD-02', faction: 'Fedeli', title: 'Appello alla Luce', repeatable: true, type: 'Verbale', active: true, points: 1, desc: 'Invita apertamente un altro giocatore a esporre il proprio ragionamento.' },
+    { id: 'FD-03', faction: 'Fedeli', title: 'Concordia del Tavolo', repeatable: true, type: 'Verbale', active: true, points: 1, desc: 'Fai convergere almeno due giocatori su un punto d’analisi comune.' },
+    { id: 'FD-04', faction: 'Fedeli', title: 'Verifica dell’Indizio', repeatable: false, type: 'Verbale', active: true, points: 1, desc: 'Metti a confronto due dichiarazioni contrastanti fatte da giocatori diversi.' },
+    { id: 'FD-05', faction: 'Fedeli', title: 'Scudo della Parola', repeatable: false, type: 'Verbale', active: true, points: 1, desc: 'Difendi con argomenti un giocatore preso di mira che risulta non Traditore.' },
+    { id: 'FD-06', faction: 'Fedeli', title: 'Voto Ragionato', repeatable: false, type: 'Verbale', active: true, points: 1, desc: 'Spiega pubblicamente il motivo del tuo voto prima del conteggio.' },
+    { id: 'FD-07', faction: 'Fedeli', title: 'Stretta di Fiducia', repeatable: true, type: 'Contatto', active: true, points: 1, desc: 'Stringi la mano o scambia un cenno d’intesa con un altro giocatore per avviare un confronto.' },
+    { id: 'FD-08', faction: 'Fedeli', title: 'Passaggio di Carte', repeatable: false, type: 'Contatto', active: true, points: 1, desc: 'Consegna un appunto o promemoria a un alleato durante il turno.' },
+    { id: 'NT-01', faction: 'Neutro', title: 'Sonda d’Identità', repeatable: true, type: 'Indagine', active: true, points: 1, desc: 'Raccogli un indizio diretto sul comportamento di un giocatore.' },
+    { id: 'NT-02', faction: 'Neutro', title: 'Osservatore Silente', repeatable: true, type: 'Indagine', active: true, points: 1, desc: 'Annota a chi si rivolge più spesso un giocatore sospetto.' },
+    { id: 'NT-03', faction: 'Neutro', title: 'Incrocio di Sospetti', repeatable: true, type: 'Indagine', active: true, points: 1, desc: 'Osserva la reazione di due giocatori quando viene nominato un terzo partecipante.' },
+    { id: 'NT-04', faction: 'Neutro', title: 'Traccia del Cacciatore', repeatable: false, type: 'Indagine', active: true, points: 1, desc: 'Collega almeno due indizi raccolti su giocatori distinti.' },
+    { id: 'NT-05', faction: 'Neutro', title: 'Prova del Fuoco', repeatable: false, type: 'Indagine', active: true, points: 1, desc: 'Metti alla prova la coerenza di un giocatore sul turno precedente.' },
+    { id: 'NT-06', faction: 'Neutro', title: 'Colloquio Riservato', repeatable: true, type: 'Contatto', active: true, points: 1, desc: 'Scambia una breve osservazione a quattr’occhi con un giocatore prima della votazione.' },
+    { id: 'NT-07', faction: 'Neutro', title: 'Scambio di Sguardi', repeatable: false, type: 'Contatto', active: true, points: 1, desc: 'Cogli la reazione visiva di un giocatore dopo avergli rivolto una domanda mirata.' }
+  ];
+
+  var activeCatalog = DEFAULT_MISSIONS.slice();
+
+  function getRoomCode() {
+    try {
+      var raw = localStorage.getItem(ACCESS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && p.roomCode) return String(p.roomCode).trim().toUpperCase();
+      }
+    } catch (_e) {}
+    return 'TAVOLO1';
+  }
+
+  function loadRoomData(code) {
+    try {
+      var raw = localStorage.getItem(ROOM_PREFIX + code);
+      return raw ? JSON.parse(raw) : { roomCode: code, players: [], missionAssignments: {}, playerPoints: {} };
+    } catch (_e) {
+      return { roomCode: code, players: [], missionAssignments: {}, playerPoints: {} };
+    }
+  }
+
+  function saveRoomData(code, data) {
+    data.updatedAt = Date.now();
+    try {
+      localStorage.setItem(ROOM_PREFIX + code, JSON.stringify(data));
+    } catch (_e) {}
+  }
+
+  function shuffleArr(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i];
+      a[i] = a[j];
+      a[j] = t;
+    }
+    return a;
+  }
+
+  // Estrae 5 missioni rispettando:
+  // - 3 ripetibili (e 2 non ripetibili, con fallback se il catalogo è ridotto)
+  // - 3 del tipo principale della fazione e 2 di altro tipo, con fallback pulito
+  function drawFiveBalancedMissions(faction) {
+    var pool = activeCatalog.filter(function (m) {
+      return m.active !== false && String(m.faction) === faction;
+    });
+    if (!pool.length) {
+      pool = DEFAULT_MISSIONS.filter(function (m) { return m.faction === faction; });
+    }
+
+    var repPool = shuffleArr(pool.filter(function (m) { return Boolean(m.repeatable); }));
+    var nonRepPool = shuffleArr(pool.filter(function (m) { return !m.repeatable; }));
+
+    var primaryType = faction === 'Traditori' ? 'Contatto' : (faction === 'Neutro' ? 'Indagine' : 'Verbale');
+    var primPool = shuffleArr(pool.filter(function (m) { return m.type === primaryType; }));
+    var secPool = shuffleArr(pool.filter(function (m) { return m.type !== primaryType; }));
+
+    var selected = [];
+    var usedIds = {};
+
+    function addMission(m) {
+      if (!m || selected.length >= 5) return;
+      if (usedIds[m.id] && selected.length < pool.length) return;
+      usedIds[m.id] = true;
+      selected.push({
+        slot: selected.length + 1,
+        id: m.id,
+        title: m.title,
+        faction: faction,
+        type: m.type,
+        repeatable: Boolean(m.repeatable),
+        points: Number(m.points || 1),
+        desc: m.desc,
+        playerClaimedDone: false,
+        masterApproved: false
+      });
+    }
+
+    // 1) Priorità: 3 ripetibili e 2 non ripetibili
+    for (var r = 0; r < Math.min(3, repPool.length); r++) addMission(repPool[r]);
+    for (var nr = 0; nr < Math.min(2, nonRepPool.length); nr++) addMission(nonRepPool[nr]);
+
+    // 2) Bilanciamento tipo (3 principali / 2 altri) se non ancora completati i 5 slot
+    for (var p = 0; p < primPool.length && selected.length < 5; p++) addMission(primPool[p]);
+    for (var s = 0; s < secPool.length && selected.length < 5; s++) addMission(secPool[s]);
+
+    // 3) Riempimento finale da tutto il pool disponibile
+    var allShuffled = shuffleArr(pool);
+    var idx = 0;
+    while (selected.length < 5 && allShuffled.length > 0) {
+      var cand = allShuffled[idx % allShuffled.length];
+      selected.push({
+        slot: selected.length + 1,
+        id: cand.id,
+        title: cand.title,
+        faction: faction,
+        type: cand.type,
+        repeatable: Boolean(cand.repeatable),
+        points: Number(cand.points || 1),
+        desc: cand.desc,
+        playerClaimedDone: false,
+        masterApproved: false
+      });
+      idx++;
+    }
+
+    return selected.slice(0, 5).map(function (item, i) {
+      item.slot = i + 1;
+      return item;
+    });
+  }
+
+  window.masterLoadCatalogJsonFile = function (inputEl) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      try {
+        var parsed = JSON.parse(String(ev.target.result || '[]'));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          activeCatalog = parsed;
+          var code = getRoomCode();
+          var data = loadRoomData(code);
+          data.customMissionCatalog = activeCatalog;
+          saveRoomData(code, data);
+          renderMasterPlayerInspector();
+        }
+      } catch (_err) {}
+    };
+    reader.readAsText(file);
+  };
+
+  window.masterAssignPlayerMissions = function (playerName, roleKey) {
+    var code = getRoomCode();
+    var data = loadRoomData(code);
+    var faction = ROLE_FACTION[roleKey] || 'Fedeli';
+    var key = String(playerName || '').trim().toLowerCase();
+    if (!key) return;
+    data.missionAssignments = data.missionAssignments || {};
+    data.missionAssignments[key] = drawFiveBalancedMissions(faction);
+    saveRoomData(code, data);
+    renderMasterPlayerInspector();
+  };
+
+  window.masterAssignAllPlayersMissions = function () {
+    var code = getRoomCode();
+    var data = loadRoomData(code);
+    var players = Array.isArray(data.players) ? data.players : [];
+    data.missionAssignments = data.missionAssignments || {};
+    players.forEach(function (p) {
+      var key = String(p.name || '').trim().toLowerCase();
+      if (!key) return;
+      var fac = ROLE_FACTION[p.assignedRoleKey] || 'Fedeli';
+      data.missionAssignments[key] = drawFiveBalancedMissions(fac);
+    });
+    saveRoomData(code, data);
+    renderMasterPlayerInspector();
+  };
+
+  window.masterApproveMission = function (playerName, slotIdx, roleKey) {
+    var code = getRoomCode();
+    var data = loadRoomData(code);
+    var key = String(playerName || '').trim().toLowerCase();
+    var fac = ROLE_FACTION[roleKey] || 'Fedeli';
+    data.missionAssignments = data.missionAssignments || {};
+    var list = Array.isArray(data.missionAssignments[key]) && data.missionAssignments[key].length
+      ? data.missionAssignments[key]
+      : drawFiveBalancedMissions(fac);
+    if (list[slotIdx]) {
+      var nextApproved = !list[slotIdx].masterApproved;
+      list[slotIdx].masterApproved = nextApproved;
+      var ptVal = Number(list[slotIdx].points || 1);
+      data.playerPoints = data.playerPoints || {};
+      var curPts = Number(data.playerPoints[key] || 0);
+      data.playerPoints[key] = Math.max(0, curPts + (nextApproved ? ptVal : -ptVal));
+    }
+    data.missionAssignments[key] = list;
+    saveRoomData(code, data);
+    renderMasterPlayerInspector();
+  };
+
+  window.masterAdjustPoints = function (playerName, delta) {
+    var code = getRoomCode();
+    var data = loadRoomData(code);
+    var key = String(playerName || '').trim().toLowerCase();
+    if (!key) return;
+    data.playerPoints = data.playerPoints || {};
+    var cur = Number(data.playerPoints[key] || 0);
+    data.playerPoints[key] = Math.max(0, cur + Number(delta || 0));
+    saveRoomData(code, data);
+    renderMasterPlayerInspector();
+  };
+
+  var selectedMasterPlayerKey = null;
+
+  window.selectMasterPlayerCard = function (playerName) {
+    var key = String(playerName || '').trim().toLowerCase();
+    selectedMasterPlayerKey = selectedMasterPlayerKey === key ? null : key;
+    renderMasterPlayerInspector();
+  };
+
+  function renderMasterPlayerInspector() {
+    var host = document.getElementById('master-player-missions-inspector');
+    if (!host) return;
+    var code = getRoomCode();
+    var data = loadRoomData(code);
+    if (Array.isArray(data.customMissionCatalog) && data.customMissionCatalog.length) {
+      activeCatalog = data.customMissionCatalog;
+    }
+    var players = Array.isArray(data.players) ? data.players : [];
+    data.missionAssignments = data.missionAssignments || {};
+    data.playerPoints = data.playerPoints || {};
+
+    if (!players.length) {
+      host.innerHTML = '<div style="padding:14px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;background:#151924;color:#9ca3af;font-size:13px;">Nessun giocatore collegato nella stanza ' + code + '.</div>';
+      return;
+    }
+
+    var cards = players.map(function (p) {
+      var pKey = String(p.name || '').trim().toLowerCase();
+      var rKey = p.assignedRoleKey || 'investigatore';
+      var fac = ROLE_FACTION[rKey] || 'Fedeli';
+      var pts = Number(data.playerPoints[pKey] || 0);
+      var missions = Array.isArray(data.missionAssignments[pKey]) && data.missionAssignments[pKey].length
+        ? data.missionAssignments[pKey]
+        : drawFiveBalancedMissions(fac);
+      var claimedCount = missions.filter(function (x) { return Boolean(x.playerClaimedDone); }).length;
+      var isOpen = selectedMasterPlayerKey === pKey;
+
+      var mHtml = missions.map(function (m, idx) {
+        var claimedBadge = m.playerClaimedDone
+          ? '<span style="font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(229,184,92,0.2);color:#e5b85c;font-weight:700;">Segnalata dal giocatore</span>'
+          : '<span style="font-size:11px;color:#9ca3af;">In attesa</span>';
+        return '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:8px;background:#0c0e14;border:1px solid rgba(255,255,255,0.1);">' +
+          '<div style="font-size:12px;color:#e5e7eb;max-width:72%;">' +
+            '<strong>' + m.slot + '. ' + m.title + '</strong> <span style="color:#9ca3af;">(' + m.type + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · +' + (m.points || 1) + ' pt)</span> ' + claimedBadge +
+            '<div style="color:#9ca3af;margin-top:2px;">' + m.desc + '</div>' +
+          '</div>' +
+          '<button type="button" onclick="event.stopPropagation();masterApproveMission(\'' + p.name.replace(/'/g, "\\'") + '\',' + idx + ',\'' + rKey + '\')" style="padding:6px 11px;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:11px;background:' + (m.masterApproved ? '#3ec98c' : '#e5b85c') + ';color:#0c0e14;">' + (m.masterApproved ? 'Assegnata ✓' : 'Conferma & +Pt') + '</button>' +
+        '</div>';
+      }).join('');
+
+      return '<div style="border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:14px;background:#151924;display:flex;flex-direction:column;gap:10px;">' +
+        '<div onclick="selectMasterPlayerCard(\'' + p.name.replace(/'/g, "\\'") + '\')" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;">' +
+          '<div>' +
+            '<div style="font-size:15px;font-weight:800;color:#fff;">' + p.name + ' <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(229,184,92,0.15);color:#e5b85c;">' + rKey + ' · ' + fac + '</span>' + (claimedCount > 0 ? ' <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(62,201,140,0.2);color:#3ec98c;">' + claimedCount + ' segnalate</span>' : '') + '</div>' +
+            '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Punti totali: <strong style="color:#3ec98c;">' + pts + '</strong> · Premi sulla scheda per aprire/chiudere le 5 missioni</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;" onclick="event.stopPropagation();">' +
+            '<button type="button" onclick="masterAdjustPoints(\'' + p.name.replace(/'/g, "\\'") + '\', -1)" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#1d2230;color:#fff;cursor:pointer;font-weight:700;">-1 Pt</button>' +
+            '<button type="button" onclick="masterAdjustPoints(\'' + p.name.replace(/'/g, "\\'") + '\', 1)" style="padding:6px 10px;border-radius:8px;border:none;background:#3ec98c;color:#0c0e14;cursor:pointer;font-weight:700;">+1 Pt</button>' +
+            '<button type="button" onclick="masterAssignPlayerMissions(\'' + p.name.replace(/'/g, "\\'") + '\',\'' + rKey + '\')" style="padding:6px 10px;border-radius:8px;border:none;background:#e5b85c;color:#0c0e14;cursor:pointer;font-weight:700;">Pesca 5 (3 Rip. / 3+2)</button>' +
+          '</div>' +
+        '</div>' +
+        (isOpen ? '<div style="display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);">' + mHtml + '</div>' : '') +
+      '</div>';
+    }).join('');
+
+    host.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' + cards + '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var box = document.createElement('section');
+    box.style.cssText = 'max-width:1120px;margin:20px auto 48px;padding:0 16px;';
+    box.innerHTML = '<div style="border:1px solid rgba(229,184,92,0.35);border-radius:16px;padding:18px;background:#10141e;">' +
+      '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">' +
+        '<div>' +
+          '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Catalogo & Distribuzione 5 Missioni</div>' +
+          '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Schede Giocatori: Missioni, Segnalazioni e Punti</h2>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+          '<label style="margin:0;padding:7px 11px;border-radius:9px;background:#1d2230;border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer;">Carica JSON Catalogo <input type="file" accept=".json,application/json" style="display:none;" onchange="masterLoadCatalogJsonFile(this)" /></label>' +
+          '<button type="button" onclick="masterAssignAllPlayersMissions()" style="padding:7px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Distribuisci a Tutti</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="master-player-missions-inspector"></div>' +
+    '</div>';
+    document.body.appendChild(box);
+    renderMasterPlayerInspector();
+    setInterval(renderMasterPlayerInspector, 2000);
+  });
+})();
+</script>
 </body>
 </html>
