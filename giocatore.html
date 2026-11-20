@@ -986,5 +986,123 @@
       });
     }
   </script>
+
+<script>
+(function () {
+  var ROOM_PREFIX = 'ombre_stanza_sync_';
+  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+  var missionsVisible = false;
+
+  function getAccessInfo() {
+    try {
+      var raw = localStorage.getItem(ACCESS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        return {
+          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase(),
+          playerName: String(p.playerName || '').trim()
+        };
+      }
+    } catch (_e) {}
+    return { roomCode: 'TAVOLO1', playerName: '' };
+  }
+
+  function loadRoom() {
+    var info = getAccessInfo();
+    try {
+      var raw = localStorage.getItem(ROOM_PREFIX + info.roomCode);
+      return raw ? JSON.parse(raw) : { players: [], missionAssignments: {}, playerPoints: {} };
+    } catch (_e) {
+      return { players: [], missionAssignments: {}, playerPoints: {} };
+    }
+  }
+
+  function saveRoom(data) {
+    var info = getAccessInfo();
+    data.updatedAt = Date.now();
+    try {
+      localStorage.setItem(ROOM_PREFIX + info.roomCode, JSON.stringify(data));
+    } catch (_e) {}
+  }
+
+  window.togglePlayerMissionsVisibility = function () {
+    missionsVisible = !missionsVisible;
+    renderPlayerMissionsBox();
+  };
+
+  window.playerClaimMissionDone = function (slotIdx) {
+    var info = getAccessInfo();
+    var pKey = info.playerName.toLowerCase();
+    if (!pKey) return;
+    var data = loadRoom();
+    data.missionAssignments = data.missionAssignments || {};
+    var list = Array.isArray(data.missionAssignments[pKey]) ? data.missionAssignments[pKey] : [];
+    if (list[slotIdx]) {
+      list[slotIdx].playerClaimedDone = !list[slotIdx].playerClaimedDone;
+      data.missionAssignments[pKey] = list;
+      saveRoom(data);
+      renderPlayerMissionsBox();
+    }
+  };
+
+  function renderPlayerMissionsBox() {
+    var host = document.getElementById('player-secret-missions-panel');
+    if (!host) return;
+    var info = getAccessInfo();
+    var pKey = info.playerName.toLowerCase();
+    var data = loadRoom();
+    data.missionAssignments = data.missionAssignments || {};
+    data.playerPoints = data.playerPoints || {};
+    var missions = pKey && Array.isArray(data.missionAssignments[pKey]) ? data.missionAssignments[pKey] : [];
+    var pts = pKey ? Number(data.playerPoints[pKey] || 0) : 0;
+
+    var bodyHtml = '';
+    if (!missionsVisible) {
+      bodyHtml = '<div style="padding:12px;border-radius:10px;background:#0c0e14;border:1px dashed rgba(229,184,92,0.35);color:#9ca3af;font-size:13px;">Missioni nascoste per evitare sbirciate. Premi <strong>Mostra Missioni</strong> per aprirle.</div>';
+    } else if (!missions.length) {
+      bodyHtml = '<div style="padding:12px;border-radius:10px;background:#0c0e14;color:#9ca3af;font-size:13px;">Il Master non ha ancora assegnato le tue 5 missioni.</div>';
+    } else {
+      bodyHtml = '<div style="display:flex;flex-direction:column;gap:8px;">' + missions.map(function (m, idx) {
+        var statusTxt = m.masterApproved
+          ? '<span style="color:#3ec98c;font-weight:700;">Confermata dal Master ✓</span>'
+          : (m.playerClaimedDone
+              ? '<span style="color:#e5b85c;font-weight:700;">Segnalata al Master (in attesa)</span>'
+              : '<span style="color:#9ca3af;">Da completare</span>');
+        return '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#0c0e14;border:1px solid rgba(255,255,255,0.12);">' +
+          '<div style="max-width:72%;">' +
+            '<div style="font-size:13px;font-weight:700;color:#fff;">' + m.slot + '. ' + m.title + ' <span style="font-size:11px;color:#9ca3af;">(' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + m.type + ')</span></div>' +
+            '<div style="font-size:12px;color:#d1d5db;margin-top:2px;">' + m.desc + '</div>' +
+            '<div style="font-size:11px;margin-top:4px;">' + statusTxt + '</div>' +
+          '</div>' +
+          '<button type="button" onclick="playerClaimMissionDone(' + idx + ')" style="padding:7px 11px;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:12px;background:' + (m.playerClaimedDone ? '#3ec98c' : '#e5b85c') + ';color:#0c0e14;">' + (m.playerClaimedDone ? 'Segnalata ✓' : 'Segnala Fatta') + '</button>' +
+        '</div>';
+      }).join('') + '</div>';
+    }
+
+    host.innerHTML =
+      '<div style="max-width:960px;margin:18px auto 36px;padding:0 16px;">' +
+        '<div style="border:1px solid rgba(229,184,92,0.35);border-radius:16px;padding:18px;background:#151924;">' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Le Tue Missioni Segrete</div>' +
+              '<h3 style="margin:2px 0 0;font-size:17px;color:#fff;">Punti Attuali: <span style="color:#3ec98c;">' + pts + '</span></h3>' +
+            '</div>' +
+            '<button type="button" onclick="togglePlayerMissionsVisibility()" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#e5b85c;font-weight:700;font-size:12px;cursor:pointer;">' + (missionsVisible ? 'Nascondi Missioni' : 'Mostra Missioni') + '</button>' +
+          '</div>' +
+          bodyHtml +
+        '</div>' +
+      '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var wrap = document.createElement('div');
+    wrap.id = 'player-secret-missions-panel';
+    document.body.appendChild(wrap);
+    renderPlayerMissionsBox();
+    setInterval(renderPlayerMissionsBox, 2000);
+  });
+})();
+</script>
+
 </body>
 </html>
