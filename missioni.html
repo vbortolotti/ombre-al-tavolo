@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Catalogo e Distribuzione Missioni</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --surface: #151924;
+      --surface-2: #1d2230;
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --gold: #e5b85c;
+      --crimson: #e05260;
+      --emerald: #3ec98c;
+      --indigo: #7c8cff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    .app-wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 16px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .card-gold {
+      border-color: rgba(229, 184, 92, 0.35);
+    }
+
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: block;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .subtext {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--emerald);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button, select {
+      font-family: inherit;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    button {
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    button:hover { opacity: 0.92; }
+
+    select {
+      background: var(--bg);
+      color: #ffffff;
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #0c0e14;
+      border: none;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn-emerald {
+      background: var(--emerald);
+      color: #0c0e14;
+      border: none;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 12px;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .filter-pill {
+      background: var(--bg);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .filter-pill.active-gold {
+      background: rgba(229, 184, 92, 0.16);
+      color: var(--gold);
+      border-color: rgba(229, 184, 92, 0.45);
+    }
+
+    .filter-pill.active-crimson {
+      background: rgba(224, 82, 96, 0.16);
+      color: var(--crimson);
+      border-color: rgba(224, 82, 96, 0.45);
+    }
+
+    .filter-pill.active-emerald {
+      background: rgba(62, 201, 140, 0.16);
+      color: var(--emerald);
+      border-color: rgba(62, 201, 140, 0.45);
+    }
+
+    .missions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .mission-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mission-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mission-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-Traditori {
+      background: rgba(224, 82, 96, 0.15);
+      color: var(--crimson);
+      border-color: rgba(224, 82, 96, 0.4);
+    }
+
+    .badge-Fedeli {
+      background: rgba(62, 201, 140, 0.15);
+      color: var(--emerald);
+      border-color: rgba(62, 201, 140, 0.4);
+    }
+
+    .badge-Neutro {
+      background: rgba(229, 184, 92, 0.15);
+      color: var(--gold);
+      border-color: rgba(229, 184, 92, 0.4);
+    }
+
+    .mission-desc {
+      margin: 0;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+
+    .mission-meta {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .assigned-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .player-mission-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .player-mission-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mission-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: #e5e7eb;
+    }
+
+    .banner {
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(62, 201, 140, 0.14);
+      border: 1px solid rgba(62, 201, 140, 0.4);
+      color: var(--emerald);
+    }
+  </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+</head>
+<body>
+  <div id="missions-catalog-app" class="app-wrap"></div>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    var ROLES_INFO = {
+      assassino: { name: 'Assassino', faction: 'Traditori' },
+      sabotatore: { name: 'Sabotatore', faction: 'Traditori' },
+      traditore_segreto: { name: 'Traditore Segreto', faction: 'Traditori' },
+      investigatore: { name: 'Investigatore', faction: 'Fedeli' },
+      guardia: { name: 'Guardia', faction: 'Fedeli' },
+      martire: { name: 'Martire', faction: 'Fedeli' },
+      mediatore: { name: 'Mediatore', faction: 'Fedeli' },
+      cacciatore: { name: 'Cacciatore', faction: 'Neutro' }
+    };
+
+    var MISSION_CATALOG = [
+      // TRADITORI (prevalentemente contatto, no altri Traditori tranne Traditore Segreto)
+      { id: 'tr_1', title: 'Sussurro Avvelenato', faction: 'Traditori', repeatable: true, mode: 'Contatto', desc: 'Chiedi in prestito un oggetto a un giocatore non Traditore e restituiscilo con una frase ambigua senza farti scoprire.' },
+      { id: 'tr_2', title: 'Brindisi delle Ombre', faction: 'Traditori', repeatable: true, mode: 'Contatto', desc: 'Fai brindare insieme a te un giocatore Fedele o Neutro durante il turno senza pronunciare la parola "brindisi".' },
+      { id: 'tr_3', title: 'Scambio d’Inchiostro', faction: 'Traditori', repeatable: true, mode: 'Contatto', desc: 'Passa un biglietto o un piccolo oggetto a un giocatore non Traditore senza che il tavolo noti lo scambio.' },
+      { id: 'tr_4', title: 'Doppio Sguardo', faction: 'Traditori', repeatable: false, mode: 'Contatto', desc: 'Ottieni uno sguardo d’intesa da due giocatori diversi (non Traditori) nello stesso round.' },
+      { id: 'tr_5', title: 'Patto Silenzioso', faction: 'Traditori', repeatable: false, mode: 'Contatto (con Traditore Segreto)', desc: 'Conferma un segnale convenuto con il Traditore Segreto (o un alleato designato) senza alzare la voce.' },
+      { id: 'tr_6', title: 'Devianza alla Tavola', faction: 'Traditori', repeatable: false, mode: 'Verbale/Contatto', desc: 'Induci un giocatore Fedele a votare o sospettare un altro Fedele durante la discussione.' },
+
+      // FEDELI (prevalentemente verbali)
+      { id: 'fd_1', title: 'Testimonianza Chiara', faction: 'Fedeli', repeatable: true, mode: 'Verbale', desc: 'Riassumi in modo accurato quanto detto da due giocatori durante il giro di confronto senza accusare a vuoto.' },
+      { id: 'fd_2', title: 'Appello alla Luce', faction: 'Fedeli', repeatable: true, mode: 'Verbale', desc: 'Invita apertamente un altro giocatore a esporre il proprio ragionamento sulle ultime mosse al tavolo.' },
+      { id: 'fd_3', title: 'Concordia del Tavolo', faction: 'Fedeli', repeatable: true, mode: 'Verbale', desc: 'Fai convergere almeno due giocatori su un punto d’analisi comune prima della chiusura del turno.' },
+      { id: 'fd_4', title: 'Verifica dell’Indizio', faction: 'Fedeli', repeatable: false, mode: 'Verbale', desc: 'Metti a confronto due dichiarazioni contrastanti fatte da giocatori diversi durante la serata.' },
+      { id: 'fd_5', title: 'Scudo della Parola', faction: 'Fedeli', repeatable: false, mode: 'Verbale', desc: 'Difendi con argomenti concreti un giocatore preso di mira che poi risulta non essere un Traditore.' },
+      { id: 'fd_6', title: 'Voto Ragionato', faction: 'Fedeli', repeatable: false, mode: 'Verbale', desc: 'Spiega pubblicamente il motivo del tuo voto o della tua scelta prima che venga conteggiato.' },
+
+      // NEUTRO (cacciatore / indagine e osservazione)
+      { id: 'nt_1', title: 'Sonda d’Identità', faction: 'Neutro', repeatable: true, mode: 'Indagine', desc: 'Raccogli un indizio diretto sul comportamento di un giocatore per preparare una domanda mirata.' },
+      { id: 'nt_2', title: 'Osservatore Silente', faction: 'Neutro', repeatable: true, mode: 'Osservazione', desc: 'Annota mentalmente a chi si rivolge più spesso un giocatore sospetto e verifica la coerenza.' },
+      { id: 'nt_3', title: 'Incrocio di Sospetti', faction: 'Neutro', repeatable: true, mode: 'Indagine', desc: 'Osserva la reazione di due giocatori quando viene nominato un terzo partecipante.' },
+      { id: 'nt_4', title: 'Traccia del Cacciatore', faction: 'Neutro', repeatable: false, mode: 'Indagine', desc: 'Collega almeno due indizi raccolti su giocatori distinti prima di formulare una verifica.' },
+      { id: 'nt_5', title: 'Prova del Fuoco', faction: 'Neutro', repeatable: false, mode: 'Indagine', desc: 'Metti alla prova la coerenza di un giocatore ponendogli una domanda diretta sul turno precedente.' }
+    ];
+
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (err) {
+        console.error('Errore Firestore su missioni.html:', err);
+        return null;
+      }
+    }
+
+    var firestoreDb = initFirestore();
+
+    function readAccess() {
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', role: 'player' };
+        var parsed = JSON.parse(raw);
+        return {
+          roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          role: parsed.role === 'master' ? 'master' : 'player'
+        };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', role: 'player' };
+      }
+    }
+
+    var access = readAccess();
+    var state = {
+      filter: 'tutti',
+      players: [],
+      missionAssignments: {},
+      banner: null
+    };
+
+    function getRoomRef() {
+      if (!firestoreDb) return null;
+      return doc(firestoreDb, 'stanze', access.roomCode);
+    }
+
+    function loadLocalRoom() {
+      try {
+        var raw = localStorage.getItem(ROOM_PREFIX + access.roomCode);
+        if (!raw) return;
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.players)) state.players = parsed.players;
+        if (parsed.missionAssignments && typeof parsed.missionAssignments === 'object') {
+          state.missionAssignments = parsed.missionAssignments;
+        }
+      } catch (_e) {}
+    }
+
+    function saveLocalRoom() {
+      try {
+        var raw = localStorage.getItem(ROOM_PREFIX + access.roomCode);
+        var cur = raw ? JSON.parse(raw) : { roomCode: access.roomCode };
+        cur.players = state.players;
+        cur.missionAssignments = state.missionAssignments;
+        cur.updatedAt = Date.now();
+        localStorage.setItem(ROOM_PREFIX + access.roomCode, JSON.stringify(cur));
+      } catch (_e) {}
+    }
+
+    function pickMissionsForFaction(faction) {
+      var pool = MISSION_CATALOG.filter(function (m) { return m.faction === faction; });
+      if (!pool.length) pool = MISSION_CATALOG.slice();
+      var copy = pool.slice();
+      for (var i = copy.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = tmp;
+      }
+      var chosen = [];
+      for (var k = 0; k < 5; k++) {
+        chosen.push(copy[k % copy.length]);
+      }
+      return chosen;
+    }
+
+    window.setMissionFilter = function (f) {
+      state.filter = f || 'tutti';
+      render();
+    };
+
+    window.distributeMissionsByFaction = async function () {
+      if (!state.players.length) {
+        state.banner = 'Nessun giocatore trovato nella stanza ' + access.roomCode + '. Aggiungi giocatori dal Master o entra con un giocatore.';
+        render();
+        return;
+      }
+
+      var nextAssignments = {};
+      state.players.forEach(function (p) {
+        var roleObj = p.assignedRoleKey && ROLES_INFO[p.assignedRoleKey] ? ROLES_INFO[p.assignedRoleKey] : null;
+        var faction = roleObj ? roleObj.faction : 'Fedeli';
+        var picked = pickMissionsForFaction(faction);
+        nextAssignments[p.name.toLowerCase()] = picked.map(function (m, idx) {
+          return {
+            slot: idx + 1,
+            id: m.id,
+            title: m.title,
+            faction: m.faction,
+            mode: m.mode,
+            repeatable: m.repeatable,
+            desc: m.desc,
+            done: false
+          };
+        });
+      });
+
+      state.missionAssignments = nextAssignments;
+      state.banner = 'Missioni distribuite casualmente rispettando le fazioni dei giocatori sulla stanza ' + access.roomCode + '.';
+      saveLocalRoom();
+
+      var ref = getRoomRef();
+      if (ref) {
+        try {
+          await setDoc(ref, {
+            roomCode: access.roomCode,
+            missionAssignments: state.missionAssignments,
+            updatedAt: Date.now()
+          }, { merge: true });
+        } catch (err) {
+          console.error('Errore salvataggio missioni su Firestore:', err);
+        }
+      }
+
+      render();
+    };
+
+    window.goBackPage = function () {
+      window.location.href = access.role === 'master' ? 'master.html' : 'giocatore.html';
+    };
+
+    window.goToRoles = function () {
+      window.location.href = 'ruoli.html';
+    };
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function render() {
+      var root = document.getElementById('missions-catalog-app');
+      if (!root) return;
+
+      var filtered = state.filter === 'tutti'
+        ? MISSION_CATALOG
+        : MISSION_CATALOG.filter(function (m) { return m.faction === state.filter; });
+
+      var cardsHtml = filtered.map(function (m) {
+        return (
+          '<article class="mission-card">' +
+            '<div class="mission-head">' +
+              '<h3 class="mission-title">' + escapeHtml(m.title) + '</h3>' +
+              '<span class="badge badge-' + m.faction + '">' + escapeHtml(m.faction) + '</span>' +
+            '</div>' +
+            '<p class="mission-desc">' + escapeHtml(m.desc) + '</p>' +
+            '<p class="mission-meta">' + escapeHtml(m.mode) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + '</p>' +
+          '</article>'
+        );
+      }).join('');
+
+      var assignedHtml = state.players.length
+        ? state.players.map(function (p) {
+            var roleObj = p.assignedRoleKey && ROLES_INFO[p.assignedRoleKey] ? ROLES_INFO[p.assignedRoleKey] : null;
+            var faction = roleObj ? roleObj.faction : 'Fedeli';
+            var list = state.missionAssignments[p.name.toLowerCase()] || [];
+            var items = list.length
+              ? list.map(function (item) {
+                  return '<div>' + item.slot + '. <strong>' + escapeHtml(item.title) + '</strong> (' + escapeHtml(item.faction) + ') — ' + escapeHtml(item.desc) + '</div>';
+                }).join('')
+              : '<div class="subtext">Nessuna missione ancora distribuita per questo giocatore.</div>';
+
+            return (
+              '<div class="player-mission-box">' +
+                '<div class="player-mission-head">' +
+                  '<strong>' + escapeHtml(p.name) + '</strong>' +
+                  '<span class="badge badge-' + faction + '">' + (roleObj ? escapeHtml(roleObj.name) + ' · ' + escapeHtml(faction) : 'Fazione: ' + escapeHtml(faction)) + '</span>' +
+                '</div>' +
+                '<div class="mission-chips">' + items + '</div>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun giocatore registrato al momento nella stanza ' + escapeHtml(access.roomCode) + '.</p>';
+
+      root.innerHTML =
+        '<header class="card header-row">' +
+          '<div>' +
+            '<span class="eyebrow">Stanza ' + escapeHtml(access.roomCode) + ' · <span class="mono">SYNC-' + escapeHtml(access.roomCode) + '</span></span>' +
+            '<h1>Catalogo e Distribuzione Missioni</h1>' +
+            '<p class="subtext">Sfoglia le missioni per fazione e assegnane 5 a ciascun giocatore rispettando la propria fazione.</p>' +
+          '</div>' +
+          '<div class="btn-row">' +
+            '<button type="button" class="btn-emerald" onclick="distributeMissionsByFaction()">Distribuisci Casuali per Fazione</button>' +
+            '<button type="button" class="btn-ghost" onclick="goToRoles()">Tutti i Ruoli</button>' +
+            '<button type="button" class="btn-gold" onclick="goBackPage()">Torna alla Scheda</button>' +
+          '</div>' +
+        '</header>' +
+        (state.banner ? '<div class="banner">' + escapeHtml(state.banner) + '</div>' : '') +
+        '<section class="card card-gold">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow">Logica Fazioni</span>' +
+              '<h2>Distribuzione Casuale delle 5 Missioni</h2>' +
+              '<p class="subtext">Traditori ricevono missioni da Traditori; Fedeli da Fedeli; Cacciatore/Neutro da Neutro.</p>' +
+            '</div>' +
+            '<button type="button" class="btn-emerald" onclick="distributeMissionsByFaction()">Assegna Ora</button>' +
+          '</div>' +
+          '<div class="assigned-list">' + assignedHtml + '</div>' +
+        '</section>' +
+        '<section class="card">' +
+          '<div class="filter-bar">' +
+            '<span class="subtext">Missioni in catalogo: <strong>' + filtered.length + '</strong></span>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="filter-pill ' + (state.filter === 'tutti' ? 'active-gold' : '') + '" onclick="setMissionFilter(\'tutti\')">Tutte</button>' +
+              '<button type="button" class="filter-pill ' + (state.filter === 'Traditori' ? 'active-crimson' : '') + '" onclick="setMissionFilter(\'Traditori\')">Traditori</button>' +
+              '<button type="button" class="filter-pill ' + (state.filter === 'Fedeli' ? 'active-emerald' : '') + '" onclick="setMissionFilter(\'Fedeli\')">Fedeli</button>' +
+              '<button type="button" class="filter-pill ' + (state.filter === 'Neutro' ? 'active-gold' : '') + '" onclick="setMissionFilter(\'Neutro\')">Neutro</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="missions-grid">' + cardsHtml + '</div>' +
+        '</section>';
+    }
+
+    loadLocalRoom();
+    render();
+
+    var ref = getRoomRef();
+    if (ref) {
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) {
+          var d = snap.data() || {};
+          if (Array.isArray(d.players)) state.players = d.players;
+          if (d.missionAssignments && typeof d.missionAssignments === 'object') state.missionAssignments = d.missionAssignments;
+          saveLocalRoom();
+          render();
+        }
+      }).catch(function () {});
+
+      onSnapshot(ref, function (snap) {
+        if (!snap.exists()) return;
+        var d = snap.data() || {};
+        if (Array.isArray(d.players)) state.players = d.players;
+        if (d.missionAssignments && typeof d.missionAssignments === 'object') state.missionAssignments = d.missionAssignments;
+        saveLocalRoom();
+        render();
+      });
+    }
+  </script>
+</body>
+</html>
