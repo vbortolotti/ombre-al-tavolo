@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Struttura Base</title>
+  <title>Ombre al Tavolo — Accesso</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
-    // Configurazione tema scuro e palette cromatica per l'anteprima di index.html
+    // Configurazione tema scuro e colori per la pagina di accesso
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -32,7 +32,7 @@
     };
   </script>
   <style>
-    /* Stile base scuro e leggibile su desktop e mobile */
+    /* Stile base per leggibilità su smartphone e desktop */
     body {
       background-color: #0c0e14;
       color: #f3f4f6;
@@ -41,213 +41,148 @@
   </style>
 </head>
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased">
-  <div id="app" class="max-w-5xl mx-auto px-4 py-8 space-y-6"></div>
+  <div id="access-app" class="max-w-2xl mx-auto px-4 py-8 sm:py-12 space-y-6"></div>
 
   <script>
-    // Catalogo ruoli base per la gestione da parte del Master
-    const ROLES = {
-      investigatore: {
-        name: 'Investigatore',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Indaga sul ruolo segreto di un giocatore vivo.'
-      },
-      guardia: {
-        name: 'Guardia',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Protegge un giocatore dagli attacchi nel turno corrente.'
-      },
-      cacciatore: {
-        name: 'Cacciatore',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Può colpire un sospetto rischiando il contraccolpo.'
-      },
-      assassino: {
-        name: 'Assassino',
-        faction: 'Traditori',
-        badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        desc: 'Elimina silenziosamente un bersaglio.'
-      },
-      sabotatore: {
-        name: 'Sabotatore',
-        faction: 'Traditori',
-        badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        desc: 'Ostacola o blocca l’azione di un avversario.'
-      }
-    };
+    // Chiave dedicata alla pagina di accesso e alla stanza attiva
+    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
 
-    const STORAGE_KEY = 'ombre_base_index_v1';
-
-    // Crea lo stato iniziale della sessione base
-    function createInitialState() {
+    // Crea lo stato iniziale della schermata di accesso
+    function createInitialAccessState() {
       return {
+        gameName: 'Ombre al Tavolo',
         roomCode: 'TAVOLO1',
-        screen: 'entry', // 'entry' | 'master' | 'player'
-        players: [],
-        activePlayerId: null,
-        rolePool: {
-          investigatore: 1,
-          guardia: 1,
-          cacciatore: 1,
-          assassino: 1,
-          sabotatore: 1
-        },
-        banner: null
+        playerName: '',
+        selectedRoleType: 'player', // 'player' | 'master'
+        statusBanner: null
       };
     }
 
-    // Carica lo stato salvato in memoria/localStorage con protezione da errori
-    function loadState() {
+    // Carica lo stato salvato in sicurezza tramite try/catch
+    function loadAccessState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return createInitialState();
+        const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
+        if (!raw) return createInitialAccessState();
         const parsed = JSON.parse(raw);
-        const base = createInitialState();
+        const base = createInitialAccessState();
         return {
-          roomCode: String(parsed.roomCode || base.roomCode).toUpperCase(),
-          screen: ['entry', 'master', 'player'].includes(parsed.screen) ? parsed.screen : 'entry',
-          players: Array.isArray(parsed.players) ? parsed.players : [],
-          activePlayerId: parsed.activePlayerId || null,
-          rolePool: { ...base.rolePool, ...(parsed.rolePool || {}) },
-          banner: parsed.banner || null
+          gameName: base.gameName,
+          roomCode: normalizeRoomCode(parsed.roomCode || base.roomCode),
+          playerName: String(parsed.playerName || '').slice(0, 24),
+          selectedRoleType: parsed.selectedRoleType === 'master' ? 'master' : 'player',
+          statusBanner: parsed.statusBanner || null
         };
       } catch (err) {
-        console.error('Errore lettura stato:', err);
-        return createInitialState();
+        console.error('Errore lettura stato accesso:', err);
+        return createInitialAccessState();
       }
     }
 
-    let appState = loadState();
+    let accessState = loadAccessState();
 
-    // Salva lo stato corrente in sicurezza
-    function saveState() {
+    // Normalizza il codice stanza in maiuscolo senza spazi superflui
+    function normalizeRoomCode(rawCode) {
+      const cleaned = String(rawCode || '')
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9_-]/g, '');
+      return (cleaned || 'TAVOLO1').slice(0, 16);
+    }
+
+    // Genera un ID Sync leggibile e coerente a partire dal codice stanza
+    function getSyncId(roomCode) {
+      return 'SYNC-' + normalizeRoomCode(roomCode);
+    }
+
+    // Salva lo stato della pagina di accesso
+    function saveAccessState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        localStorage.setItem(ACCESS_STORAGE_KEY, JSON.stringify(accessState));
       } catch (err) {
-        console.error('Errore salvataggio stato:', err);
+        console.error('Errore salvataggio stato accesso:', err);
       }
     }
 
-    // Mostra un messaggio di avviso o conferma
+    // Imposta un messaggio di avviso o conferma
     function setBanner(text, type = 'info') {
-      appState.banner = { text, type };
-      saveState();
-      render();
+      accessState.statusBanner = { text, type };
+      saveAccessState();
+      renderAccessPage();
     }
 
-    // Aggiorna il codice stanza
-    function updateRoomCode(rawCode) {
-      const clean = String(rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '') || 'TAVOLO1';
-      appState.roomCode = clean.slice(0, 16);
-      appState.banner = null;
-      saveState();
-      render();
+    // Aggiorna il codice stanza e il relativo ID Sync
+    function handleRoomCodeChange(value) {
+      accessState.roomCode = normalizeRoomCode(value);
+      accessState.statusBanner = null;
+      saveAccessState();
+      renderAccessPage();
     }
 
-    // Entra nella plancia Master
-    function enterMaster() {
-      appState.screen = 'master';
-      appState.banner = null;
-      saveState();
-      render();
+    // Aggiorna il nome inserito dall'utente
+    function handlePlayerNameChange(value) {
+      accessState.playerName = String(value || '').slice(0, 24);
+      accessState.statusBanner = null;
+      saveAccessState();
     }
 
-    // Entra come giocatore registrandosi al tavolo
-    function joinAsPlayer(rawName) {
-      const name = String(rawName || '').trim();
-      if (!name) {
-        setBanner('Inserisci il tuo nome per entrare al tavolo.', 'error');
-        return;
-      }
-
-      let existing = appState.players.find(p => p.name.toLowerCase() === name.toLowerCase());
-      if (!existing) {
-        existing = {
-          id: 'pl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name,
-          roleKey: null
-        };
-        appState.players.push(existing);
-      }
-
-      appState.activePlayerId = existing.id;
-      appState.screen = 'player';
-      appState.banner = null;
-      saveState();
-      render();
+    // Seleziona se si entra come Giocatore o Master
+    function chooseRoleType(roleType) {
+      accessState.selectedRoleType = roleType === 'master' ? 'master' : 'player';
+      accessState.statusBanner = null;
+      saveAccessState();
+      renderAccessPage();
     }
 
-    // Torna alla schermata iniziale senza cancellare la stanza
-    function exitScreen() {
-      appState.screen = 'entry';
-      appState.banner = null;
-      saveState();
-      render();
-    }
-
-    // Svuota completamente la stanza corrente
-    function clearRoom() {
-      const keepCode = appState.roomCode || 'TAVOLO1';
+    // Copia l'ID Sync negli appunti usando execCommand per compatibilità iframe
+    function copySyncId() {
+      const syncId = getSyncId(accessState.roomCode);
       try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch (err) {
-        console.error('Errore pulizia storage:', err);
-      }
-      const fresh = createInitialState();
-      fresh.roomCode = keepCode;
-      appState = fresh;
-      setBanner(`Stanza ${keepCode} svuotata.`, 'success');
-    }
+        const tempInput = document.createElement('input');
+        tempInput.value = syncId;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        tempInput.setSelectionRange(0, tempInput.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(tempInput);
 
-    // Modifica la quantità di un ruolo nel mazzo del Master
-    function changeRoleQty(roleKey, delta) {
-      if (!ROLES[roleKey]) return;
-      const cur = Number(appState.rolePool[roleKey] || 0);
-      appState.rolePool[roleKey] = Math.max(0, Math.min(10, cur + delta));
-      appState.banner = null;
-      saveState();
-      render();
-    }
-
-    // Estrae casualmente i ruoli tra i giocatori attualmente al tavolo
-    function drawRoles() {
-      if (appState.players.length === 0) {
-        setBanner('Attendi che almeno un giocatore entri al tavolo prima di estrarre i ruoli.', 'error');
-        return;
-      }
-
-      const deck = [];
-      Object.keys(ROLES).forEach(roleKey => {
-        const qty = Number(appState.rolePool[roleKey] || 0);
-        for (let i = 0; i < qty; i++) {
-          deck.push(roleKey);
+        if (ok) {
+          setBanner(`ID Sync "${syncId}" copiato negli appunti.`, 'success');
+        } else {
+          setBanner(`ID Sync attivo: ${syncId}`, 'info');
         }
-      });
+      } catch (err) {
+        console.error('Errore copia ID Sync:', err);
+        setBanner(`ID Sync attivo: ${syncId}`, 'info');
+      }
+    }
 
-      if (deck.length < appState.players.length) {
-        setBanner(
-          `Ci sono ${deck.length} ruoli disponibili ma ${appState.players.length} giocatori al tavolo: aumenta uno o più ruoli.`,
-          'error'
-        );
+    // Conferma l'accesso e prepara il passaggio alla pagina di Giocatore o Master
+    function proceedToSession() {
+      const cleanName = String(accessState.playerName || '').trim();
+      const roomCode = normalizeRoomCode(accessState.roomCode);
+      const syncId = getSyncId(roomCode);
+      accessState.roomCode = roomCode;
+      accessState.playerName = cleanName;
+
+      if (accessState.selectedRoleType === 'player' && !cleanName) {
+        setBanner('Inserisci il tuo nome per entrare come Giocatore.', 'error');
         return;
       }
 
-      for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = deck[i];
-        deck[i] = deck[j];
-        deck[j] = tmp;
+      const displayLabel = cleanName || (accessState.selectedRoleType === 'master' ? 'Master' : 'Giocatore');
+      saveAccessState();
+
+      if (accessState.selectedRoleType === 'player') {
+        setBanner(
+          `Pronto per la pagina Giocatore: "${displayLabel}" nella stanza ${roomCode} (${syncId}). Puoi aprire giocatore.html.`,
+          'success'
+        );
+      } else {
+        setBanner(
+          `Pronto per la pagina Master: "${displayLabel}" nella stanza ${roomCode} (${syncId}).`,
+          'success'
+        );
       }
-
-      const picked = deck.slice(0, appState.players.length);
-      appState.players = appState.players.map((p, idx) => ({
-        ...p,
-        roleKey: picked[idx]
-      }));
-
-      setBanner(`Estratti e assegnati ${picked.length} ruoli ai giocatori al tavolo.`, 'success');
     }
 
     // Escape di sicurezza per il testo renderizzato in HTML
@@ -260,202 +195,151 @@
         .replace(/'/g, '&#39;');
     }
 
-    // Renderizza la schermata attiva
-    function render() {
-      const root = document.getElementById('app');
-      if (!root) return;
+    // Renderizza la pagina di accesso
+    function renderAccessPage() {
+      const container = document.getElementById('access-app');
+      if (!container) return;
 
       try {
-        const bannerHtml = appState.banner
+        const syncId = getSyncId(accessState.roomCode);
+        const banner = accessState.statusBanner;
+
+        const bannerHtml = banner
           ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
-              appState.banner.type === 'success'
+              banner.type === 'success'
                 ? 'bg-emerald/15 border-emerald/40 text-emerald'
-                : appState.banner.type === 'error'
+                : banner.type === 'error'
                 ? 'bg-crimson/15 border-crimson/40 text-crimson'
                 : 'bg-indigo/15 border-indigo/40 text-indigo'
-            }">${escapeHtml(appState.banner.text)}</div>`
+            }">${escapeHtml(banner.text)}</div>`
           : '';
 
-        if (appState.screen === 'master') {
-          const totalPool = Object.values(appState.rolePool).reduce((sum, n) => sum + Number(n || 0), 0);
-          root.innerHTML = `
-            <header class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Master · Stanza ${escapeHtml(appState.roomCode)}</span>
-                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tavolo e Assegnazione Ruoli</h1>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <button type="button" onclick="drawRoles()" class="px-4 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer">
-                  Estrai Ruoli
-                </button>
-                <button type="button" onclick="exitScreen()" class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
-                  Esci
-                </button>
-                <button type="button" onclick="clearRoom()" class="px-3.5 py-2 rounded-xl bg-crimson/15 hover:bg-crimson/25 border border-crimson/35 text-xs font-semibold text-crimson transition cursor-pointer">
-                  Svuota Stanza
-                </button>
-              </div>
-            </header>
-
-            ${bannerHtml}
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="font-serif text-xl font-bold text-white">Giocatori al Tavolo (${appState.players.length})</h2>
-                </div>
-                ${appState.players.length === 0
-                  ? `<p class="text-sm text-gray-400">Nessun giocatore ancora al tavolo.</p>`
-                  : `<div class="space-y-2.5">${appState.players.map(p => {
-                      const role = p.roleKey ? ROLES[p.roleKey] : null;
-                      return `
-                        <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
-                          <span class="font-semibold text-sm text-white">${escapeHtml(p.name)}</span>
-                          ${role
-                            ? `<span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${role.badge}">${escapeHtml(role.name)}</span>`
-                            : `<span class="text-xs text-gray-400">In attesa</span>`
-                          }
-                        </div>
-                      `;
-                    }).join('')}</div>`
-                }
-              </section>
-
-              <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="font-serif text-xl font-bold text-white">Ruoli nel Mazzo</h2>
-                  <span class="text-xs px-3 py-1 rounded-full bg-bgdark border border-white/10 text-gray-300">
-                    Totale: <strong class="text-gold">${totalPool}</strong>
-                  </span>
-                </div>
-                <div class="space-y-2.5">
-                  ${Object.entries(ROLES).map(([key, r]) => {
-                    const count = Number(appState.rolePool[key] || 0);
-                    return `
-                      <div class="rounded-xl bg-bgdark border border-white/10 p-3 flex items-center justify-between gap-3">
-                        <div>
-                          <div class="text-sm font-semibold text-white">${escapeHtml(r.name)}</div>
-                          <div class="text-xs text-gray-400">${escapeHtml(r.faction)}</div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                          <button type="button" onclick="changeRoleQty('${key}', -1)" class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold cursor-pointer">-</button>
-                          <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
-                          <button type="button" onclick="changeRoleQty('${key}', 1)" class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold cursor-pointer">+</button>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </section>
-            </div>
-          `;
-          return;
-        }
-
-        if (appState.screen === 'player') {
-          const me = appState.players.find(p => p.id === appState.activePlayerId) || null;
-          const myRole = me && me.roleKey ? ROLES[me.roleKey] : null;
-          root.innerHTML = `
-            <header class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-indigo">Scheda Giocatore · Stanza ${escapeHtml(appState.roomCode)}</span>
-                <h1 class="font-serif text-2xl font-bold text-white mt-1">${escapeHtml(me ? me.name : 'Giocatore')}</h1>
-              </div>
-              <button type="button" onclick="exitScreen()" class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
-                Esci
-              </button>
-            </header>
-
-            ${bannerHtml}
-
-            <section class="rounded-2xl bg-surface border border-white/10 p-6 space-y-3">
-              <div class="text-xs uppercase tracking-wider text-gray-400">Il tuo ruolo assegnato</div>
-              ${myRole
-                ? `
-                  <div class="inline-block text-sm font-bold px-3 py-1 rounded-full border ${myRole.badge}">
-                    ${escapeHtml(myRole.name)} · ${escapeHtml(myRole.faction)}
-                  </div>
-                  <p class="text-sm text-gray-300 mt-2">${escapeHtml(myRole.desc)}</p>
-                `
-                : `<p class="text-sm text-gray-300">Sei al tavolo in attesa che il Master estragga i ruoli.</p>`
-              }
-            </section>
-          `;
-          return;
-        }
-
-        root.innerHTML = `
-          <header class="rounded-2xl bg-surface border border-white/10 p-6 text-center space-y-2">
-            <span class="text-xs font-bold uppercase tracking-widest text-gold">Struttura Base</span>
-            <h1 class="font-serif text-3xl sm:text-4xl font-bold text-white">Ombre al Tavolo</h1>
-            <p class="text-sm text-gray-400 max-w-xl mx-auto">
-              Ingresso principale del gioco. Imposta il codice stanza, entra come Master o come Giocatore.
+        container.innerHTML = `
+          <header class="rounded-2xl bg-surface border border-white/10 p-6 sm:p-8 text-center space-y-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-gold">Pagina 1 · Accesso al Tavolo</span>
+            <h1 class="font-serif text-3xl sm:text-4xl font-bold text-white">${escapeHtml(accessState.gameName)}</h1>
+            <p class="text-sm text-gray-400 max-w-md mx-auto">
+              Inserisci il codice stanza per allineare i telefoni, scrivi il tuo nome e scegli se entrare come Giocatore o Master.
             </p>
           </header>
 
           ${bannerHtml}
 
-          <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
-            <div class="flex flex-wrap items-end justify-between gap-4">
-              <div class="flex-1 min-w-[200px]">
-                <label for="room-code-input" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                  Codice Stanza
-                </label>
-                <input
-                  id="room-code-input"
-                  type="text"
-                  value="${escapeHtml(appState.roomCode)}"
-                  onchange="updateRoomCode(this.value)"
-                  class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm font-mono uppercase text-white focus:outline-none focus:border-gold"
-                />
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <button type="button" onclick="enterMaster()" class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer">
-                  Entra come Master
-                </button>
-                <button type="button" onclick="clearRoom()" class="px-3.5 py-2.5 rounded-xl bg-crimson/15 hover:bg-crimson/25 border border-crimson/35 text-xs font-semibold text-crimson transition cursor-pointer">
-                  Svuota Stanza
+          <section class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 space-y-5">
+            <div class="space-y-2">
+              <label for="room-code-field" class="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                1. Codice Stanza
+              </label>
+              <input
+                id="room-code-field"
+                type="text"
+                maxlength="16"
+                value="${escapeHtml(accessState.roomCode)}"
+                onchange="handleRoomCodeChange(this.value)"
+                placeholder="Es. TAVOLO1"
+                class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm font-mono uppercase text-white focus:outline-none focus:border-gold"
+              />
+
+              <div class="rounded-xl bg-bgdark border border-emerald/30 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="text-xs text-gray-300">
+                  <span class="text-gray-400">ID Sync stanza:</span>
+                  <strong class="ml-1.5 font-mono text-emerald text-sm">${escapeHtml(syncId)}</strong>
+                </div>
+                <button
+                  type="button"
+                  onclick="copySyncId()"
+                  class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+                >
+                  Copia ID Sync
                 </button>
               </div>
             </div>
 
-            <form
-              onsubmit="event.preventDefault(); const inp = document.getElementById('join-name-input'); joinAsPlayer(inp.value); inp.value = '';"
-              class="pt-4 border-t border-white/10 flex flex-col sm:flex-row gap-2.5"
-            >
+            <div class="space-y-2 pt-2 border-t border-white/10">
+              <label for="player-name-field" class="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                2. Il Tuo Nome
+              </label>
               <input
-                id="join-name-input"
+                id="player-name-field"
                 type="text"
                 maxlength="24"
-                placeholder="Il tuo nome per entrare come Giocatore..."
-                class="flex-1 rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo"
+                value="${escapeHtml(accessState.playerName)}"
+                oninput="handlePlayerNameChange(this.value)"
+                placeholder="Scrivi il tuo nome..."
+                class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo"
               />
-              <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo text-white text-xs font-bold hover:brightness-110 transition cursor-pointer">
-                Entra come Giocatore
+            </div>
+
+            <div class="space-y-2.5 pt-2 border-t border-white/10">
+              <span class="block text-xs font-bold uppercase tracking-wider text-gray-300">
+                3. Scegli il Ruolo di Accesso
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onclick="chooseRoleType('player')"
+                  class="p-4 rounded-xl border text-left transition cursor-pointer ${
+                    accessState.selectedRoleType === 'player'
+                      ? 'bg-indigo/15 border-indigo text-white'
+                      : 'bg-bgdark border-white/10 text-gray-300 hover:border-white/25'
+                  }"
+                >
+                  <div class="text-sm font-bold">Giocatore</div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    Apre la scheda personale del giocatore e la sezione selfie.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onclick="chooseRoleType('master')"
+                  class="p-4 rounded-xl border text-left transition cursor-pointer ${
+                    accessState.selectedRoleType === 'master'
+                      ? 'bg-gold/15 border-gold text-white'
+                      : 'bg-bgdark border-white/10 text-gray-300 hover:border-white/25'
+                  }"
+                >
+                  <div class="text-sm font-bold">Master</div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    Apre la gestione del tavolo, dei ruoli e della partita.
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <button
+                type="button"
+                onclick="proceedToSession()"
+                class="w-full py-3.5 px-5 rounded-xl bg-gold text-bgdark text-sm font-bold hover:brightness-110 transition cursor-pointer"
+              >
+                ${
+                  accessState.selectedRoleType === 'player'
+                    ? 'Prosegui alla Pagina Giocatore'
+                    : 'Prosegui alla Pagina Master'
+                }
               </button>
-            </form>
+            </div>
           </section>
         `;
       } catch (err) {
-        console.error('Errore rendering index.html:', err);
-        root.innerHTML = `
+        console.error('Errore rendering pagina accesso:', err);
+        container.innerHTML = `
           <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
-            Errore durante il caricamento della pagina. Ricarica l'anteprima.
+            Errore durante il caricamento della pagina di accesso. Ricarica la pagina.
           </div>
         `;
       }
     }
 
-    // Esposizione esplicita delle funzioni usate nei pulsanti e form
-    window.updateRoomCode = updateRoomCode;
-    window.enterMaster = enterMaster;
-    window.joinAsPlayer = joinAsPlayer;
-    window.exitScreen = exitScreen;
-    window.clearRoom = clearRoom;
-    window.changeRoleQty = changeRoleQty;
-    window.drawRoles = drawRoles;
+    // Esposizione esplicita delle funzioni usate nei controlli HTML
+    window.handleRoomCodeChange = handleRoomCodeChange;
+    window.handlePlayerNameChange = handlePlayerNameChange;
+    window.chooseRoleType = chooseRoleType;
+    window.copySyncId = copySyncId;
+    window.proceedToSession = proceedToSession;
 
-    render();
+    renderAccessPage();
   </script>
 </body>
 </html>
