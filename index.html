@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Companion Giocatore e Master</title>
+  <title>Ombre al Tavolo — Struttura Base</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
-    // Configurazione tema scuro e colori personalizzati di Tailwind
+    // Configurazione tema scuro e palette cromatica per l'anteprima di index.html
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -32,2254 +32,227 @@
     };
   </script>
   <style>
+    /* Stile base scuro e leggibile su desktop e mobile */
     body {
       background-color: #0c0e14;
       color: #f3f4f6;
       font-family: 'Inter', sans-serif;
-      overflow-x: hidden;
-    }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #121620;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #2c344a;
-      border-radius: 9999px;
     }
   </style>
 </head>
-<body class="min-h-screen bg-bgdark text-gray-100 antialiased selection:bg-gold/30 selection:text-gold">
-  <div id="app" class="min-h-screen flex flex-col"></div>
+<body class="min-h-screen bg-bgdark text-gray-100 antialiased">
+  <div id="app" class="max-w-5xl mx-auto px-4 py-8 space-y-6"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Chiavi e costanti per persistenza locale, sessione scheda e sincronizzazione stanza
-    const STORAGE_KEY = 'ombre_al_tavolo_v4_clean';
-    const TAB_SESSION_KEY = 'ombre_al_tavolo_tab_session_v1';
-    const SYNC_CHANNEL_NAME = 'ombre_al_tavolo_sync_v1';
-    const DEFAULT_ROOM_CODE = 'TAVOLO1';
-    const SYNC_POLL_INTERVAL_MS = 2000;
-    const SYNC_PUBLIC_BUCKET_KEY = 'ombre_al_tavolo_cloud_bin_id_v1';
-
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ombre-al-tavolo-app';
-    let db = null;
-    let auth = null;
-    let currentUser = null;
-    let roomUnsubscribe = null;
-    let cloudReady = false;
-
-    // Definizione dei ruoli, fazioni e poteri del gioco
-    const ROLE_DEFS = {
+  <script>
+    // Catalogo ruoli base per la gestione da parte del Master
+    const ROLES = {
       investigatore: {
         name: 'Investigatore',
-        faction: 'cittadini',
-        factionLabel: 'Fazione Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        powerName: 'Indagine Approfondita',
-        powerDesc: 'Spendi 1 punto potere per scoprire il ruolo esatto di un giocatore vivo a tua scelta.',
-        cost: 1
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Indaga sul ruolo segreto di un giocatore vivo.'
       },
       guardia: {
         name: 'Guardia',
-        faction: 'cittadini',
-        factionLabel: 'Fazione Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        powerName: 'Scudo Protettivo',
-        powerDesc: 'Spendi 1 punto potere per proteggere un giocatore vivo (anche te stesso) fino al prossimo turno.',
-        cost: 1
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Protegge un giocatore dagli attacchi nel turno corrente.'
       },
       cacciatore: {
         name: 'Cacciatore',
-        faction: 'cittadini',
-        factionLabel: 'Fazione Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        powerName: 'Colpo Mirato',
-        powerDesc: 'Spendi 2 punti potere per eliminare un giocatore sospetto. Se colpisci un innocente, subisci contraccolpo.',
-        cost: 2
-      },
-      martire: {
-        name: 'Martire',
-        faction: 'cittadini',
-        factionLabel: 'Fazione Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        powerName: 'Ultima Testimonianza',
-        powerDesc: 'Dichiara pubblicamente un ruolo al tavolo prima o durante un momento chiave della partita.',
-        cost: 0
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Può colpire un sospetto rischiando il contraccolpo.'
       },
       assassino: {
         name: 'Assassino',
-        faction: 'traditori',
-        factionLabel: 'Fazione Traditori',
-        badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        powerName: 'Eliminazione Silenziosa',
-        powerDesc: 'Spendi 2 punti potere per eliminare un giocatore vivo (massimo 1 volta per turno).',
-        cost: 2
+        faction: 'Traditori',
+        badge: 'bg-crimson/15 text-crimson border-crimson/40',
+        desc: 'Elimina silenziosamente un bersaglio.'
       },
       sabotatore: {
         name: 'Sabotatore',
-        faction: 'traditori',
-        factionLabel: 'Fazione Traditori',
-        badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        powerName: 'Intralcio Notturno',
-        powerDesc: 'Spendi 1 punto potere per bloccare l’azione/potere di un giocatore bersaglio nel turno corrente.',
-        cost: 1
+        faction: 'Traditori',
+        badge: 'bg-crimson/15 text-crimson border-crimson/40',
+        desc: 'Ostacola o blocca l’azione di un avversario.'
       }
     };
 
-    const PHASES = ['Esplorazione', 'Confronto al Tavolo', 'Votazione'];
+    const STORAGE_KEY = 'ombre_base_index_v1';
 
-    // Quantità predefinita di copie per ciascun ruolo nel mazzo di estrazione
-    function createDefaultRolePool() {
-      return {
-        investigatore: 1,
-        guardia: 1,
-        cacciatore: 1,
-        martire: 0,
-        assassino: 1,
-        sabotatore: 1
-      };
-    }
-
-    // Genera missioni segrete coerenti con la fazione assegnata
-    function buildMissionsForFaction(faction) {
-      if (faction === 'traditori') {
-        return [
-          { id: 'm_rep_1', text: 'Semina un dubbio credibile su un Cittadino durante la discussione.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-          { id: 'm_rep_2', text: 'Fai convergere almeno due voti su un bersaglio scelto dai Traditori.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-          { id: 'm_rep_3', text: 'Ottieni fiducia o un’informazione riservata senza destare sospetti.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-          { id: 'm_uni_1', text: 'Sopravvivi indenne fino al secondo Confronto al Tavolo.', points: 2, repeatable: false, status: 'idle', approvedCount: 0 },
-          { id: 'm_uni_2', text: 'Induci un Cittadino a dichiarare un ruolo errato in pubblico.', points: 2, repeatable: false, status: 'idle', approvedCount: 0 }
-        ];
-      }
-
-      return [
-        { id: 'm_rep_1', text: 'Condividi un indizio utile o un’osservazione chiara con il tavolo.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-        { id: 'm_rep_2', text: 'Confronta due versioni o testimonianze emerse durante il turno.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-        { id: 'm_rep_3', text: 'Coordina una scelta difensiva o di voto con almeno un alleato.', points: 1, repeatable: true, status: 'idle', approvedCount: 0 },
-        { id: 'm_uni_1', text: 'Individua un comportamento incoerente prima della Votazione.', points: 2, repeatable: false, status: 'idle', approvedCount: 0 },
-        { id: 'm_uni_2', text: 'Proteggi un giocatore chiave durante una fase critica.', points: 2, repeatable: false, status: 'idle', approvedCount: 0 }
-      ];
-    }
-
-    // Stato iniziale della partita
+    // Crea lo stato iniziale della sessione base
     function createInitialState() {
       return {
-        roomCode: DEFAULT_ROOM_CODE,
-        lastUpdatedAt: 0,
-        screen: 'entry',
-        sessionRole: null,
-        currentPlayerId: null,
-        inspectingPlayerId: null,
-        phase: 'Esplorazione',
-        round: 1,
-        rolesAssigned: false,
-        rolePool: createDefaultRolePool(),
+        roomCode: 'TAVOLO1',
+        screen: 'entry', // 'entry' | 'master' | 'player'
         players: [],
-        logs: [],
-        masterMessages: [],
-        bannerMessage: null,
-        winner: null
+        activePlayerId: null,
+        rolePool: {
+          investigatore: 1,
+          guardia: 1,
+          cacciatore: 1,
+          assassino: 1,
+          sabotatore: 1
+        },
+        banner: null
       };
     }
 
-    let tabSession = loadTabSession();
-    let state = null;
-    let tempSelfieDataUrl = null;
-    let cameraStream = null;
-    let syncChannel = null;
-    let syncPollTimer = null;
-    let isRemoteApplying = false;
-
-    function normalizeRoomCode(code) {
-      const cleaned = String(code || '')
-        .toUpperCase()
-        .replace(/[^A-Z0-9_-]/g, '')
-        .slice(0, 20);
-      return cleaned || DEFAULT_ROOM_CODE;
-    }
-
-    function loadTabSession() {
-      try {
-        const raw = sessionStorage.getItem(TAB_SESSION_KEY);
-        if (!raw) {
-          return {
-            roomCode: DEFAULT_ROOM_CODE,
-            sessionRole: null,
-            currentPlayerId: null,
-            screen: 'entry'
-          };
-        }
-        const parsed = JSON.parse(raw);
-        return {
-          roomCode: normalizeRoomCode(parsed.roomCode),
-          sessionRole: parsed.sessionRole || null,
-          currentPlayerId: parsed.currentPlayerId || null,
-          screen: parsed.screen || 'entry'
-        };
-      } catch (err) {
-        console.error('Errore lettura sessione scheda:', err);
-        return {
-          roomCode: DEFAULT_ROOM_CODE,
-          sessionRole: null,
-          currentPlayerId: null,
-          screen: 'entry'
-        };
-      }
-    }
-
-    function saveTabSession() {
-      try {
-        sessionStorage.setItem(TAB_SESSION_KEY, JSON.stringify(tabSession));
-      } catch (err) {
-        console.error('Errore salvataggio sessione scheda:', err);
-      }
-    }
-
-    function getRoomStorageKey(roomCode) {
-      return `${STORAGE_KEY}_${normalizeRoomCode(roomCode)}`;
-    }
-
-    function getRoomCloudIdKey(roomCode) {
-      return `${SYNC_PUBLIC_BUCKET_KEY}_${normalizeRoomCode(roomCode)}`;
-    }
-
+    // Carica lo stato salvato in memoria/localStorage con protezione da errori
     function loadState() {
-      const roomCode = normalizeRoomCode(tabSession.roomCode);
       try {
-        const raw = localStorage.getItem(getRoomStorageKey(roomCode)) || localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return createInitialState();
+        const parsed = JSON.parse(raw);
         const base = createInitialState();
-        base.roomCode = roomCode;
-        let merged = base;
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          merged = { ...base, ...parsed, roomCode };
-        }
-        if (tabSession.sessionRole !== undefined) merged.sessionRole = tabSession.sessionRole;
-        if (tabSession.currentPlayerId !== undefined) merged.currentPlayerId = tabSession.currentPlayerId;
-        if (tabSession.screen) merged.screen = tabSession.screen;
-        return merged;
+        return {
+          roomCode: String(parsed.roomCode || base.roomCode).toUpperCase(),
+          screen: ['entry', 'master', 'player'].includes(parsed.screen) ? parsed.screen : 'entry',
+          players: Array.isArray(parsed.players) ? parsed.players : [],
+          activePlayerId: parsed.activePlayerId || null,
+          rolePool: { ...base.rolePool, ...(parsed.rolePool || {}) },
+          banner: parsed.banner || null
+        };
       } catch (err) {
         console.error('Errore lettura stato:', err);
-        const fallback = createInitialState();
-        fallback.roomCode = roomCode;
-        return fallback;
+        return createInitialState();
       }
     }
 
-    function getSharedSnapshot() {
-      return {
-        roomCode: normalizeRoomCode(state.roomCode),
-        lastUpdatedAt: Number(state.lastUpdatedAt || Date.now()),
-        phase: state.phase,
-        round: state.round,
-        rolesAssigned: Boolean(state.rolesAssigned),
-        rolePool: state.rolePool || createDefaultRolePool(),
-        players: state.players,
-        logs: state.logs,
-        masterMessages: state.masterMessages,
-        winner: state.winner
-      };
-    }
+    let appState = loadState();
 
-    function getCloudBinId(roomCode) {
+    // Salva lo stato corrente in sicurezza
+    function saveState() {
       try {
-        return localStorage.getItem(getRoomCloudIdKey(roomCode)) || null;
-      } catch (err) {
-        return null;
-      }
-    }
-
-    function setCloudBinId(roomCode, binId) {
-      if (!binId) return;
-      try {
-        localStorage.setItem(getRoomCloudIdKey(roomCode), String(binId));
-      } catch (err) {
-        // Ignora errori storage
-      }
-    }
-
-    function getOrCreateDisplaySyncId(roomCode) {
-      const normalized = normalizeRoomCode(roomCode);
-      const existing = getCloudBinId(normalized);
-      if (existing) return existing;
-      const generated = `ROOM_${normalized}`;
-      setCloudBinId(normalized, generated);
-      return generated;
-    }
-
-    function getRoomDocRef(roomCode) {
-      if (!db || !currentUser) return null;
-      const normalized = normalizeRoomCode(roomCode);
-      return doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', normalized);
-    }
-
-    async function initCloudSync() {
-      try {
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          cloudReady = false;
-          return;
-        }
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-
-        currentUser = auth.currentUser;
-        if (!currentUser) {
-          cloudReady = false;
-          return;
-        }
-
-        cloudReady = true;
-        subscribeToCloudRoom(state.roomCode);
-        await pullRemoteSnapshot();
-      } catch (err) {
-        console.error('Errore inizializzazione sincronizzazione remota:', err);
-        cloudReady = false;
-      }
-    }
-
-    function subscribeToCloudRoom(roomCode) {
-      if (roomUnsubscribe) {
-        try {
-          roomUnsubscribe();
-        } catch (err) {
-          // Ignora chiusura listener precedente
-        }
-        roomUnsubscribe = null;
-      }
-
-      const ref = getRoomDocRef(roomCode);
-      if (!ref) return;
-
-      roomUnsubscribe = onSnapshot(
-        ref,
-        (snap) => {
-          if (!snap.exists()) return;
-          const data = snap.data();
-          if (!data) return;
-
-          let parsedSnapshot = data;
-          if (typeof data.payloadJson === 'string') {
-            try {
-              parsedSnapshot = JSON.parse(data.payloadJson);
-            } catch (err) {
-              console.error('Errore parsing payload stanza:', err);
-              return;
-            }
-          }
-          applySharedSnapshot(parsedSnapshot, 'cloud_listener');
-        },
-        (err) => {
-          console.error('Errore ascolto stanza remota:', err);
-        }
-      );
-    }
-
-    async function pushCloudSnapshot(snapshot) {
-      if (!cloudReady || !currentUser || isRemoteApplying) return;
-      const ref = getRoomDocRef(snapshot.roomCode);
-      if (!ref) return;
-
-      try {
-        await setDoc(ref, {
-          roomCode: normalizeRoomCode(snapshot.roomCode),
-          lastUpdatedAt: Number(snapshot.lastUpdatedAt || Date.now()),
-          updatedBy: currentUser.uid,
-          payloadJson: JSON.stringify(snapshot)
-        });
-      } catch (err) {
-        console.error('Errore invio stato su stanza remota:', err);
-      }
-    }
-
-    function applySharedSnapshot(snapshot, sourceLabel = 'sync') {
-      if (!snapshot || typeof snapshot !== 'object') return false;
-      const roomCode = normalizeRoomCode(state.roomCode);
-      const snapRoom = normalizeRoomCode(snapshot.roomCode || roomCode);
-      if (snapRoom !== roomCode) return false;
-
-      const incomingTs = Number(snapshot.lastUpdatedAt || 0);
-      const currentTs = Number(state.lastUpdatedAt || 0);
-      if (incomingTs && incomingTs <= currentTs && sourceLabel !== 'force') {
-        return false;
-      }
-
-      isRemoteApplying = true;
-      try {
-        state.lastUpdatedAt = incomingTs || Date.now();
-        if (snapshot.phase) state.phase = snapshot.phase;
-        if (typeof snapshot.round === 'number') state.round = snapshot.round;
-        if (typeof snapshot.rolesAssigned === 'boolean') state.rolesAssigned = snapshot.rolesAssigned;
-        if (snapshot.rolePool && typeof snapshot.rolePool === 'object') {
-          state.rolePool = { ...createDefaultRolePool(), ...snapshot.rolePool };
-        }
-        if (Array.isArray(snapshot.players)) state.players = snapshot.players;
-        if (Array.isArray(snapshot.logs)) state.logs = snapshot.logs;
-        if (Array.isArray(snapshot.masterMessages)) state.masterMessages = snapshot.masterMessages;
-        if ('winner' in snapshot) state.winner = snapshot.winner;
-
-        const roomKey = getRoomStorageKey(roomCode);
-        const persistable = {
-          roomCode,
-          lastUpdatedAt: state.lastUpdatedAt,
-          phase: state.phase,
-          round: state.round,
-          rolesAssigned: state.rolesAssigned,
-          rolePool: state.rolePool,
-          players: state.players,
-          logs: state.logs,
-          masterMessages: state.masterMessages,
-          winner: state.winner
-        };
-        localStorage.setItem(roomKey, JSON.stringify(persistable));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
-        render();
-        return true;
-      } catch (err) {
-        console.error('Errore applicazione snapshot:', err);
-        return false;
-      } finally {
-        isRemoteApplying = false;
-      }
-    }
-
-    function broadcastSnapshot(snapshot) {
-      if (!snapshot || isRemoteApplying) return;
-      try {
-        if (syncChannel) {
-          syncChannel.postMessage({
-            type: 'STATE_UPDATE',
-            roomCode: normalizeRoomCode(snapshot.roomCode),
-            snapshot
-          });
-        }
-      } catch (err) {
-        // Ignora errori BroadcastChannel
-      }
-    }
-
-    async function pullRemoteSnapshot(sourceLabel = 'poll') {
-      if (isRemoteApplying) return;
-      const roomCode = normalizeRoomCode(state.roomCode);
-
-      if (cloudReady && currentUser) {
-        try {
-          const ref = getRoomDocRef(roomCode);
-          if (ref) {
-            const snap = await getDoc(ref);
-            if (snap.exists()) {
-              const data = snap.data();
-              let parsedSnapshot = data;
-              if (data && typeof data.payloadJson === 'string') {
-                parsedSnapshot = JSON.parse(data.payloadJson);
-              }
-              applySharedSnapshot(parsedSnapshot, sourceLabel === 'manual' ? 'force' : 'cloud_pull');
-              return;
-            }
-          }
-        } catch (err) {
-          console.error('Errore lettura remota stanza:', err);
-        }
-      }
-
-      try {
-        const raw = localStorage.getItem(getRoomStorageKey(roomCode));
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          applySharedSnapshot(parsed, sourceLabel === 'manual' ? 'force' : 'poll');
-        }
-      } catch (err) {
-        // Ignora errori temporanei
-      }
-    }
-
-    function initSyncTransport() {
-      const roomCode = normalizeRoomCode(state.roomCode);
-      getOrCreateDisplaySyncId(roomCode);
-
-      if (cloudReady) {
-        subscribeToCloudRoom(roomCode);
-      }
-
-      if (syncChannel) {
-        try {
-          syncChannel.close();
-        } catch (err) {
-          // Ignora
-        }
-        syncChannel = null;
-      }
-
-      if ('BroadcastChannel' in window) {
-        try {
-          syncChannel = new BroadcastChannel(SYNC_CHANNEL_NAME);
-          syncChannel.onmessage = (event) => {
-            const msg = event && event.data;
-            if (!msg || msg.type !== 'STATE_UPDATE') return;
-            if (normalizeRoomCode(msg.roomCode) !== roomCode) return;
-            applySharedSnapshot(msg.snapshot, 'broadcast');
-          };
-        } catch (err) {
-          // Ignora errori BroadcastChannel
-        }
-      }
-
-      window.removeEventListener('storage', handleStorageSync);
-      window.addEventListener('storage', handleStorageSync);
-
-      if (syncPollTimer) {
-        clearInterval(syncPollTimer);
-      }
-      syncPollTimer = setInterval(() => {
-        pullRemoteSnapshot('poll');
-      }, SYNC_POLL_INTERVAL_MS);
-    }
-
-    function handleStorageSync(e) {
-      if (!e || !e.key || !e.newValue) return;
-      const roomCode = normalizeRoomCode(state.roomCode);
-      if (e.key === getRoomStorageKey(roomCode) || e.key === STORAGE_KEY) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          applySharedSnapshot(parsed, 'storage');
-        } catch (err) {
-          // Ignora JSON non valido
-        }
-      }
-    }
-
-    function saveState(options = {}) {
-      const skipBump = Boolean(options.skipBump);
-      if (!skipBump && !isRemoteApplying) {
-        state.lastUpdatedAt = Date.now();
-      }
-      const roomCode = normalizeRoomCode(state.roomCode);
-      state.roomCode = roomCode;
-
-      tabSession = {
-        roomCode,
-        sessionRole: state.sessionRole || null,
-        currentPlayerId: state.currentPlayerId || null,
-        screen: state.screen || 'entry'
-      };
-      saveTabSession();
-
-      try {
-        const persistable = {
-          roomCode,
-          lastUpdatedAt: state.lastUpdatedAt,
-          phase: state.phase,
-          round: state.round,
-          rolesAssigned: state.rolesAssigned,
-          rolePool: state.rolePool,
-          players: state.players,
-          logs: state.logs,
-          masterMessages: state.masterMessages,
-          winner: state.winner
-        };
-        localStorage.setItem(getRoomStorageKey(roomCode), JSON.stringify(persistable));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
       } catch (err) {
         console.error('Errore salvataggio stato:', err);
-        setBanner('Attenzione: spazio di salvataggio del browser pieno.', 'error');
-      }
-
-      if (!isRemoteApplying && !skipBump) {
-        const snap = getSharedSnapshot();
-        broadcastSnapshot(snap);
-        pushCloudSnapshot(snap);
       }
     }
 
+    // Mostra un messaggio di avviso o conferma
     function setBanner(text, type = 'info') {
-      state.bannerMessage = { text, type };
-      render();
-    }
-
-    function clearBanner() {
-      state.bannerMessage = null;
-      render();
-    }
-
-    function addLog(text) {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-      state.logs.unshift({
-        id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        time: timeStr,
-        text
-      });
-      if (state.logs.length > 60) {
-        state.logs = state.logs.slice(0, 60);
-      }
-    }
-
-    function nowTimeStr() {
-      return new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function getCurrentPlayer() {
-      return state.players.find(p => p.id === state.currentPlayerId) || null;
-    }
-
-    function getPlayerById(id) {
-      return state.players.find(p => p.id === id) || null;
-    }
-
-    // Gestione fotocamera e selfie opzionale
-    function stopCamera() {
-      if (cameraStream) {
-        try {
-          cameraStream.getTracks().forEach(t => t.stop());
-        } catch (err) {
-          // Ignora
-        }
-        cameraStream = null;
-      }
-    }
-
-    async function startCamera() {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          setBanner('Fotocamera non supportata in questo browser: puoi caricare un’immagine o entrare senza foto.', 'info');
-          return;
-        }
-        stopCamera();
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
-          audio: false
-        });
-        const videoEl = document.getElementById('camera-preview');
-        const snapBtn = document.getElementById('btn-snap-selfie');
-        if (videoEl) {
-          videoEl.srcObject = cameraStream;
-          videoEl.classList.remove('hidden');
-          await videoEl.play();
-        }
-        if (snapBtn) {
-          snapBtn.classList.remove('hidden');
-        }
-      } catch (err) {
-        console.error('Errore accesso fotocamera:', err);
-        setBanner('Impossibile accedere alla fotocamera. Puoi caricare un’immagine o continuare senza selfie.', 'error');
-      }
-    }
-
-    function snapSelfie() {
-      const videoEl = document.getElementById('camera-preview');
-      if (!videoEl || !videoEl.videoWidth) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = 240;
-      canvas.height = 240;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-      tempSelfieDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      stopCamera();
-      render();
-    }
-
-    function handleSelfieFileUpload(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        tempSelfieDataUrl = typeof reader.result === 'string' ? reader.result : null;
-        render();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // Cambio stanza ed uscita libera dalla sessione corrente
-    function setRoomCodeAndReload(newCode, customBinId = '') {
-      const normalized = normalizeRoomCode(newCode);
-      if (customBinId && String(customBinId).trim()) {
-        setCloudBinId(normalized, String(customBinId).trim());
-      } else {
-        getOrCreateDisplaySyncId(normalized);
-      }
-      tabSession = {
-        roomCode: normalized,
-        sessionRole: null,
-        currentPlayerId: null,
-        screen: 'entry'
-      };
-      saveTabSession();
-      stopCamera();
-      tempSelfieDataUrl = null;
-      state = loadState();
-      state.screen = 'entry';
-      state.sessionRole = null;
-      state.currentPlayerId = null;
-      state.inspectingPlayerId = null;
-      initSyncTransport();
-      saveState({ skipBump: true });
-      pullRemoteSnapshot('manual');
-      setBanner(`Stanza impostata su ${normalized}.`, 'success');
-    }
-
-    function exitToEntry() {
-      stopCamera();
-      tempSelfieDataUrl = null;
-      const roomCode = normalizeRoomCode(state.roomCode);
-      tabSession = {
-        roomCode,
-        sessionRole: null,
-        currentPlayerId: null,
-        screen: 'entry'
-      };
-      saveTabSession();
-      state.sessionRole = null;
-      state.currentPlayerId = null;
-      state.inspectingPlayerId = null;
-      state.screen = 'entry';
-      state.bannerMessage = null;
-      render();
-    }
-
-    function createPlayer(name, selfieDataUrl) {
-      const cleanName = String(name || '').trim();
-      if (!cleanName) {
-        setBanner('Inserisci il tuo nome prima di entrare al tavolo.', 'error');
-        return null;
-      }
-
-      const duplicate = state.players.find(
-        p => p.name.toLowerCase() === cleanName.toLowerCase() && p.alive
-      );
-      if (duplicate) {
-        setBanner(`Esiste già un giocatore attivo chiamato "${duplicate.name}" in questa stanza.`, 'error');
-        return null;
-      }
-
-      const newPlayer = {
-        id: 'pl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        name: cleanName,
-        selfie: selfieDataUrl || null,
-        roleKey: null,
-        alive: true,
-        powerPoints: 1,
-        protectedUntilNextTurn: false,
-        blockedThisRound: false,
-        limitedUsesThisRound: 0,
-        lastInvestigation: null,
-        martyrDeclaration: null,
-        missions: [],
-        pendingSubmissions: [],
-        reports: []
-      };
-
-      state.players.push(newPlayer);
-      addLog(`${newPlayer.name} è entrato al tavolo nella stanza ${state.roomCode}.`);
-      saveState();
-      return newPlayer;
-    }
-
-    // Selezione quantità ruoli e assegnazione casuale da parte del Master
-    function adjustRolePoolCount(roleKey, delta) {
-      if (!ROLE_DEFS[roleKey]) return;
-      const current = Number(state.rolePool?.[roleKey] || 0);
-      const nextVal = Math.max(0, Math.min(12, current + delta));
-      state.rolePool = {
-        ...createDefaultRolePool(),
-        ...(state.rolePool || {}),
-        [roleKey]: nextVal
-      };
+      appState.banner = { text, type };
       saveState();
       render();
     }
 
-    function applyRandomRolesToPlayers() {
-      if (state.players.length === 0) {
-        setBanner('Attendi che almeno un giocatore entri al tavolo prima di assegnare i ruoli.', 'error');
+    // Aggiorna il codice stanza
+    function updateRoomCode(rawCode) {
+      const clean = String(rawCode || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '') || 'TAVOLO1';
+      appState.roomCode = clean.slice(0, 16);
+      appState.banner = null;
+      saveState();
+      render();
+    }
+
+    // Entra nella plancia Master
+    function enterMaster() {
+      appState.screen = 'master';
+      appState.banner = null;
+      saveState();
+      render();
+    }
+
+    // Entra come giocatore registrandosi al tavolo
+    function joinAsPlayer(rawName) {
+      const name = String(rawName || '').trim();
+      if (!name) {
+        setBanner('Inserisci il tuo nome per entrare al tavolo.', 'error');
         return;
       }
 
-      const pool = state.rolePool || createDefaultRolePool();
+      let existing = appState.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!existing) {
+        existing = {
+          id: 'pl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          name,
+          roleKey: null
+        };
+        appState.players.push(existing);
+      }
+
+      appState.activePlayerId = existing.id;
+      appState.screen = 'player';
+      appState.banner = null;
+      saveState();
+      render();
+    }
+
+    // Torna alla schermata iniziale senza cancellare la stanza
+    function exitScreen() {
+      appState.screen = 'entry';
+      appState.banner = null;
+      saveState();
+      render();
+    }
+
+    // Svuota completamente la stanza corrente
+    function clearRoom() {
+      const keepCode = appState.roomCode || 'TAVOLO1';
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (err) {
+        console.error('Errore pulizia storage:', err);
+      }
+      const fresh = createInitialState();
+      fresh.roomCode = keepCode;
+      appState = fresh;
+      setBanner(`Stanza ${keepCode} svuotata.`, 'success');
+    }
+
+    // Modifica la quantità di un ruolo nel mazzo del Master
+    function changeRoleQty(roleKey, delta) {
+      if (!ROLES[roleKey]) return;
+      const cur = Number(appState.rolePool[roleKey] || 0);
+      appState.rolePool[roleKey] = Math.max(0, Math.min(10, cur + delta));
+      appState.banner = null;
+      saveState();
+      render();
+    }
+
+    // Estrae casualmente i ruoli tra i giocatori attualmente al tavolo
+    function drawRoles() {
+      if (appState.players.length === 0) {
+        setBanner('Attendi che almeno un giocatore entri al tavolo prima di estrarre i ruoli.', 'error');
+        return;
+      }
+
       const deck = [];
-      Object.keys(ROLE_DEFS).forEach((rk) => {
-        const count = Math.max(0, Number(pool[rk] || 0));
-        for (let i = 0; i < count; i += 1) {
-          deck.push(rk);
+      Object.keys(ROLES).forEach(roleKey => {
+        const qty = Number(appState.rolePool[roleKey] || 0);
+        for (let i = 0; i < qty; i++) {
+          deck.push(roleKey);
         }
       });
 
-      if (deck.length < state.players.length) {
+      if (deck.length < appState.players.length) {
         setBanner(
-          `Hai configurato ${deck.length} ruoli nel mazzo ma ci sono ${state.players.length} giocatori al tavolo: aumenta le copie di uno o più ruoli.`,
+          `Ci sono ${deck.length} ruoli disponibili ma ${appState.players.length} giocatori al tavolo: aumenta uno o più ruoli.`,
           'error'
         );
         return;
       }
 
-      // Mescolamento Fisher-Yates
-      for (let i = deck.length - 1; i > 0; i -= 1) {
+      for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const tmp = deck[i];
         deck[i] = deck[j];
         deck[j] = tmp;
       }
 
-      const extracted = deck.slice(0, state.players.length);
-      state.players.forEach((player, idx) => {
-        const assignedKey = extracted[idx];
-        const rDef = ROLE_DEFS[assignedKey];
-        const isMartyr = assignedKey === 'martire';
-        player.roleKey = assignedKey;
-        player.alive = true;
-        player.powerPoints = 1;
-        player.protectedUntilNextTurn = false;
-        player.blockedThisRound = false;
-        player.limitedUsesThisRound = 0;
-        player.lastInvestigation = null;
-        player.martyrDeclaration = null;
-        player.missions = isMartyr ? [] : buildMissionsForFaction(rDef.faction);
-        player.pendingSubmissions = [];
-      });
+      const picked = deck.slice(0, appState.players.length);
+      appState.players = appState.players.map((p, idx) => ({
+        ...p,
+        roleKey: picked[idx]
+      }));
 
-      state.rolesAssigned = true;
-      state.winner = null;
-      addLog(`Il Master ha estratto e assegnato casualmente i ruoli a ${state.players.length} giocatori al tavolo.`);
-      saveState();
-      setBanner(`Ruoli assegnati casualmente a tutti i ${state.players.length} giocatori al tavolo.`, 'success');
-      render();
+      setBanner(`Estratti e assegnati ${picked.length} ruoli ai giocatori al tavolo.`, 'success');
     }
 
-    // Azioni poteri, missioni, segnalazioni e gestione Master
-    function useRolePower(actorId, targetId, martyrDeclarationText = '') {
-      const actor = getPlayerById(actorId);
-      if (!actor || !actor.roleKey) return;
-      const roleDef = ROLE_DEFS[actor.roleKey];
-
-      if (actor.roleKey === 'martire') {
-        if (actor.limitedUsesThisRound >= 1) {
-          setBanner('Hai già usato la tua Testimonianza.', 'error');
-          return;
-        }
-        const decl = String(martyrDeclarationText || '').trim();
-        if (!decl) {
-          setBanner('Seleziona un ruolo da dichiarare.', 'error');
-          return;
-        }
-        actor.limitedUsesThisRound += 1;
-        actor.martyrDeclaration = decl;
-        addLog(`${actor.name} (Martire) ha dichiarato pubblicamente il ruolo "${decl}" al tavolo.`);
-        saveState();
-        setBanner(`Hai dichiarato pubblicamente: ${decl}.`, 'success');
-        render();
-        return;
-      }
-
-      if (!actor.alive) {
-        setBanner('Non puoi usare poteri se sei stato eliminato.', 'error');
-        return;
-      }
-      if (actor.blockedThisRound) {
-        setBanner('Il tuo potere è bloccato per questo turno.', 'error');
-        return;
-      }
-      if (actor.powerPoints < roleDef.cost) {
-        setBanner(`Punti potere insufficienti (servono ${roleDef.cost} PT).`, 'error');
-        return;
-      }
-      if (actor.roleKey === 'assassino' && actor.limitedUsesThisRound >= 1) {
-        setBanner('Hai già effettuato un’eliminazione in questo turno.', 'error');
-        return;
-      }
-
-      const target = getPlayerById(targetId);
-      if (!target || !target.alive) {
-        setBanner('Seleziona un bersaglio vivo valido.', 'error');
-        return;
-      }
-
-      actor.powerPoints -= roleDef.cost;
-      if (actor.roleKey === 'assassino') {
-        actor.limitedUsesThisRound += 1;
-      }
-
-      if (actor.roleKey === 'investigatore') {
-        const tDef = ROLE_DEFS[target.roleKey] || ROLE_DEFS.investigatore;
-        actor.lastInvestigation = {
-          targetName: target.name,
-          roleName: tDef.name,
-          factionLabel: tDef.factionLabel
-        };
-        addLog(`${actor.name} ha svolto un’indagine riservata.`);
-        saveState();
-        setBanner(`Indagine completata: ${target.name} ha il ruolo ${tDef.name} (${tDef.factionLabel}).`, 'success');
-        render();
-        return;
-      }
-
-      if (actor.roleKey === 'guardia') {
-        target.protectedUntilNextTurn = true;
-        addLog(`${actor.name} ha attivato una protezione su ${target.name}.`);
-        saveState();
-        setBanner(`${target.name} è protetto fino al prossimo turno.`, 'success');
-        render();
-        return;
-      }
-
-      if (actor.roleKey === 'sabotatore') {
-        target.blockedThisRound = true;
-        addLog(`${actor.name} ha intralciato un giocatore durante il turno.`);
-        saveState();
-        setBanner(`Hai bloccato il potere di ${target.name} per il turno corrente.`, 'success');
-        render();
-        return;
-      }
-
-      if (actor.roleKey === 'assassino' || actor.roleKey === 'cacciatore') {
-        if (target.protectedUntilNextTurn) {
-          target.protectedUntilNextTurn = false;
-          addLog(`Un attacco contro ${target.name} è stato respinto da uno Scudo Protettivo!`);
-          saveState();
-          setBanner(`L’attacco su ${target.name} è stato bloccato dalla protezione.`, 'info');
-          render();
-          return;
-        }
-
-        target.alive = false;
-        addLog(`${target.name} è stato eliminato durante la notte/azione.`);
-
-        if (actor.roleKey === 'cacciatore') {
-          const targetFaction = ROLE_DEFS[target.roleKey]?.faction;
-          if (targetFaction === 'cittadini') {
-            actor.alive = false;
-            addLog(`${actor.name} (Cacciatore) ha colpito un Cittadino ed è stato eliminato per contraccolpo.`);
-            saveState();
-            checkVictoryCondition();
-            saveState();
-            setBanner(`${target.name} era un Cittadino: hai subito il contraccolpo!`, 'error');
-            render();
-            return;
-          }
-        }
-
-        checkVictoryCondition();
-        saveState();
-        setBanner(`${target.name} è stato eliminato.`, 'success');
-        render();
-      }
-    }
-
-    function submitMission(playerId, missionId, note) {
-      const player = getPlayerById(playerId);
-      if (!player || !player.alive) return;
-      const mission = player.missions.find(m => m.id === missionId);
-      if (!mission) return;
-      if (!mission.repeatable && mission.approvedCount > 0) return;
-      if (mission.status === 'pending') return;
-
-      mission.status = 'pending';
-      const subId = 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
-      player.pendingSubmissions.push({
-        id: subId,
-        missionId: mission.id,
-        missionText: mission.text,
-        points: mission.points,
-        note: String(note || '').trim(),
-        submittedAt: nowTimeStr()
-      });
-
-      addLog(`${player.name} ha inviato una missione in attesa di approvazione.`);
-      saveState();
-      setBanner('Missione inviata al Master per la verifica.', 'info');
-      render();
-    }
-
-    function approveSubmission(playerId, subId) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      const subIdx = player.pendingSubmissions.findIndex(s => s.id === subId);
-      if (subIdx === -1) return;
-      const [sub] = player.pendingSubmissions.splice(subIdx, 1);
-
-      player.powerPoints += sub.points;
-      const mission = player.missions.find(m => m.id === sub.missionId);
-      if (mission) {
-        mission.approvedCount = (mission.approvedCount || 0) + 1;
-        mission.status = mission.repeatable ? 'idle' : 'completed';
-      }
-
-      addLog(`Master ha approvato la missione di ${player.name} (+${sub.points} PT).`);
-      saveState();
-      render();
-    }
-
-    function rejectSubmission(playerId, subId) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      const subIdx = player.pendingSubmissions.findIndex(s => s.id === subId);
-      if (subIdx === -1) return;
-      const [sub] = player.pendingSubmissions.splice(subIdx, 1);
-
-      const mission = player.missions.find(m => m.id === sub.missionId);
-      if (mission) {
-        mission.status = 'idle';
-      }
-
-      addLog(`Master ha respinto la richiesta di missione di ${player.name}.`);
-      saveState();
-      render();
-    }
-
-    function submitReport(reporterId, targetId, reason) {
-      const reporter = getPlayerById(reporterId);
-      const target = getPlayerById(targetId);
-      const cleanReason = String(reason || '').trim();
-      if (!reporter || !reporter.alive) return;
-      if (!target || target.id === reporter.id) {
-        setBanner('Seleziona un altro giocatore valido da segnalare.', 'error');
-        return;
-      }
-      if (!cleanReason) {
-        setBanner('Inserisci un motivo per la segnalazione.', 'error');
-        return;
-      }
-
-      const rep = {
-        id: 'rep_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        reporterId: reporter.id,
-        reporterName: reporter.name,
-        targetId: target.id,
-        targetName: target.name,
-        reason: cleanReason,
-        status: 'pending',
-        createdAt: nowTimeStr()
-      };
-
-      reporter.reports.push(rep);
-      addLog(`${reporter.name} ha inviato una segnalazione su ${target.name}.`);
-      saveState();
-      setBanner('Segnalazione inviata al Master.', 'info');
-      render();
-    }
-
-    function resolveReport(reporterId, repId, decision) {
-      const reporter = getPlayerById(reporterId);
-      if (!reporter) return;
-      const rep = reporter.reports.find(r => r.id === repId);
-      if (!rep) return;
-
-      rep.status = decision;
-      if (decision === 'valid') {
-        reporter.powerPoints += 1;
-        addLog(`Master ha convalidato la segnalazione di ${reporter.name} su ${rep.targetName} (+1 PT).`);
-      } else {
-        addLog(`Master ha archiviato la segnalazione di ${reporter.name} su ${rep.targetName}.`);
-      }
-
-      saveState();
-      render();
-    }
-
-    function sendMasterMessage(targetId, text) {
-      const cleanText = String(text || '').trim();
-      if (!cleanText) {
-        setBanner('Scrivi un messaggio prima di inviarlo.', 'error');
-        return;
-      }
-
-      let targetName = 'Tutti i Giocatori';
-      if (targetId !== 'ALL') {
-        const p = getPlayerById(targetId);
-        if (!p) return;
-        targetName = p.name;
-      }
-
-      state.masterMessages.unshift({
-        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        targetId,
-        targetName,
-        text: cleanText,
-        time: nowTimeStr()
-      });
-
-      addLog(`Master ha inviato un messaggio a ${targetName}.`);
-      saveState();
-      setBanner(`Messaggio inviato a ${targetName}.`, 'success');
-      render();
-    }
-
-    function togglePlayerAlive(playerId) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      player.alive = !player.alive;
-      if (player.alive) {
-        player.blockedThisRound = false;
-      } else {
-        player.protectedUntilNextTurn = false;
-      }
-      addLog(`Master ha impostato ${player.name} come ${player.alive ? 'Vivo' : 'Eliminato'}.`);
-      checkVictoryCondition();
-      saveState();
-      render();
-    }
-
-    function adjustPlayerPoints(playerId, delta) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      player.powerPoints = Math.max(0, player.powerPoints + delta);
-      addLog(`Master ha modificato i punti potere di ${player.name} (${delta > 0 ? '+' + delta : delta}).`);
-      saveState();
-      render();
-    }
-
-    function checkVictoryCondition() {
-      if (!state.rolesAssigned) return;
-      const alivePlayers = state.players.filter(p => p.alive && p.roleKey);
-      if (alivePlayers.length < 2) return;
-      const aliveTraitors = alivePlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'traditori').length;
-      const aliveCitizens = alivePlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'cittadini').length;
-
-      if (aliveTraitors === 0 && aliveCitizens > 0) {
-        state.winner = {
-          faction: 'cittadini',
-          title: 'Vittoria dei Cittadini',
-          desc: 'Tutti i Traditori sono stati smascherati o eliminati.'
-        };
-      } else if (aliveTraitors >= aliveCitizens && aliveTraitors > 0) {
-        state.winner = {
-          faction: 'traditori',
-          title: 'Vittoria dei Traditori',
-          desc: 'I Traditori hanno raggiunto parità o maggioranza numerica al tavolo.'
-        };
-      }
-    }
-
-    function advancePhase() {
-      const idx = PHASES.indexOf(state.phase);
-      const nextIdx = (idx + 1) % PHASES.length;
-      state.phase = PHASES[nextIdx];
-
-      if (state.phase === 'Esplorazione') {
-        state.round += 1;
-        state.players.forEach(p => {
-          p.protectedUntilNextTurn = false;
-          p.blockedThisRound = false;
-          p.limitedUsesThisRound = 0;
-        });
-        addLog(`Inizia il Turno ${state.round} — Fase: ${state.phase}.`);
-      } else {
-        addLog(`Fase aggiornata a: ${state.phase} (Turno ${state.round}).`);
-      }
-
-      checkVictoryCondition();
-      saveState();
-      render();
-    }
-
-    function resetGame() {
-      const roomCode = normalizeRoomCode(state.roomCode);
-      const fresh = createInitialState();
-      fresh.roomCode = roomCode;
-      fresh.screen = state.screen === 'master' ? 'master' : 'entry';
-      fresh.sessionRole = state.screen === 'master' ? 'master' : null;
-      fresh.currentPlayerId = null;
-      fresh.inspectingPlayerId = null;
-      fresh.lastUpdatedAt = Date.now();
-      state = fresh;
-      addLog(`Nuova partita avviata nella stanza ${roomCode}.`);
-      saveState({ skipBump: false });
-      render();
-    }
-
-    // Componenti di interfaccia
-    function renderBanner() {
-      if (!state.bannerMessage) return '';
-      const { text, type } = state.bannerMessage;
-      const styles = {
-        success: 'bg-emerald/15 border-emerald/40 text-emerald',
-        error: 'bg-crimson/15 border-crimson/40 text-crimson',
-        info: 'bg-indigo/15 border-indigo/40 text-indigo'
-      };
-      const cls = styles[type] || styles.info;
-      return `
-        <div class="mb-5 rounded-xl border ${cls} px-4 py-3 flex items-center justify-between gap-3 shadow-lg">
-          <p class="text-sm font-medium">${escapeHtml(text)}</p>
-          <button type="button" onclick="clearBanner()" class="text-xs uppercase tracking-wider opacity-80 hover:opacity-100 font-semibold px-2 py-1 rounded">
-            Chiudi
-          </button>
-        </div>
-      `;
-    }
-
-    function renderVictoryBanner() {
-      if (!state.winner) return '';
-      const isTraitors = state.winner.faction === 'traditori';
-      return `
-        <div class="mb-6 rounded-2xl border ${isTraitors ? 'border-crimson/50 bg-crimson/10' : 'border-emerald/50 bg-emerald/10'} p-5 shadow-xl">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <span class="inline-block text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${isTraitors ? 'bg-crimson/20 text-crimson' : 'bg-emerald/20 text-emerald'} mb-2">
-                Esito della Partita
-              </span>
-              <h2 class="font-serif text-2xl font-bold text-white">${escapeHtml(state.winner.title)}</h2>
-              <p class="text-sm text-gray-300 mt-1">${escapeHtml(state.winner.desc)}</p>
-            </div>
-            ${state.screen === 'master' ? `
-              <button type="button" onclick="resetGame()" class="px-4 py-2.5 rounded-xl bg-gold text-bgdark font-semibold text-sm hover:brightness-110 transition">
-                Avvia Nuova Partita
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }
-
-    function renderEntryScreen() {
-      const activePlayers = state.players.filter(p => p.alive);
-      const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
-
-      return `
-        <div class="flex-1 flex flex-col justify-center max-w-4xl w-full mx-auto px-4 py-8">
-          <div class="text-center mb-8">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface2 border border-white/10 text-xs uppercase tracking-widest text-gold mb-3">
-              Gioco da Tavolo · Companion Digitale
-            </div>
-            <h1 class="font-serif text-4xl sm:text-5xl font-bold tracking-wide text-white">
-              Ombre al Tavolo
-            </h1>
-            <p class="text-gray-400 mt-2 max-w-xl mx-auto text-sm sm:text-base">
-              Ogni giocatore consulta in segreto il proprio ruolo, le missioni e i poteri dal proprio dispositivo, mentre il Master coordina il tavolo.
-            </p>
-          </div>
-
-          <div class="mb-5 rounded-2xl bg-surface border border-white/10 p-4 shadow-lg">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-              <div class="flex-1">
-                <label for="room-code-input" class="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1.5">
-                  Codice Stanza Condiviso (stesso codice su tutti i dispositivi)
-                </label>
-                <input
-                  id="room-code-input"
-                  type="text"
-                  maxlength="20"
-                  value="${escapeAttr(state.roomCode)}"
-                  placeholder="Es. TAVOLO1"
-                  class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2 text-sm text-white uppercase tracking-wider focus:outline-none focus:border-gold"
-                />
-              </div>
-              <button
-                type="button"
-                onclick="setRoomCodeAndReload(document.getElementById('room-code-input').value)"
-                class="rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-white font-semibold text-sm px-4 py-2 transition"
-              >
-                Applica Stanza
-              </button>
-            </div>
-            <div class="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald">
-              <span>ID Sync stanza: <strong class="font-mono text-white">${escapeHtml(displaySyncId)}</strong></span>
-              <span class="text-gray-400">Stanza attiva: <strong class="text-gold">${escapeHtml(state.roomCode)}</strong></span>
-            </div>
-          </div>
-
-          ${renderBanner()}
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="rounded-2xl bg-surface border border-white/10 p-6 flex flex-col justify-between shadow-xl">
-              <div>
-                <div class="w-11 h-11 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold font-serif font-bold text-lg mb-4">
-                  M
-                </div>
-                <h2 class="font-serif text-2xl font-bold text-white">Modalità Master</h2>
-                <p class="text-sm text-gray-400 mt-2 leading-relaxed">
-                  Gestisci turni e fasi, estrai casualmente i ruoli, approva missioni e segnalazioni, invia messaggi e monitora il tavolo.
-                </p>
-              </div>
-              <button
-                type="button"
-                onclick="enterMasterMode()"
-                class="mt-6 w-full py-3 px-4 rounded-xl bg-gold text-bgdark font-semibold text-sm hover:brightness-110 transition cursor-pointer"
-              >
-                Entra come Master
-              </button>
-            </div>
-
-            <div class="rounded-2xl bg-surface border border-white/10 p-6 flex flex-col justify-between shadow-xl">
-              <div>
-                <div class="w-11 h-11 rounded-xl bg-indigo/15 border border-indigo/30 flex items-center justify-center text-indigo font-serif font-bold text-lg mb-4">
-                  G
-                </div>
-                <h2 class="font-serif text-2xl font-bold text-white">Modalità Giocatore</h2>
-                <p class="text-sm text-gray-400 mt-2 leading-relaxed">
-                  Registrati con il tuo nome e un selfie opzionale per sederti al tavolo, ricevere il tuo ruolo segreto, completare missioni e usare i poteri.
-                </p>
-              </div>
-              <button
-                type="button"
-                onclick="openPlayerJoin()"
-                class="mt-6 w-full py-3 px-4 rounded-xl bg-indigo text-white font-semibold text-sm hover:brightness-110 transition cursor-pointer"
-              >
-                Entra come Giocatore
-              </button>
-            </div>
-          </div>
-
-          ${activePlayers.length > 0 ? `
-            <div class="mt-8 rounded-2xl bg-surface/70 border border-white/10 p-5">
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">
-                  Giocatori attualmente al tavolo (${activePlayers.length})
-                </h3>
-                <span class="text-xs text-gray-500">Turno ${state.round} · ${escapeHtml(state.phase)}</span>
-              </div>
-              <div class="flex flex-wrap gap-2.5">
-                ${activePlayers.map(p => `
-                  <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface2 border border-white/10 text-sm">
-                    ${renderAvatar(p, 'w-6 h-6')}
-                    <span class="font-medium text-gray-200">${escapeHtml(p.name)}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    function enterMasterMode() {
-      stopCamera();
-      tempSelfieDataUrl = null;
-      state.sessionRole = 'master';
-      state.currentPlayerId = null;
-      state.inspectingPlayerId = null;
-      state.screen = 'master';
-      if (state.logs.length === 0) {
-        addLog('Il Master ha aperto la plancia di controllo.');
-      }
-      saveState();
-      render();
-    }
-
-    function openPlayerJoin() {
-      tempSelfieDataUrl = null;
-      state.sessionRole = 'player';
-      state.screen = 'player_join';
-      state.bannerMessage = null;
-      render();
-    }
-
-    function renderPlayerJoinScreen() {
-      const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
-
-      return `
-        <div class="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto px-4 py-8">
-          <div class="mb-6 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onclick="exitToEntry()"
-              class="text-sm text-gray-400 hover:text-white transition inline-flex items-center gap-1.5"
-            >
-              ← Torna all’ingresso
-            </button>
-            <button
-              type="button"
-              onclick="exitToEntry()"
-              class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-200 transition"
-            >
-              Esci
-            </button>
-          </div>
-
-          <div class="rounded-2xl bg-surface border border-white/10 p-6 sm:p-8 shadow-2xl">
-            <span class="text-xs font-bold uppercase tracking-widest text-indigo">Registrazione Giocatore</span>
-            <h1 class="font-serif text-3xl font-bold text-white mt-1">Unisciti al Tavolo</h1>
-            <p class="text-sm text-gray-400 mt-1">
-              Stanza <strong class="text-gold">${escapeHtml(state.roomCode)}</strong> · ID Sync: <strong class="font-mono text-emerald">${escapeHtml(displaySyncId)}</strong>
-            </p>
-
-            <div class="mt-4">${renderBanner()}</div>
-
-            <form onsubmit="handleJoinSubmit(event)" class="mt-5 space-y-5">
-              <div>
-                <label for="player-name-input" class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                  Nome Giocatore *
-                </label>
-                <input
-                  id="player-name-input"
-                  type="text"
-                  maxlength="24"
-                  required
-                  placeholder="Es. Elena, Marco, Sofia..."
-                  class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                  Selfie del Giocatore (Opzionale)
-                </label>
-
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-bgdark/80 border border-white/10">
-                  <div class="w-20 h-20 rounded-2xl bg-surface2 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
-                    ${tempSelfieDataUrl
-                      ? `<img src="${tempSelfieDataUrl}" alt="Anteprima selfie" class="w-full h-full object-cover" />`
-                      : `<span class="text-xs text-gray-500 text-center px-2">Nessun selfie</span>`
-                    }
-                  </div>
-
-                  <div class="flex-1 space-y-2.5 w-full">
-                    <div class="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onclick="startCamera()"
-                        class="px-3 py-2 rounded-lg bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-white transition"
-                      >
-                        Apri Fotocamera
-                      </button>
-                      <button
-                        id="btn-snap-selfie"
-                        type="button"
-                        onclick="snapSelfie()"
-                        class="hidden px-3 py-2 rounded-lg bg-gold text-bgdark text-xs font-semibold hover:brightness-110 transition"
-                      >
-                        Scatta Foto
-                      </button>
-                      <label class="px-3 py-2 rounded-lg bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
-                        Carica Immagine
-                        <input
-                          type="file"
-                          accept="image/*"
-                          class="hidden"
-                          onchange="if(this.files && this.files[0]) handleSelfieFileUpload(this.files[0])"
-                        />
-                      </label>
-                      ${tempSelfieDataUrl ? `
-                        <button
-                          type="button"
-                          onclick="tempSelfieDataUrl = null; render();"
-                          class="px-3 py-2 rounded-lg bg-crimson/15 hover:bg-crimson/25 border border-crimson/30 text-xs font-semibold text-crimson transition"
-                        >
-                          Rimuovi
-                        </button>
-                      ` : ''}
-                    </div>
-                    <video id="camera-preview" class="hidden w-full max-w-xs rounded-xl border border-white/15 bg-black" playsinline muted></video>
-                    <p class="text-xs text-gray-500">
-                      Puoi scattare una foto, caricarne una o entrare direttamente senza selfie.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                class="w-full py-3.5 px-4 rounded-xl bg-indigo text-white font-semibold text-sm hover:brightness-110 transition shadow-lg cursor-pointer"
-              >
-                Entra al Tavolo
-              </button>
-            </form>
-          </div>
-        </div>
-      `;
-    }
-
-    function handleJoinSubmit(e) {
-      e.preventDefault();
-      const input = document.getElementById('player-name-input');
-      const name = input ? input.value : '';
-      const created = createPlayer(name, tempSelfieDataUrl);
-      if (created) {
-        stopCamera();
-        tempSelfieDataUrl = null;
-        state.currentPlayerId = created.id;
-        state.sessionRole = 'player';
-        state.screen = 'player_dashboard';
-        state.bannerMessage = null;
-        saveState();
-        render();
-      }
-    }
-
-    function renderPlayerDashboard() {
-      const player = getCurrentPlayer();
-      if (!player) {
-        return renderPlayerJoinScreen();
-      }
-
-      if (!state.rolesAssigned || !player.roleKey) {
-        const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
-        return `
-          <div class="max-w-3xl w-full mx-auto px-4 py-8 space-y-6">
-            <div class="rounded-2xl bg-surface border border-white/10 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-              <div class="flex items-center gap-3.5">
-                ${renderAvatar(player, 'w-12 h-12')}
-                <div>
-                  <h1 class="font-serif text-xl sm:text-2xl font-bold text-white">${escapeHtml(player.name)}</h1>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    Stanza <strong class="text-gold">${escapeHtml(state.roomCode)}</strong> · ID Sync: <strong class="font-mono text-emerald">${escapeHtml(displaySyncId)}</strong>
-                  </p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  onclick="pullRemoteSnapshot('manual')"
-                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
-                >
-                  Aggiorna
-                </button>
-                <button
-                  type="button"
-                  onclick="exitToEntry()"
-                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
-                >
-                  Esci
-                </button>
-              </div>
-            </div>
-
-            ${renderBanner()}
-
-            <div class="rounded-2xl bg-surface border border-gold/30 p-6 sm:p-8 text-center shadow-xl space-y-3">
-              <span class="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gold/15 text-gold border border-gold/30">
-                Sala d'Attesa al Tavolo
-              </span>
-              <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white">Sei seduto al tavolo</h2>
-              <p class="text-sm text-gray-300 max-w-lg mx-auto leading-relaxed">
-                Il Master sta radunando i giocatori e scegliendo i ruoli della partita. Appena il Master avvierà l'assegnazione casuale, qui appariranno il tuo ruolo segreto, i poteri e le missioni.
-              </p>
-              <div class="pt-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                  Giocatori già al tavolo (${state.players.length})
-                </h3>
-                <div class="flex flex-wrap justify-center gap-2.5">
-                  ${state.players.map(p => `
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-bgdark border border-white/10 text-xs">
-                      ${renderAvatar(p, 'w-6 h-6')}
-                      <span class="font-medium text-gray-200">${escapeHtml(p.name)}</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      const roleDef = ROLE_DEFS[player.roleKey] || ROLE_DEFS.investigatore;
-      const aliveTargets = state.players.filter(p => p.alive && p.id !== player.id);
-      const allAliveTargets = state.players.filter(p => p.alive);
-      const isMartyr = player.roleKey === 'martire';
-      const myMessages = state.masterMessages.filter(m => m.targetId === 'ALL' || m.targetId === player.id);
-      const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
-
-      return `
-        <div class="max-w-5xl w-full mx-auto px-4 py-6 space-y-6">
-          <div class="rounded-2xl bg-surface border border-white/10 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              ${renderAvatar(player, 'w-12 h-12')}
-              <div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <h1 class="font-serif text-xl sm:text-2xl font-bold text-white">${escapeHtml(player.name)}</h1>
-                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${player.alive ? 'bg-emerald/15 text-emerald border-emerald/30' : 'bg-crimson/15 text-crimson border-crimson/30'}">
-                    ${player.alive ? 'In Gioco' : 'Eliminato'}
-                  </span>
-                </div>
-                <p class="text-xs text-gray-400 mt-0.5">
-                  Stanza <strong class="text-gold">${escapeHtml(state.roomCode)}</strong> · ID Sync: <strong class="font-mono text-emerald">${escapeHtml(displaySyncId)}</strong> · Turno ${state.round} · ${escapeHtml(state.phase)}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <div class="px-4 py-2 rounded-xl bg-bgdark border border-gold/30 text-right">
-                <div class="text-[11px] uppercase tracking-wider text-gray-400">Punti Potere</div>
-                <div class="text-xl font-bold text-gold">${player.powerPoints}</div>
-              </div>
-              <button
-                type="button"
-                onclick="pullRemoteSnapshot('manual')"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
-              >
-                Aggiorna
-              </button>
-              <button
-                type="button"
-                onclick="exitToEntry()"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
-              >
-                Esci
-              </button>
-            </div>
-          </div>
-
-          ${renderBanner()}
-          ${renderVictoryBanner()}
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1 space-y-6">
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Scheda Segreta</span>
-                <h2 class="font-serif text-2xl font-bold text-white mt-1">${escapeHtml(roleDef.name)}</h2>
-                <div class="mt-2">
-                  <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full border ${roleDef.badgeClass}">
-                    ${escapeHtml(roleDef.factionLabel)}
-                  </span>
-                </div>
-
-                <div class="mt-4 pt-4 border-t border-white/10">
-                  <div class="text-xs font-bold uppercase tracking-wider text-gold">${escapeHtml(roleDef.powerName)}</div>
-                  <p class="text-sm text-gray-300 mt-1.5 leading-relaxed">${escapeHtml(roleDef.powerDesc)}</p>
-                  <div class="mt-3 text-xs text-gray-400">
-                    Costo: <strong class="text-white">${roleDef.cost} ${roleDef.cost === 1 ? 'punto potere' : 'punti potere'}</strong>
-                  </div>
-                </div>
-
-                ${player.lastInvestigation ? `
-                  <div class="mt-4 p-3.5 rounded-xl bg-indigo/10 border border-indigo/30">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-indigo">Ultimo Riscontro Indagine</div>
-                    <p class="text-sm text-white mt-1">
-                      <strong>${escapeHtml(player.lastInvestigation.targetName)}</strong> → ${escapeHtml(player.lastInvestigation.roleName)} (${escapeHtml(player.lastInvestigation.factionLabel)})
-                    </p>
-                  </div>
-                ` : ''}
-
-                ${player.martyrDeclaration ? `
-                  <div class="mt-4 p-3.5 rounded-xl bg-gold/10 border border-gold/30">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-gold">Ultima Testimonianza Dichiarata</div>
-                    <p class="text-sm text-white mt-1 font-medium">"${escapeHtml(player.martyrDeclaration)}"</p>
-                  </div>
-                ` : ''}
-              </div>
-
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h3 class="font-serif text-lg font-bold text-white">Usa Potere</h3>
-                ${!player.alive && !isMartyr ? `
-                  <p class="text-sm text-gray-400 mt-2">Sei stato eliminato: non puoi più attivare poteri.</p>
-                ` : isMartyr ? `
-                  <form onsubmit="handleMartyrSubmit(event, '${player.id}')" class="mt-3 space-y-3">
-                    <select id="martyr-role-select" class="w-full rounded-xl bg-bgdark border border-white/15 px-3 py-2.5 text-sm text-white">
-                      ${Object.values(ROLE_DEFS).map(r => `<option value="${escapeAttr(r.name)}">${escapeHtml(r.name)}</option>`).join('')}
-                    </select>
-                    <button
-                      type="submit"
-                      ${player.limitedUsesThisRound >= 1 ? 'disabled' : ''}
-                      class="w-full py-2.5 px-4 rounded-xl bg-gold text-bgdark font-semibold text-sm hover:brightness-110 transition disabled:opacity-40"
-                    >
-                      ${player.limitedUsesThisRound >= 1 ? 'Testimonianza Già Usata' : 'Dichiara Ruolo al Tavolo'}
-                    </button>
-                  </form>
-                ` : `
-                  <form onsubmit="handlePowerSubmit(event, '${player.id}')" class="mt-3 space-y-3">
-                    <div>
-                      <label for="power-target-select" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                        Bersaglio
-                      </label>
-                      <select id="power-target-select" class="w-full rounded-xl bg-bgdark border border-white/15 px-3 py-2.5 text-sm text-white">
-                        ${(player.roleKey === 'guardia' ? allAliveTargets : aliveTargets).map(t => `
-                          <option value="${t.id}">${escapeHtml(t.name)}${t.id === player.id ? ' (Tu)' : ''}</option>
-                        `).join('')}
-                      </select>
-                    </div>
-                    <button
-                      type="submit"
-                      ${!player.alive || player.powerPoints < roleDef.cost || player.blockedThisRound ? 'disabled' : ''}
-                      class="w-full py-2.5 px-4 rounded-xl bg-gold text-bgdark font-semibold text-sm hover:brightness-110 transition disabled:opacity-40"
-                    >
-                      Attiva ${escapeHtml(roleDef.powerName)} (${roleDef.cost} PT)
-                    </button>
-                  </form>
-                `}
-              </div>
-
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h3 class="font-serif text-lg font-bold text-white">Messaggi del Master</h3>
-                ${myMessages.length === 0 ? `
-                  <p class="text-sm text-gray-400 mt-2">Nessun messaggio ricevuto dal Master.</p>
-                ` : `
-                  <div class="mt-3 space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                    ${myMessages.map(m => `
-                      <div class="p-3 rounded-xl bg-bgdark border border-white/10">
-                        <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1">
-                          <span class="font-semibold text-gold">${escapeHtml(m.targetName)}</span>
-                          <span>${escapeHtml(m.time)}</span>
-                        </div>
-                        <p class="text-sm text-gray-200">${escapeHtml(m.text)}</p>
-                      </div>
-                    `).join('')}
-                  </div>
-                `}
-              </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h2 class="font-serif text-xl font-bold text-white">Missioni Segrete</h2>
-                <p class="text-xs text-gray-400 mt-0.5">
-                  Invia il completamento al Master: se approvato, ricevi Punti Potere.
-                </p>
-
-                ${isMartyr ? `
-                  <div class="mt-4 p-4 rounded-xl bg-bgdark border border-white/10 text-sm text-gray-300">
-                    Come <strong>Martire</strong> non hai missioni standard: il tuo potere speciale è <strong>Ultima Testimonianza</strong>.
-                  </div>
-                ` : `
-                  <div class="mt-4 space-y-3.5">
-                    ${player.missions.map(m => {
-                      const isDoneUnique = !m.repeatable && m.approvedCount > 0;
-                      const isPending = m.status === 'pending';
-                      return `
-                        <div class="p-4 rounded-xl bg-bgdark border border-white/10">
-                          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <div class="flex items-center gap-2">
-                              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30">
-                                +${m.points} ${m.points === 1 ? 'Punto Potere' : 'Punti Potere'}
-                              </span>
-                              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-surface2 text-gray-300">
-                                ${m.repeatable ? 'Ripetibile' : 'Unica'}
-                              </span>
-                            </div>
-                            <span class="text-xs font-semibold ${isPending ? 'text-gold' : isDoneUnique ? 'text-emerald' : 'text-gray-400'}">
-                              ${isPending ? 'In attesa di verifica' : isDoneUnique ? 'Completata' : 'Disponibile'}
-                            </span>
-                          </div>
-                          <p class="text-sm text-gray-100 leading-relaxed">${escapeHtml(m.text)}</p>
-                          ${player.alive && !isDoneUnique && !isPending ? `
-                            <div class="mt-3 flex flex-col sm:flex-row gap-2">
-                              <input
-                                id="note-${m.id}"
-                                type="text"
-                                placeholder="Nota opzionale per il Master..."
-                                class="flex-1 rounded-xl bg-surface border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo"
-                              />
-                              <button
-                                type="button"
-                                onclick="submitMission('${player.id}', '${m.id}', document.getElementById('note-${m.id}').value)"
-                                class="px-4 py-2 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition shrink-0"
-                              >
-                                Invia Completamento
-                              </button>
-                            </div>
-                          ` : ''}
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                `}
-              </div>
-
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h2 class="font-serif text-xl font-bold text-white">Segnala un Giocatore al Master</h2>
-                ${!player.alive ? `
-                  <p class="text-sm text-gray-400 mt-3">I giocatori eliminati non possono inviare nuove segnalazioni.</p>
-                ` : `
-                  <form onsubmit="handleReportSubmit(event, '${player.id}')" class="mt-4 space-y-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label for="report-target" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                          Giocatore
-                        </label>
-                        <select id="report-target" class="w-full rounded-xl bg-bgdark border border-white/15 px-3 py-2.5 text-sm text-white">
-                          ${aliveTargets.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}
-                        </select>
-                      </div>
-                      <div class="sm:col-span-2">
-                        <label for="report-reason" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                          Motivo / Osservazione
-                        </label>
-                        <input
-                          id="report-reason"
-                          type="text"
-                          required
-                          placeholder="Descrivi brevemente cosa hai notato..."
-                          class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="submit"
-                      ${aliveTargets.length === 0 ? 'disabled' : ''}
-                      class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-sm font-semibold text-white transition disabled:opacity-40"
-                    >
-                      Invia Segnalazione
-                    </button>
-                  </form>
-                `}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function handlePowerSubmit(e, actorId) {
-      e.preventDefault();
-      const sel = document.getElementById('power-target-select');
-      const targetId = sel ? sel.value : '';
-      useRolePower(actorId, targetId);
-    }
-
-    function handleMartyrSubmit(e, actorId) {
-      e.preventDefault();
-      const sel = document.getElementById('martyr-role-select');
-      const decl = sel ? sel.value : '';
-      useRolePower(actorId, actorId, decl);
-    }
-
-    function handleReportSubmit(e, playerId) {
-      e.preventDefault();
-      const targetEl = document.getElementById('report-target');
-      const reasonEl = document.getElementById('report-reason');
-      if (!targetEl || !reasonEl) return;
-      submitReport(playerId, targetEl.value, reasonEl.value);
-      reasonEl.value = '';
-    }
-
-    function renderMasterDashboard() {
-      const pendingSubs = [];
-      const pendingReps = [];
-
-      state.players.forEach(p => {
-        (p.pendingSubmissions || []).forEach(sub => {
-          pendingSubs.push({ player: p, sub });
-        });
-        (p.reports || []).forEach(rep => {
-          if (rep.status === 'pending') {
-            pendingReps.push({ player: p, rep });
-          }
-        });
-      });
-
-      const inspectedPlayer = state.inspectingPlayerId ? getPlayerById(state.inspectingPlayerId) : null;
-      const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
-
-      return `
-        <div class="max-w-6xl w-full mx-auto px-4 py-6 space-y-6">
-          <div class="rounded-2xl bg-surface border border-white/10 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-gold/15 text-gold border border-gold/30">
-                  Modalità Master
-                </span>
-                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-surface2 text-gray-200 border border-white/10">
-                  Stanza ${escapeHtml(state.roomCode)} · Turno ${state.round} · ${escapeHtml(state.phase)}
-                </span>
-              </div>
-              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-2">Plancia del Tavolo</h1>
-              <p class="text-xs text-emerald mt-1">
-                ID Sync stanza: <strong class="font-mono text-white">${escapeHtml(displaySyncId)}</strong> · Codice Stanza: <strong class="text-gold">${escapeHtml(state.roomCode)}</strong>
-              </p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onclick="pullRemoteSnapshot('manual')"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition"
-              >
-                Aggiorna
-              </button>
-              <button
-                type="button"
-                onclick="advancePhase()"
-                class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition"
-              >
-                Avanza Fase
-              </button>
-              <button
-                type="button"
-                onclick="resetGame()"
-                class="px-4 py-2.5 rounded-xl bg-crimson/20 hover:bg-crimson/30 border border-crimson/40 text-crimson text-xs font-semibold transition"
-              >
-                Nuova Partita
-              </button>
-              <button
-                type="button"
-                onclick="exitToEntry()"
-                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition"
-              >
-                Esci
-              </button>
-            </div>
-          </div>
-
-          ${renderBanner()}
-          ${renderVictoryBanner()}
-
-          <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 class="font-serif text-xl font-bold text-white">Selezione Ruoli e Assegnazione Casuale</h2>
-                <p class="text-xs text-gray-400 mt-0.5">
-                  Scegli quante copie di ciascun ruolo includere, poi estrai casualmente per i ${state.players.length} giocatori al tavolo.
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs px-3 py-1.5 rounded-full bg-bgdark border border-white/10 text-gray-300">
-                  Mazzo: <strong class="text-gold">${Object.values(state.rolePool || createDefaultRolePool()).reduce((a, b) => a + Number(b || 0), 0)}</strong> / Giocatori: <strong class="text-white">${state.players.length}</strong>
-                </span>
-                <button
-                  type="button"
-                  onclick="applyRandomRolesToPlayers()"
-                  class="px-4 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-                >
-                  ${state.rolesAssigned ? 'Riassegna Ruoli Casualmente' : 'Assegna Ruoli Casualmente'}
-                </button>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              ${Object.entries(ROLE_DEFS).map(([rk, rDef]) => {
-                const count = Number((state.rolePool && state.rolePool[rk]) || 0);
-                return `
-                  <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
-                    <div>
-                      <div class="font-semibold text-sm text-white">${escapeHtml(rDef.name)}</div>
-                      <span class="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${rDef.badgeClass}">
-                        ${rDef.faction === 'traditori' ? 'Traditore' : 'Cittadino'}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onclick="adjustRolePoolCount('${rk}', -1)"
-                        class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                      >-</button>
-                      <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
-                      <button
-                        type="button"
-                        onclick="adjustRolePoolCount('${rk}', 1)"
-                        class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                      >+</button>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-
-          <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="font-serif text-xl font-bold text-white">Giocatori al Tavolo (${state.players.length})</h2>
-              <span class="text-xs text-gray-400">Clicca “Scheda Completa” per ispezionare ruolo e missioni</span>
-            </div>
-
-            ${state.players.length === 0 ? `
-              <div class="p-6 rounded-xl bg-bgdark border border-white/10 text-center text-sm text-gray-400">
-                Nessun giocatore ancora registrato in questa stanza.
-              </div>
-            ` : `
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${state.players.map(p => {
-                  const rDef = p.roleKey ? (ROLE_DEFS[p.roleKey] || ROLE_DEFS.investigatore) : null;
-                  const isInspected = state.inspectingPlayerId === p.id;
-                  return `
-                    <div class="rounded-xl bg-bgdark border ${isInspected ? 'border-gold' : 'border-white/10'} p-4 flex flex-col justify-between gap-4">
-                      <div>
-                        <div class="flex items-start justify-between gap-3">
-                          <div class="flex items-center gap-3">
-                            ${renderAvatar(p, 'w-11 h-11')}
-                            <div>
-                              <div class="font-semibold text-white text-base">${escapeHtml(p.name)}</div>
-                              <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${p.alive ? 'bg-emerald/15 text-emerald' : 'bg-crimson/15 text-crimson'}">
-                                  ${p.alive ? 'Vivo' : 'Eliminato'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="text-right">
-                            <div class="text-[10px] uppercase tracking-wider text-gray-500">Potere</div>
-                            <div class="text-lg font-bold text-gold">${p.powerPoints}</div>
-                          </div>
-                        </div>
-
-                        <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                          <span class="text-gray-400">Ruolo: <strong class="text-gray-200">${rDef ? escapeHtml(rDef.name) : 'Da assegnare'}</strong></span>
-                          ${rDef ? `
-                            <span class="px-2 py-0.5 rounded-full border ${rDef.badgeClass} text-[11px] font-semibold">
-                              ${rDef.faction === 'traditori' ? 'Traditore' : 'Cittadino'}
-                            </span>
-                          ` : `
-                            <span class="px-2 py-0.5 rounded-full bg-surface2 text-gray-400 text-[11px] font-semibold">
-                              In attesa
-                            </span>
-                          `}
-                        </div>
-                      </div>
-
-                      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
-                        <div class="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onclick="adjustPlayerPoints('${p.id}', -1)"
-                            class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                          >-</button>
-                          <button
-                            type="button"
-                            onclick="adjustPlayerPoints('${p.id}', 1)"
-                            class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                          >+</button>
-                          <button
-                            type="button"
-                            onclick="togglePlayerAlive('${p.id}')"
-                            class="px-2.5 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-[11px] font-semibold ${p.alive ? 'text-crimson' : 'text-emerald'}"
-                          >
-                            ${p.alive ? 'Elimina' : 'Ripristina'}
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onclick="toggleInspectPlayer('${p.id}')"
-                          class="px-3 h-7 rounded-lg ${isInspected ? 'bg-gold text-bgdark' : 'bg-indigo/20 text-indigo hover:bg-indigo/30'} text-[11px] font-semibold transition"
-                        >
-                          ${isInspected ? 'Chiudi Scheda' : 'Scheda Completa'}
-                        </button>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `}
-
-            ${inspectedPlayer ? renderMasterPlayerInspector(inspectedPlayer) : ''}
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg space-y-5">
-              <div class="flex items-center justify-between">
-                <h2 class="font-serif text-xl font-bold text-white">Approvazioni e Segnalazioni</h2>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gold/15 text-gold">
-                  ${pendingSubs.length + pendingReps.length} in attesa
-                </span>
-              </div>
-
-              <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">
-                  Missioni da Verificare (${pendingSubs.length})
-                </h3>
-                ${pendingSubs.length === 0 ? `
-                  <p class="text-xs text-gray-500 bg-bgdark rounded-xl p-3.5 border border-white/10">Nessuna missione in attesa.</p>
-                ` : `
-                  <div class="space-y-2.5">
-                    ${pendingSubs.map(({ player, sub }) => `
-                      <div class="p-3.5 rounded-xl bg-bgdark border border-white/10 space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                          <span class="font-bold text-white">${escapeHtml(player.name)}</span>
-                          <span class="text-gold font-semibold">+${sub.points} PT · ${escapeHtml(sub.submittedAt)}</span>
-                        </div>
-                        <p class="text-sm text-gray-200">${escapeHtml(sub.missionText)}</p>
-                        <div class="flex gap-2 pt-1">
-                          <button
-                            type="button"
-                            onclick="approveSubmission('${player.id}', '${sub.id}')"
-                            class="px-3 py-1.5 rounded-lg bg-emerald text-bgdark text-xs font-semibold hover:brightness-110 transition"
-                          >
-                            Approva (+${sub.points} PT)
-                          </button>
-                          <button
-                            type="button"
-                            onclick="rejectSubmission('${player.id}', '${sub.id}')"
-                            class="px-3 py-1.5 rounded-lg bg-crimson/20 text-crimson border border-crimson/30 text-xs font-semibold hover:bg-crimson/30 transition"
-                          >
-                            Respingi
-                          </button>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                `}
-              </div>
-
-              <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">
-                  Segnalazioni Giocatori (${pendingReps.length})
-                </h3>
-                ${pendingReps.length === 0 ? `
-                  <p class="text-xs text-gray-500 bg-bgdark rounded-xl p-3.5 border border-white/10">Nessuna segnalazione in attesa.</p>
-                ` : `
-                  <div class="space-y-2.5">
-                    ${pendingReps.map(({ player, rep }) => `
-                      <div class="p-3.5 rounded-xl bg-bgdark border border-white/10 space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                          <span class="text-gray-300"><strong class="text-white">${escapeHtml(rep.reporterName)}</strong> segnala <strong class="text-gold">${escapeHtml(rep.targetName)}</strong></span>
-                          <span class="text-gray-500">${escapeHtml(rep.createdAt)}</span>
-                        </div>
-                        <p class="text-sm text-gray-200">"${escapeHtml(rep.reason)}"</p>
-                        <div class="flex gap-2 pt-1">
-                          <button
-                            type="button"
-                            onclick="resolveReport('${player.id}', '${rep.id}', 'valid')"
-                            class="px-3 py-1.5 rounded-lg bg-emerald text-bgdark text-xs font-semibold hover:brightness-110 transition"
-                          >
-                            Convalida (+1 PT)
-                          </button>
-                          <button
-                            type="button"
-                            onclick="resolveReport('${player.id}', '${rep.id}', 'dismissed')"
-                            class="px-3 py-1.5 rounded-lg bg-surface2 text-gray-300 border border-white/10 text-xs font-semibold hover:bg-white/10 transition"
-                          >
-                            Archivia
-                          </button>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                `}
-              </div>
-            </div>
-
-            <div class="space-y-6">
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h2 class="font-serif text-xl font-bold text-white">Invia Messaggio</h2>
-                <form onsubmit="handleMasterMessageSubmit(event)" class="mt-4 space-y-3">
-                  <div>
-                    <label for="master-msg-target" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                      Destinatario
-                    </label>
-                    <select id="master-msg-target" class="w-full rounded-xl bg-bgdark border border-white/15 px-3 py-2.5 text-sm text-white">
-                      <option value="ALL">Tutti i Giocatori</option>
-                      ${state.players.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
-                    </select>
-                  </div>
-                  <div>
-                    <label for="master-msg-text" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-                      Messaggio
-                    </label>
-                    <input
-                      id="master-msg-text"
-                      type="text"
-                      required
-                      placeholder="Scrivi il messaggio per il tavolo o per un giocatore..."
-                      class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-sm font-semibold hover:brightness-110 transition"
-                  >
-                    Invia Messaggio
-                  </button>
-                </form>
-              </div>
-
-              <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <h2 class="font-serif text-xl font-bold text-white mb-3">Cronaca del Tavolo</h2>
-                ${state.logs.length === 0 ? `
-                  <p class="text-sm text-gray-500">Nessun evento registrato.</p>
-                ` : `
-                  <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    ${state.logs.map(l => `
-                      <div class="flex items-start justify-between gap-3 py-2 border-b border-white/5 last:border-b-0 text-xs">
-                        <span class="text-gray-300 leading-relaxed">${escapeHtml(l.text)}</span>
-                        <span class="text-gray-500 shrink-0">${escapeHtml(l.time)}</span>
-                      </div>
-                    `).join('')}
-                  </div>
-                `}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function toggleInspectPlayer(playerId) {
-      state.inspectingPlayerId = state.inspectingPlayerId === playerId ? null : playerId;
-      render();
-    }
-
-    function renderMasterPlayerInspector(p) {
-      const rDef = ROLE_DEFS[p.roleKey] || ROLE_DEFS.investigatore;
-      return `
-        <div class="mt-5 rounded-2xl bg-surface2/80 border border-gold/40 p-5">
-          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">
-            <div class="flex items-center gap-3.5">
-              ${renderAvatar(p, 'w-14 h-14')}
-              <div>
-                <h3 class="font-serif text-xl font-bold text-white">${escapeHtml(p.name)}</h3>
-                <div class="flex flex-wrap items-center gap-2 mt-1">
-                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${rDef.badgeClass}">
-                    ${escapeHtml(rDef.name)} · ${escapeHtml(rDef.factionLabel)}
-                  </span>
-                  <span class="text-xs text-gold font-semibold">Punti Potere: ${p.powerPoints}</span>
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onclick="toggleInspectPlayer('${p.id}')"
-              class="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-bgdark border border-white/10"
-            >
-              Chiudi
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div>
-              <div class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Potere e Stato</div>
-              <div class="p-3.5 rounded-xl bg-bgdark border border-white/10 text-xs space-y-1.5">
-                <div><strong class="text-gold">${escapeHtml(rDef.powerName)}:</strong> <span class="text-gray-300">${escapeHtml(rDef.powerDesc)}</span></div>
-                <div><strong class="text-gray-400">Stato vitale:</strong> <span class="text-white">${p.alive ? 'Vivo' : 'Eliminato'}</span></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Missioni Assegnate</div>
-              ${p.missions.length === 0 ? `
-                <div class="p-3.5 rounded-xl bg-bgdark border border-white/10 text-xs text-gray-400">
-                  Nessuna missione standard (ruolo Martire).
-                </div>
-              ` : `
-                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  ${p.missions.map(m => `
-                    <div class="p-3 rounded-xl bg-bgdark border border-white/10 text-xs flex items-start justify-between gap-2">
-                      <span class="text-gray-200">${escapeHtml(m.text)}</span>
-                      <span class="text-gold font-semibold shrink-0">+${m.points} PT (${m.approvedCount || 0} ok)</span>
-                    </div>
-                  `).join('')}
-                </div>
-              `}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function handleMasterMessageSubmit(e) {
-      e.preventDefault();
-      const targetEl = document.getElementById('master-msg-target');
-      const textEl = document.getElementById('master-msg-text');
-      if (!targetEl || !textEl) return;
-      sendMasterMessage(targetEl.value, textEl.value);
-      textEl.value = '';
-    }
-
-    function renderAvatar(player, sizeClass = 'w-10 h-10') {
-      if (player.selfie) {
-        return `<img src="${player.selfie}" alt="${escapeAttr(player.name)}" class="${sizeClass} rounded-full object-cover border border-white/15 shrink-0" />`;
-      }
-      const initials = (player.name || '?')
-        .split(/\s+/)
-        .map(part => part[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
-      return `
-        <div class="${sizeClass} rounded-full bg-surface2 border border-white/15 flex items-center justify-center text-xs font-bold text-gold shrink-0">
-          ${escapeHtml(initials)}
-        </div>
-      `;
-    }
-
-    function escapeHtml(str) {
-      return String(str ?? '')
+    // Escape di sicurezza per il testo renderizzato in HTML
+    function escapeHtml(value) {
+      return String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -2287,70 +260,202 @@
         .replace(/'/g, '&#39;');
     }
 
-    function escapeAttr(str) {
-      return escapeHtml(str);
-    }
-
+    // Renderizza la schermata attiva
     function render() {
-      const appEl = document.getElementById('app');
-      if (!appEl) return;
+      const root = document.getElementById('app');
+      if (!root) return;
 
       try {
-        if (state.screen === 'master') {
-          appEl.innerHTML = renderMasterDashboard();
-        } else if (state.screen === 'player_join') {
-          appEl.innerHTML = renderPlayerJoinScreen();
-        } else if (state.screen === 'player_dashboard') {
-          appEl.innerHTML = renderPlayerDashboard();
-        } else {
-          appEl.innerHTML = renderEntryScreen();
+        const bannerHtml = appState.banner
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              appState.banner.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : appState.banner.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(appState.banner.text)}</div>`
+          : '';
+
+        if (appState.screen === 'master') {
+          const totalPool = Object.values(appState.rolePool).reduce((sum, n) => sum + Number(n || 0), 0);
+          root.innerHTML = `
+            <header class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Master · Stanza ${escapeHtml(appState.roomCode)}</span>
+                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tavolo e Assegnazione Ruoli</h1>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="drawRoles()" class="px-4 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer">
+                  Estrai Ruoli
+                </button>
+                <button type="button" onclick="exitScreen()" class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
+                  Esci
+                </button>
+                <button type="button" onclick="clearRoom()" class="px-3.5 py-2 rounded-xl bg-crimson/15 hover:bg-crimson/25 border border-crimson/35 text-xs font-semibold text-crimson transition cursor-pointer">
+                  Svuota Stanza
+                </button>
+              </div>
+            </header>
+
+            ${bannerHtml}
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-serif text-xl font-bold text-white">Giocatori al Tavolo (${appState.players.length})</h2>
+                </div>
+                ${appState.players.length === 0
+                  ? `<p class="text-sm text-gray-400">Nessun giocatore ancora al tavolo.</p>`
+                  : `<div class="space-y-2.5">${appState.players.map(p => {
+                      const role = p.roleKey ? ROLES[p.roleKey] : null;
+                      return `
+                        <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
+                          <span class="font-semibold text-sm text-white">${escapeHtml(p.name)}</span>
+                          ${role
+                            ? `<span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${role.badge}">${escapeHtml(role.name)}</span>`
+                            : `<span class="text-xs text-gray-400">In attesa</span>`
+                          }
+                        </div>
+                      `;
+                    }).join('')}</div>`
+                }
+              </section>
+
+              <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h2 class="font-serif text-xl font-bold text-white">Ruoli nel Mazzo</h2>
+                  <span class="text-xs px-3 py-1 rounded-full bg-bgdark border border-white/10 text-gray-300">
+                    Totale: <strong class="text-gold">${totalPool}</strong>
+                  </span>
+                </div>
+                <div class="space-y-2.5">
+                  ${Object.entries(ROLES).map(([key, r]) => {
+                    const count = Number(appState.rolePool[key] || 0);
+                    return `
+                      <div class="rounded-xl bg-bgdark border border-white/10 p-3 flex items-center justify-between gap-3">
+                        <div>
+                          <div class="text-sm font-semibold text-white">${escapeHtml(r.name)}</div>
+                          <div class="text-xs text-gray-400">${escapeHtml(r.faction)}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button type="button" onclick="changeRoleQty('${key}', -1)" class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold cursor-pointer">-</button>
+                          <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
+                          <button type="button" onclick="changeRoleQty('${key}', 1)" class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold cursor-pointer">+</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </section>
+            </div>
+          `;
+          return;
         }
+
+        if (appState.screen === 'player') {
+          const me = appState.players.find(p => p.id === appState.activePlayerId) || null;
+          const myRole = me && me.roleKey ? ROLES[me.roleKey] : null;
+          root.innerHTML = `
+            <header class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-indigo">Scheda Giocatore · Stanza ${escapeHtml(appState.roomCode)}</span>
+                <h1 class="font-serif text-2xl font-bold text-white mt-1">${escapeHtml(me ? me.name : 'Giocatore')}</h1>
+              </div>
+              <button type="button" onclick="exitScreen()" class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
+                Esci
+              </button>
+            </header>
+
+            ${bannerHtml}
+
+            <section class="rounded-2xl bg-surface border border-white/10 p-6 space-y-3">
+              <div class="text-xs uppercase tracking-wider text-gray-400">Il tuo ruolo assegnato</div>
+              ${myRole
+                ? `
+                  <div class="inline-block text-sm font-bold px-3 py-1 rounded-full border ${myRole.badge}">
+                    ${escapeHtml(myRole.name)} · ${escapeHtml(myRole.faction)}
+                  </div>
+                  <p class="text-sm text-gray-300 mt-2">${escapeHtml(myRole.desc)}</p>
+                `
+                : `<p class="text-sm text-gray-300">Sei al tavolo in attesa che il Master estragga i ruoli.</p>`
+              }
+            </section>
+          `;
+          return;
+        }
+
+        root.innerHTML = `
+          <header class="rounded-2xl bg-surface border border-white/10 p-6 text-center space-y-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-gold">Struttura Base</span>
+            <h1 class="font-serif text-3xl sm:text-4xl font-bold text-white">Ombre al Tavolo</h1>
+            <p class="text-sm text-gray-400 max-w-xl mx-auto">
+              Ingresso principale del gioco. Imposta il codice stanza, entra come Master o come Giocatore.
+            </p>
+          </header>
+
+          ${bannerHtml}
+
+          <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+              <div class="flex-1 min-w-[200px]">
+                <label for="room-code-input" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                  Codice Stanza
+                </label>
+                <input
+                  id="room-code-input"
+                  type="text"
+                  value="${escapeHtml(appState.roomCode)}"
+                  onchange="updateRoomCode(this.value)"
+                  class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm font-mono uppercase text-white focus:outline-none focus:border-gold"
+                />
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="enterMaster()" class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer">
+                  Entra come Master
+                </button>
+                <button type="button" onclick="clearRoom()" class="px-3.5 py-2.5 rounded-xl bg-crimson/15 hover:bg-crimson/25 border border-crimson/35 text-xs font-semibold text-crimson transition cursor-pointer">
+                  Svuota Stanza
+                </button>
+              </div>
+            </div>
+
+            <form
+              onsubmit="event.preventDefault(); const inp = document.getElementById('join-name-input'); joinAsPlayer(inp.value); inp.value = '';"
+              class="pt-4 border-t border-white/10 flex flex-col sm:flex-row gap-2.5"
+            >
+              <input
+                id="join-name-input"
+                type="text"
+                maxlength="24"
+                placeholder="Il tuo nome per entrare come Giocatore..."
+                class="flex-1 rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo"
+              />
+              <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo text-white text-xs font-bold hover:brightness-110 transition cursor-pointer">
+                Entra come Giocatore
+              </button>
+            </form>
+          </section>
+        `;
       } catch (err) {
-        console.error('Errore durante il rendering:', err);
-        appEl.innerHTML = `
-          <div class="max-w-xl mx-auto my-12 p-6 rounded-2xl bg-surface border border-crimson/40 text-center">
-            <h2 class="font-serif text-xl font-bold text-crimson">Errore di visualizzazione</h2>
-            <p class="text-sm text-gray-300 mt-2">Si è verificato un problema imprevisto nel rendering della pagina.</p>
-            <button type="button" onclick="resetGame()" class="mt-4 px-4 py-2 rounded-xl bg-gold text-bgdark text-sm font-semibold">
-              Ripristina Partita
-            </button>
+        console.error('Errore rendering index.html:', err);
+        root.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Errore durante il caricamento della pagina. Ricarica l'anteprima.
           </div>
         `;
       }
     }
 
-    // Esposizione funzioni usate dagli handler inline nell'HTML generato
-    window.clearBanner = clearBanner;
-    window.setRoomCodeAndReload = setRoomCodeAndReload;
-    window.exitToEntry = exitToEntry;
-    window.enterMasterMode = enterMasterMode;
-    window.openPlayerJoin = openPlayerJoin;
-    window.startCamera = startCamera;
-    window.snapSelfie = snapSelfie;
-    window.handleSelfieFileUpload = handleSelfieFileUpload;
-    window.handleJoinSubmit = handleJoinSubmit;
-    window.submitMission = submitMission;
-    window.approveSubmission = approveSubmission;
-    window.rejectSubmission = rejectSubmission;
-    window.submitReport = submitReport;
-    window.resolveReport = resolveReport;
-    window.handlePowerSubmit = handlePowerSubmit;
-    window.handleMartyrSubmit = handleMartyrSubmit;
-    window.handleReportSubmit = handleReportSubmit;
-    window.togglePlayerAlive = togglePlayerAlive;
-    window.adjustPlayerPoints = adjustPlayerPoints;
-    window.advancePhase = advancePhase;
-    window.resetGame = resetGame;
-    window.toggleInspectPlayer = toggleInspectPlayer;
-    window.handleMasterMessageSubmit = handleMasterMessageSubmit;
-    window.pullRemoteSnapshot = pullRemoteSnapshot;
-    window.adjustRolePoolCount = adjustRolePoolCount;
-    window.applyRandomRolesToPlayers = applyRandomRolesToPlayers;
+    // Esposizione esplicita delle funzioni usate nei pulsanti e form
+    window.updateRoomCode = updateRoomCode;
+    window.enterMaster = enterMaster;
+    window.joinAsPlayer = joinAsPlayer;
+    window.exitScreen = exitScreen;
+    window.clearRoom = clearRoom;
+    window.changeRoleQty = changeRoleQty;
+    window.drawRoles = drawRoles;
 
-    state = loadState();
-    initSyncTransport();
     render();
-    initCloudSync();
   </script>
 </body>
 </html>
