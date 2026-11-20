@@ -124,9 +124,9 @@
         name: 'Cacciatore',
         faction: 'Neutro',
         factionKey: 'neutro',
-        missionStyle: 'Missioni prevalentemente di confronto (5 missioni, di cui 3 ripetibili).',
+        missionStyle: 'Missioni prevalentemente di confronto (5 missioni, di cui 3 ripetibili): i punti missione permettono di fare la domanda "giocatore X è ruolo Y?", mentre il tentativo finale sui 3 giocatori è sempre disponibile senza spendere punti.',
         badge: 'bg-gold/15 text-gold border-gold/40',
-        power: 'Può indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato.'
+        power: 'Può usare i punti missione per chiedere "giocatore X è ruolo Y?" e, in qualsiasi momento senza punti, può indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato.'
       }
     };
 
@@ -140,6 +140,7 @@
     let latestRoomPlayers = [];
     let latestTraitorMessages = [];
     let latestMasterMessages = [];
+    let activeTraitorTab = 'traitors'; // 'traitors' | 'master'
     let chatDraft = '';
 
     function initFirestore() {
@@ -394,13 +395,15 @@
       const isTraitor = isTraitorRole(roleKey);
       const isSecretTraitor = isSecretTraitorRole(roleKey);
       const roleObj = ROLE_DETAILS[roleKey];
+      const useTraitorChannel = isTraitor && activeTraitorTab === 'traitors';
+      const hideNameInChannel = Boolean(useTraitorChannel && isSecretTraitor);
 
       const newMessage = {
         id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        senderName: isTraitor && isSecretTraitor ? roleObj.name : playerState.playerName,
+        senderName: hideNameInChannel ? roleObj.name : playerState.playerName,
         senderRoleName: roleObj.name,
         senderFaction: roleObj.faction,
-        anonymousIdentity: Boolean(isTraitor && isSecretTraitor),
+        anonymousIdentity: hideNameInChannel,
         playerName: playerState.playerName,
         text: text.slice(0, 400),
         createdAt: Date.now()
@@ -414,7 +417,7 @@
         try {
           const snap = await getDoc(ref);
           const data = snap.exists() ? (snap.data() || {}) : {};
-          if (isTraitor) {
+          if (useTraitorChannel) {
             const existing = Array.isArray(data.traitorChat) ? data.traitorChat : [];
             const nextList = [...existing, newMessage].slice(-100);
             latestTraitorMessages = nextList;
@@ -444,7 +447,7 @@
         }
       }
 
-      if (isTraitor) {
+      if (useTraitorChannel) {
         latestTraitorMessages = [...latestTraitorMessages, newMessage].slice(-100);
       } else {
         latestMasterMessages = [...latestMasterMessages, newMessage].slice(-150);
@@ -655,13 +658,44 @@
       }
     }
 
+    function renderHunterActionPanel(roleKey) {
+      if (roleKey !== 'cacciatore') return '';
+      return `
+        <section class="rounded-2xl bg-bgdark border border-gold/30 p-5 space-y-3">
+          <div class="space-y-0.5">
+            <span class="text-[11px] font-bold uppercase tracking-widest text-gold">Azioni del Cacciatore</span>
+            <h2 class="font-serif text-lg font-bold text-white">Indagine a Punti e Tentativo Finale</h2>
+            <p class="text-xs text-gray-400">
+              Usa i punti missione per chiedere "giocatore X è ruolo Y?", oppure usa in qualsiasi momento (senza punti) il pulsante per indicare i 3 giocatori.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2.5 pt-1">
+            <button
+              type="button"
+              onclick="setPlayerBanner('Domanda a punti missione: invia al Master la verifica &quot;Giocatore X è ruolo Y?&quot;.', 'info')"
+              class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-100 transition cursor-pointer"
+            >
+              Chiedi "Giocatore X è Ruolo Y?" (Punti Missione)
+            </button>
+            <button
+              type="button"
+              onclick="setPlayerBanner('Tentativo Cacciatore sempre disponibile (0 punti): dichiara 3 giocatori e i relativi ruoli. Tutti esatti = vittoria immediata; anche un solo errore = eliminazione.', 'success')"
+              class="px-3.5 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+            >
+              Indovina 3 Ruoli (Sempre Disponibile · 0 Punti)
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
     function renderChatSection(roleObj) {
       if (!roleObj) {
         return `
           <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-2">
             <h2 class="font-serif text-lg font-bold text-white">Canale di Comunicazione</h2>
             <p class="text-xs text-gray-400">
-              Disponibile non appena il Master ti assegna un ruolo: i Traditori avranno la chat interna dei Traditori, mentre Fedeli e Neutro avranno la chat diretta con il Master.
+              Disponibile non appena il Master ti assegna un ruolo: i Traditori hanno sia la chat interna dei Traditori sia la chat diretta con il Master, mentre Fedeli e Neutro hanno la chat diretta con il Master.
             </p>
           </section>
         `;
@@ -669,14 +703,42 @@
 
       const isTraitor = isTraitorRole(playerState.assignedRoleKey);
       const isSecretTraitor = isSecretTraitorRole(playerState.assignedRoleKey);
-      const messages = isTraitor ? latestTraitorMessages : latestMasterMessages;
+      const useTraitorChannel = isTraitor && activeTraitorTab === 'traitors';
+      const messages = useTraitorChannel ? latestTraitorMessages : latestMasterMessages;
 
-      const chatTitle = isTraitor ? 'Chat Interna dei Traditori' : 'Chat Diretta con il Master';
-      const chatSubtitle = isTraitor
+      const chatTitle = useTraitorChannel ? 'Chat Interna dei Traditori' : 'Chat Diretta con il Master';
+      const chatSubtitle = useTraitorChannel
         ? (isSecretTraitor
             ? 'Scrivi ai Traditori: per te compare solo il ruolo "Traditore Segreto", senza mostrare il tuo nome.'
             : 'Canale riservato ai Traditori della stanza.')
         : 'Canale privato tra te e il Master.';
+
+      const traitorTabsHtml = isTraitor
+        ? `<div class="flex items-center gap-2 pt-1">
+             <button
+               type="button"
+               onclick="activeTraitorTab = 'traitors'; renderPlayerPage();"
+               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                 activeTraitorTab === 'traitors'
+                   ? 'bg-crimson text-white'
+                   : 'bg-surface border border-white/10 text-gray-300 hover:bg-white/5'
+               }"
+             >
+               Chat Traditori
+             </button>
+             <button
+               type="button"
+               onclick="activeTraitorTab = 'master'; renderPlayerPage();"
+               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                 activeTraitorTab === 'master'
+                   ? 'bg-gold text-bgdark'
+                   : 'bg-surface border border-white/10 text-gray-300 hover:bg-white/5'
+               }"
+             >
+               Chat con il Master
+             </button>
+           </div>`
+        : '';
 
       const messagesHtml = messages.length
         ? messages.map(msg => {
@@ -705,9 +767,10 @@
 
       return `
         <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
-          <div class="space-y-0.5">
+          <div class="space-y-1">
             <h2 class="font-serif text-xl font-bold text-white">${escapeHtml(chatTitle)}</h2>
             <p class="text-xs text-gray-400">${escapeHtml(chatSubtitle)}</p>
+            ${traitorTabsHtml}
           </div>
 
           <div class="max-h-60 overflow-y-auto space-y-2.5 pr-1">
@@ -721,7 +784,7 @@
               value="${escapeHtml(chatDraft)}"
               oninput="chatDraft = this.value;"
               onkeydown="if(event.key === 'Enter'){ event.preventDefault(); sendChatMessage(); }"
-              placeholder="${isTraitor ? 'Scrivi ai Traditori...' : 'Scrivi al Master...'}"
+              placeholder="${useTraitorChannel ? 'Scrivi ai Traditori...' : 'Scrivi al Master...'}"
               class="flex-1 rounded-xl bg-surface border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold"
             />
             <button
@@ -923,6 +986,8 @@
               }
             </section>
 
+            ${renderHunterActionPanel(playerState.assignedRoleKey)}
+
             ${renderChatSection(roleObj)}
           </div>
         `;
@@ -945,9 +1010,14 @@
     window.refreshAssignedRoleFromMaster = refreshAssignedRoleFromMaster;
     window.togglePrivateCard = togglePrivateCard;
     window.sendChatMessage = sendChatMessage;
+    window.renderPlayerPage = renderPlayerPage;
     Object.defineProperty(window, 'chatDraft', {
       get: () => chatDraft,
       set: (v) => { chatDraft = v; }
+    });
+    Object.defineProperty(window, 'activeTraitorTab', {
+      get: () => activeTraitorTab,
+      set: (v) => { activeTraitorTab = v; }
     });
 
     firestoreDb = initFirestore();
