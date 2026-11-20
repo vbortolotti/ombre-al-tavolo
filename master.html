@@ -514,720 +514,895 @@
       justify-content: flex-end;
     }
   </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
 </head>
 <body>
   <div id="master-roles-app" class="app-wrap"></div>
 
-  <script>
-    (function () {
-      var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-      var MASTER_KEY = 'ombre_master_assegnazione_ruoli_v1';
-      var ROOM_PREFIX = 'ombre_stanza_sync_';
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      var ROLE_CATALOG = {
-        assassino: {
-          name: 'Assassino',
-          faction: 'Traditori',
-          summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
-        },
-        sabotatore: {
-          name: 'Sabotatore',
-          faction: 'Traditori',
-          summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
-        },
-        traditore_segreto: {
-          name: 'Traditore Segreto',
-          faction: 'Traditori',
-          summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).'
-        },
-        investigatore: {
-          name: 'Investigatore',
-          faction: 'Fedeli',
-          summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).'
-        },
-        guardia: {
-          name: 'Guardia',
-          faction: 'Fedeli',
-          summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).'
-        },
-        martire: {
-          name: 'Martire',
-          faction: 'Fedeli',
-          summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.'
-        },
-        mediatore: {
-          name: 'Mediatore',
-          faction: 'Fedeli',
-          summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).'
-        },
-        cacciatore: {
-          name: 'Cacciatore',
-          faction: 'Neutro',
-          summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).'
-        }
-      };
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var MASTER_KEY = 'ombre_master_assegnazione_ruoli_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
 
-      var SPEECH_TEMPLATES = {
-        suspense: [
-          'Le luci si abbassano intorno al tavolo della stanza {{STANZA}}. Ognuno ha davanti a sé un destino ancora non svelato.',
-          'Nel silenzio della notte, le ombre iniziano a muoversi: alcuni giureranno fedeltà alla luce, altri nasconderanno un secondo fine.',
-          'Ora riceverete il vostro ruolo segreto. Guardate la vostra scheda soltanto quando siete certi che nessuno sbircia, poi alzate lo sguardo sul tavolo.'
-        ],
-        solenne: [
-          'Benvenuti nella cerimonia d’apertura del tavolo {{STANZA}}. Da questo istante il patto del gioco è sigillato.',
-          'Ogni ruolo porta con sé un dovere, un limite e una scelta che peserà sull’intera serata.',
-          'Prendete coscienza della vostra identità segreta con calma e preparatevi a sostenere la vostra parte.'
-        ],
-        rapido: [
-          'Tavolo {{STANZA}}, ci siamo: i ruoli stanno per essere distribuiti.',
-          'Controlla in segreto la tua scheda non appena viene assegnata, non mostrare nulla e resta pronto a giocare.'
-        ]
-      };
+    var ROLE_CATALOG = {
+      assassino: {
+        name: 'Assassino',
+        faction: 'Traditori',
+        summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
+      },
+      sabotatore: {
+        name: 'Sabotatore',
+        faction: 'Traditori',
+        summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
+      },
+      traditore_segreto: {
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).'
+      },
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Fedeli',
+        summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Fedeli',
+        summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.'
+      },
+      mediatore: {
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).'
+      }
+    };
 
-      function safeGetItem(key) {
-        try {
-          if (typeof window.localStorage === 'undefined') return null;
-          return window.localStorage.getItem(key);
-        } catch (_e) {
+    var SPEECH_TEMPLATES = {
+      suspense: [
+        'Le luci si abbassano intorno al tavolo della stanza {{STANZA}}. Ognuno ha davanti a sé un destino ancora non svelato.',
+        'Nel silenzio della notte, le ombre iniziano a muoversi: alcuni giureranno fedeltà alla luce, altri nasconderanno un secondo fine.',
+        'Ora riceverete il vostro ruolo segreto. Guardate la vostra scheda soltanto quando siete certi che nessuno sbircia, poi alzate lo sguardo sul tavolo.'
+      ],
+      solenne: [
+        'Benvenuti nella cerimonia d’apertura del tavolo {{STANZA}}. Da questo istante il patto del gioco è sigillato.',
+        'Ogni ruolo porta con sé un dovere, un limite e una scelta che peserà sull’intera serata.',
+        'Prendete coscienza della vostra identità segreta con calma e preparatevi a sostenere la vostra parte.'
+      ],
+      rapido: [
+        'Tavolo {{STANZA}}, ci siamo: i ruoli stanno per essere distribuiti.',
+        'Controlla in segreto la tua scheda non appena viene assegnata, non mostrare nulla e resta pronto a giocare.'
+      ]
+    };
+
+    function safeGetItem(key) {
+      try {
+        if (typeof window.localStorage === 'undefined') return null;
+        return window.localStorage.getItem(key);
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function safeSetItem(key, val) {
+      try {
+        if (typeof window.localStorage === 'undefined') return;
+        window.localStorage.setItem(key, val);
+      } catch (_e) {
+        // Ignora
+      }
+    }
+
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) {
           return null;
         }
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (err) {
+        console.error('Errore inizializzazione Firestore su master.html:', err);
+        return null;
       }
+    }
 
-      function safeSetItem(key, val) {
-        try {
-          if (typeof window.localStorage === 'undefined') return;
-          window.localStorage.setItem(key, val);
-        } catch (_e) {
-          // Ignora
-        }
-      }
+    var firestoreDb = initFirestore();
+    var unsubscribeRoom = null;
 
-      function escapeHtml(value) {
-        return String(value == null ? '' : value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
+    function getRoomDocRef(roomCode) {
+      if (!firestoreDb) return null;
+      var cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      return doc(firestoreDb, 'stanze', cleanRoom);
+    }
 
-      function readAccess() {
-        try {
-          var raw = safeGetItem(ACCESS_KEY);
-          if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master' };
-          var parsed = JSON.parse(raw);
-          return {
-            roomCode: String(parsed && parsed.roomCode ? parsed.roomCode : 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
-            masterName: String(parsed && parsed.playerName ? parsed.playerName : 'Master').trim() || 'Master'
-          };
-        } catch (_e) {
-          return { roomCode: 'TAVOLO1', masterName: 'Master' };
-        }
-      }
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
-      function createDefaultCounts() {
+    function readAccess() {
+      try {
+        var raw = safeGetItem(ACCESS_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master' };
+        var parsed = JSON.parse(raw);
         return {
-          assassino: 1,
-          sabotatore: 1,
-          traditore_segreto: 1,
-          investigatore: 1,
-          guardia: 1,
-          martire: 1,
-          mediatore: 1,
-          cacciatore: 1
+          roomCode: String(parsed && parsed.roomCode ? parsed.roomCode : 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          masterName: String(parsed && parsed.playerName ? parsed.playerName : 'Master').trim() || 'Master'
         };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', masterName: 'Master' };
       }
+    }
 
-      function loadState() {
-        var ctx = readAccess();
-        var base = {
-          roomCode: ctx.roomCode,
-          masterName: ctx.masterName,
-          roleCounts: createDefaultCounts(),
-          players: [],
-          speechTone: 'suspense',
-          customSpeechText: '',
-          activeParagraphIndex: 0,
-          assignmentCompleted: false,
-          boardOpened: false,
-          banner: null,
-          chatTab: 'master',
-          playerFilter: 'ALL',
-          masterChat: [],
-          traitorChat: []
-        };
+    function createDefaultCounts() {
+      return {
+        assassino: 1,
+        sabotatore: 1,
+        traditore_segreto: 1,
+        investigatore: 1,
+        guardia: 1,
+        martire: 1,
+        mediatore: 1,
+        cacciatore: 1
+      };
+    }
 
-        try {
-          var raw = safeGetItem(MASTER_KEY);
-          if (raw) {
-            var parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object') {
-              if (parsed.roleCounts && typeof parsed.roleCounts === 'object') {
-                Object.keys(base.roleCounts).forEach(function (k) {
-                  var n = Number(parsed.roleCounts[k]);
-                  if (!isNaN(n)) base.roleCounts[k] = Math.max(0, Math.min(12, n));
-                });
-              }
-              if (Array.isArray(parsed.players)) {
-                base.players = parsed.players.map(function (p, idx) {
-                  return {
-                    id: String(p && p.id ? p.id : ('p_' + idx)),
-                    name: String(p && p.name ? p.name : 'Giocatore').trim() || 'Giocatore',
-                    boardUnlocked: Boolean(p && p.boardUnlocked),
-                    assignedRoleKey: p && p.assignedRoleKey ? p.assignedRoleKey : null
-                  };
-                });
-              }
-              if (parsed.speechTone && SPEECH_TEMPLATES[parsed.speechTone]) {
-                base.speechTone = parsed.speechTone;
-              }
-              if (typeof parsed.customSpeechText === 'string') {
-                base.customSpeechText = parsed.customSpeechText;
-              }
-              if (typeof parsed.activeParagraphIndex === 'number') {
-                base.activeParagraphIndex = Math.max(0, parsed.activeParagraphIndex);
-              }
-              base.assignmentCompleted = Boolean(parsed.assignmentCompleted);
-              base.boardOpened = Boolean(parsed.boardOpened);
-              if (parsed.banner && parsed.banner.text) {
-                base.banner = parsed.banner;
-              }
-            }
-          }
-        } catch (_e) {
-          // Usa stato di base
+    function normalizePlayerList(rawPlayers) {
+      if (!Array.isArray(rawPlayers)) return [];
+      var seen = {};
+      var out = [];
+      rawPlayers.forEach(function (p, idx) {
+        var name = String(p && p.name ? p.name : '').trim();
+        if (!name) return;
+        var key = name.toLowerCase();
+        var roleKey = p && p.assignedRoleKey && ROLE_CATALOG[p.assignedRoleKey] ? p.assignedRoleKey : null;
+        if (seen[key]) {
+          var existing = out[seen[key] - 1];
+          if (p && p.boardUnlocked) existing.boardUnlocked = true;
+          if (roleKey) existing.assignedRoleKey = roleKey;
+          return;
         }
+        out.push({
+          id: String(p && p.id ? p.id : ('p_' + idx + '_' + key)),
+          name: name,
+          boardUnlocked: Boolean(p && p.boardUnlocked),
+          assignedRoleKey: roleKey
+        });
+        seen[key] = out.length;
+      });
+      return out;
+    }
 
-        try {
-          var roomRaw = safeGetItem(ROOM_PREFIX + base.roomCode);
-          if (roomRaw) {
-            var roomParsed = JSON.parse(roomRaw);
-            if (roomParsed && Array.isArray(roomParsed.masterChat)) {
-              base.masterChat = roomParsed.masterChat;
-            }
-            if (roomParsed && Array.isArray(roomParsed.traitorChat)) {
-              base.traitorChat = roomParsed.traitorChat;
-            }
-            if (roomParsed && Array.isArray(roomParsed.players) && base.players.length === 0) {
-              base.players = roomParsed.players.map(function (p, idx) {
-                return {
-                  id: String(p && p.id ? p.id : ('rp_' + idx)),
-                  name: String(p && p.name ? p.name : 'Giocatore').trim() || 'Giocatore',
-                  boardUnlocked: Boolean(p && p.boardUnlocked),
-                  assignedRoleKey: p && p.assignedRoleKey ? p.assignedRoleKey : null
-                };
+    function loadState() {
+      var ctx = readAccess();
+      var base = {
+        roomCode: ctx.roomCode,
+        masterName: ctx.masterName,
+        syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Locale',
+        roleCounts: createDefaultCounts(),
+        players: [],
+        speechTone: 'suspense',
+        customSpeechText: '',
+        activeParagraphIndex: 0,
+        assignmentCompleted: false,
+        boardOpened: false,
+        banner: null,
+        chatTab: 'master',
+        playerFilter: 'ALL',
+        masterChat: [],
+        traitorChat: []
+      };
+
+      try {
+        var raw = safeGetItem(MASTER_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.roleCounts && typeof parsed.roleCounts === 'object') {
+              Object.keys(base.roleCounts).forEach(function (k) {
+                var n = Number(parsed.roleCounts[k]);
+                if (!isNaN(n)) base.roleCounts[k] = Math.max(0, Math.min(12, n));
               });
             }
+            if (Array.isArray(parsed.players) && String(parsed.roomCode || '').toUpperCase() === base.roomCode) {
+              base.players = normalizePlayerList(parsed.players);
+            }
+            if (parsed.speechTone && SPEECH_TEMPLATES[parsed.speechTone]) {
+              base.speechTone = parsed.speechTone;
+            }
+            if (typeof parsed.customSpeechText === 'string') {
+              base.customSpeechText = parsed.customSpeechText;
+            }
+            if (typeof parsed.activeParagraphIndex === 'number') {
+              base.activeParagraphIndex = Math.max(0, parsed.activeParagraphIndex);
+            }
+            if (String(parsed.roomCode || '').toUpperCase() === base.roomCode) {
+              base.assignmentCompleted = Boolean(parsed.assignmentCompleted);
+              base.boardOpened = Boolean(parsed.boardOpened);
+            }
           }
-        } catch (_e) {
-          // Ignora
         }
-
-        return base;
+      } catch (_e) {
+        // Usa stato di base
       }
 
-      var state = loadState();
-      var chatDraft = '';
+      try {
+        var roomRaw = safeGetItem(ROOM_PREFIX + base.roomCode);
+        if (roomRaw) {
+          var roomParsed = JSON.parse(roomRaw);
+          if (roomParsed && Array.isArray(roomParsed.masterChat)) {
+            base.masterChat = roomParsed.masterChat;
+          }
+          if (roomParsed && Array.isArray(roomParsed.traitorChat)) {
+            base.traitorChat = roomParsed.traitorChat;
+          }
+          if (roomParsed && Array.isArray(roomParsed.players) && base.players.length === 0) {
+            base.players = normalizePlayerList(roomParsed.players);
+          }
+        }
+      } catch (_e) {
+        // Ignora
+      }
 
-      function persist() {
-        safeSetItem(MASTER_KEY, JSON.stringify({
-          roomCode: state.roomCode,
-          masterName: state.masterName,
-          roleCounts: state.roleCounts,
-          players: state.players,
-          speechTone: state.speechTone,
-          customSpeechText: state.customSpeechText,
-          activeParagraphIndex: state.activeParagraphIndex,
-          assignmentCompleted: state.assignmentCompleted,
-          boardOpened: state.boardOpened,
-          banner: state.banner
-        }));
+      return base;
+    }
 
-        safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify({
+    var state = loadState();
+    var chatDraft = '';
+
+    function persistLocal() {
+      safeSetItem(MASTER_KEY, JSON.stringify({
+        roomCode: state.roomCode,
+        masterName: state.masterName,
+        roleCounts: state.roleCounts,
+        players: state.players,
+        speechTone: state.speechTone,
+        customSpeechText: state.customSpeechText,
+        activeParagraphIndex: state.activeParagraphIndex,
+        assignmentCompleted: state.assignmentCompleted,
+        boardOpened: state.boardOpened
+      }));
+
+      safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify({
+        roomCode: state.roomCode,
+        masterName: state.masterName,
+        players: state.players,
+        roleCounts: state.roleCounts,
+        masterChat: state.masterChat,
+        traitorChat: state.traitorChat,
+        updatedAt: Date.now()
+      }));
+    }
+
+    async function syncRoomToCloud(extraFields) {
+      persistLocal();
+      var ref = getRoomDocRef(state.roomCode);
+      if (!ref) return;
+      try {
+        var payload = Object.assign({
           roomCode: state.roomCode,
+          masterName: state.masterName || 'Master',
           players: state.players,
           roleCounts: state.roleCounts,
           masterChat: state.masterChat,
           traitorChat: state.traitorChat,
           updatedAt: Date.now()
-        }));
+        }, extraFields || {});
+        await setDoc(ref, payload, { merge: true });
+        state.syncStatus = 'Cloud Firestore attivo';
+      } catch (err) {
+        console.error('Errore scrittura stanza su Firestore:', err);
+        state.syncStatus = 'Locale (controlla permessi Firestore)';
+      }
+    }
+
+    async function subscribeToRoomCloud() {
+      if (typeof unsubscribeRoom === 'function') {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
       }
 
-      function setBanner(text, type) {
-        state.banner = { text: text, type: type || 'info' };
-        persist();
-        render();
+      var ref = getRoomDocRef(state.roomCode);
+      if (!ref) {
+        state.syncStatus = 'Solo locale';
+        return;
       }
 
-      function getParagraphs() {
-        var room = state.roomCode || 'TAVOLO1';
-        var custom = String(state.customSpeechText || '').trim();
-        if (custom) {
-          return custom
-            .split(/\r?\n\s*\r?\n/)
-            .map(function (part) { return part.replace(/\{\{STANZA\}\}/gi, room).trim(); })
-            .filter(Boolean);
+      try {
+        var snap = await getDoc(ref);
+        if (snap.exists()) {
+          applyCloudRoomData(snap.data() || {});
+        } else {
+          await setDoc(ref, {
+            roomCode: state.roomCode,
+            masterName: state.masterName || 'Master',
+            players: state.players,
+            roleCounts: state.roleCounts,
+            masterChat: state.masterChat,
+            traitorChat: state.traitorChat,
+            updatedAt: Date.now()
+          }, { merge: true });
         }
-        var list = SPEECH_TEMPLATES[state.speechTone] || SPEECH_TEMPLATES.suspense;
-        return list.map(function (line) { return line.replace(/\{\{STANZA\}\}/gi, room); });
+      } catch (err) {
+        console.error('Errore lettura iniziale stanza Firestore:', err);
       }
 
-      window.masterSetTone = function (tone) {
-        if (!SPEECH_TEMPLATES[tone]) return;
-        state.speechTone = tone;
-        state.customSpeechText = '';
-        state.activeParagraphIndex = 0;
-        persist();
-        render();
-      };
-
-      window.masterSetCustomSpeech = function (val) {
-        state.customSpeechText = String(val || '');
-        state.activeParagraphIndex = 0;
-        persist();
-        render();
-      };
-
-      window.masterSelectParagraph = function (idx) {
-        var list = getParagraphs();
-        if (!list.length) return;
-        state.activeParagraphIndex = Math.max(0, Math.min(list.length - 1, Number(idx || 0)));
-        persist();
-        render();
-      };
-
-      window.masterCopySpeech = function () {
-        var text = getParagraphs().join('\n\n');
-        if (!text) {
-          setBanner('Nessun testo del discorso da copiare.', 'error');
+      unsubscribeRoom = onSnapshot(ref, function (snap) {
+        state.syncStatus = 'Cloud Firestore attivo';
+        if (!snap.exists()) {
+          render();
           return;
         }
-        try {
-          var ta = document.createElement('textarea');
-          ta.value = text;
-          ta.setAttribute('readonly', '');
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          setBanner('Discorso di assegnazione ruoli copiato negli appunti.', 'success');
-        } catch (_e) {
-          setBanner('Impossibile copiare il testo in questo browser.', 'error');
-        }
-      };
-
-      window.masterAdjustRole = function (roleKey, delta) {
-        if (!ROLE_CATALOG[roleKey]) return;
-        var cur = Number(state.roleCounts[roleKey] || 0);
-        state.roleCounts[roleKey] = Math.max(0, Math.min(12, cur + delta));
-        state.banner = null;
-        persist();
+        applyCloudRoomData(snap.data() || {});
         render();
-      };
+      }, function (err) {
+        console.error('Errore listener stanza Firestore:', err);
+        state.syncStatus = 'Locale (permessi Firestore)';
+        render();
+      });
+    }
 
-      window.masterAddPlayer = function (name) {
-        var clean = String(name || '').trim();
-        if (!clean) {
-          setBanner('Inserisci un nome valido per aggiungere un giocatore.', 'error');
-          return;
+    function applyCloudRoomData(data) {
+      if (!data || typeof data !== 'object') return;
+      if (data.masterName && (!state.masterName || state.masterName === 'Master')) {
+        state.masterName = String(data.masterName);
+      }
+
+      if (Array.isArray(data.players)) {
+        var cloudPlayers = normalizePlayerList(data.players);
+        // Unisce eventuali ruoli già assegnati localmente se il cloud non li ha ancora
+        var prevByName = {};
+        state.players.forEach(function (p) {
+          prevByName[p.name.toLowerCase()] = p;
+        });
+        state.players = cloudPlayers.map(function (cp) {
+          var prev = prevByName[cp.name.toLowerCase()];
+          return {
+            id: cp.id,
+            name: cp.name,
+            boardUnlocked: Boolean(cp.boardUnlocked || (prev && prev.boardUnlocked)),
+            assignedRoleKey: cp.assignedRoleKey || (prev ? prev.assignedRoleKey : null)
+          };
+        });
+        var anyAssigned = state.players.some(function (p) { return Boolean(p.assignedRoleKey); });
+        if (anyAssigned) {
+          state.assignmentCompleted = true;
         }
-        state.players.push({
-          id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name: clean,
+      }
+
+      if (Array.isArray(data.masterChat)) {
+        state.masterChat = data.masterChat;
+      }
+      if (Array.isArray(data.traitorChat)) {
+        state.traitorChat = data.traitorChat;
+      }
+
+      persistLocal();
+    }
+
+    function setBanner(text, type) {
+      state.banner = { text: text, type: type || 'info' };
+      persistLocal();
+      render();
+    }
+
+    function getParagraphs() {
+      var room = state.roomCode || 'TAVOLO1';
+      var custom = String(state.customSpeechText || '').trim();
+      if (custom) {
+        return custom
+          .split(/\r?\n\s*\r?\n/)
+          .map(function (part) { return part.replace(/\{\{STANZA\}\}/gi, room).trim(); })
+          .filter(Boolean);
+      }
+      var list = SPEECH_TEMPLATES[state.speechTone] || SPEECH_TEMPLATES.suspense;
+      return list.map(function (line) { return line.replace(/\{\{STANZA\}\}/gi, room); });
+    }
+
+    window.masterSetTone = function (tone) {
+      if (!SPEECH_TEMPLATES[tone]) return;
+      state.speechTone = tone;
+      state.customSpeechText = '';
+      state.activeParagraphIndex = 0;
+      persistLocal();
+      render();
+    };
+
+    window.masterSetCustomSpeech = function (val) {
+      state.customSpeechText = String(val || '');
+      state.activeParagraphIndex = 0;
+      persistLocal();
+      render();
+    };
+
+    window.masterSelectParagraph = function (idx) {
+      var list = getParagraphs();
+      if (!list.length) return;
+      state.activeParagraphIndex = Math.max(0, Math.min(list.length - 1, Number(idx || 0)));
+      persistLocal();
+      render();
+    };
+
+    window.masterCopySpeech = function () {
+      var text = getParagraphs().join('\n\n');
+      if (!text) {
+        setBanner('Nessun testo del discorso da copiare.', 'error');
+        return;
+      }
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setBanner('Discorso di assegnazione ruoli copiato negli appunti.', 'success');
+      } catch (_e) {
+        setBanner('Impossibile copiare il testo in questo browser.', 'error');
+      }
+    };
+
+    window.masterAdjustRole = async function (roleKey, delta) {
+      if (!ROLE_CATALOG[roleKey]) return;
+      var cur = Number(state.roleCounts[roleKey] || 0);
+      state.roleCounts[roleKey] = Math.max(0, Math.min(12, cur + delta));
+      state.banner = null;
+      await syncRoomToCloud();
+      render();
+    };
+
+    window.masterAddPlayer = async function (name) {
+      var clean = String(name || '').trim();
+      if (!clean) {
+        setBanner('Inserisci un nome valido per aggiungere un giocatore.', 'error');
+        return;
+      }
+      var existingIdx = state.players.findIndex(function (p) {
+        return p.name.toLowerCase() === clean.toLowerCase();
+      });
+      if (existingIdx !== -1) {
+        setBanner('Il giocatore "' + state.players[existingIdx].name + '" è già al tavolo.', 'info');
+        return;
+      }
+      state.players.push({
+        id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: clean,
+        boardUnlocked: false,
+        assignedRoleKey: null
+      });
+      state.assignmentCompleted = false;
+      state.banner = null;
+      await syncRoomToCloud();
+      render();
+    };
+
+    window.masterRemovePlayer = async function (playerId) {
+      state.players = state.players.filter(function (p) { return p.id !== playerId; });
+      state.banner = null;
+      await syncRoomToCloud();
+      render();
+    };
+
+    window.masterAssignRoles = async function () {
+      if (!state.players.length) {
+        setBanner('Aggiungi almeno un giocatore al tavolo prima di assegnare i ruoli.', 'error');
+        return;
+      }
+      var pool = [];
+      Object.keys(ROLE_CATALOG).forEach(function (k) {
+        var cnt = Number(state.roleCounts[k] || 0);
+        for (var i = 0; i < cnt; i++) {
+          pool.push(k);
+        }
+      });
+      if (pool.length < state.players.length) {
+        setBanner(
+          'Hai configurato ' + pool.length + ' ruoli per ' + state.players.length + ' giocatori: aumenta la quantità di uno o più ruoli.',
+          'error'
+        );
+        return;
+      }
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = pool[i];
+        pool[i] = pool[j];
+        pool[j] = tmp;
+      }
+      var chosen = pool.slice(0, state.players.length);
+      state.players = state.players.map(function (p, idx) {
+        return {
+          id: p.id,
+          name: p.name,
+          boardUnlocked: true,
+          assignedRoleKey: chosen[idx]
+        };
+      });
+      state.assignmentCompleted = true;
+      state.banner = {
+        text: 'Assegnati casualmente ' + chosen.length + ' ruoli e sincronizzati sulla stanza ' + state.roomCode + '.',
+        type: 'success'
+      };
+      await syncRoomToCloud({ assignmentCompleted: true });
+      render();
+    };
+
+    window.masterResetRoles = async function () {
+      state.players = state.players.map(function (p) {
+        return {
+          id: p.id,
+          name: p.name,
           boardUnlocked: false,
           assignedRoleKey: null
-        });
-        state.assignmentCompleted = false;
-        state.banner = null;
-        persist();
-        render();
-      };
-
-      window.masterRemovePlayer = function (playerId) {
-        state.players = state.players.filter(function (p) { return p.id !== playerId; });
-        state.banner = null;
-        persist();
-        render();
-      };
-
-      window.masterAssignRoles = function () {
-        if (!state.players.length) {
-          setBanner('Aggiungi almeno un giocatore al tavolo prima di assegnare i ruoli.', 'error');
-          return;
-        }
-        var pool = [];
-        Object.keys(ROLE_CATALOG).forEach(function (k) {
-          var cnt = Number(state.roleCounts[k] || 0);
-          for (var i = 0; i < cnt; i++) {
-            pool.push(k);
-          }
-        });
-        if (pool.length < state.players.length) {
-          setBanner(
-            'Hai configurato ' + pool.length + ' ruoli per ' + state.players.length + ' giocatori: aumenta la quantità di uno o più ruoli.',
-            'error'
-          );
-          return;
-        }
-        for (var i = pool.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var tmp = pool[i];
-          pool[i] = pool[j];
-          pool[j] = tmp;
-        }
-        var chosen = pool.slice(0, state.players.length);
-        state.players = state.players.map(function (p, idx) {
-          return {
-            id: p.id,
-            name: p.name,
-            boardUnlocked: p.boardUnlocked,
-            assignedRoleKey: chosen[idx]
-          };
-        });
-        state.assignmentCompleted = true;
-        setBanner(
-          'Assegnati casualmente ' + chosen.length + ' ruoli: ora puoi aprire la Plancia Master.',
-          'success'
-        );
-      };
-
-      window.masterResetRoles = function () {
-        state.players = state.players.map(function (p) {
-          return {
-            id: p.id,
-            name: p.name,
-            boardUnlocked: p.boardUnlocked,
-            assignedRoleKey: null
-          };
-        });
-        state.assignmentCompleted = false;
-        state.boardOpened = false;
-        setBanner('Ruoli assegnati azzerati: i giocatori restano al tavolo.', 'info');
-      };
-
-      window.masterOpenBoard = function () {
-        if (!state.assignmentCompleted) {
-          setBanner('Assegna prima i ruoli ai giocatori al tavolo per aprire la Plancia Master.', 'error');
-          return;
-        }
-        state.boardOpened = true;
-        setBanner('Plancia Master aperta. Puoi tornare a Cerimonia e Ruoli dal pulsante in alto.', 'success');
-      };
-
-      window.masterOpenCeremony = function () {
-        state.boardOpened = false;
-        state.banner = null;
-        persist();
-        render();
-      };
-
-      window.masterGoTo = function (page) {
-        window.location.href = page;
-      };
-
-      window.masterSetChatTab = function (tab) {
-        state.chatTab = tab === 'traitors' ? 'traitors' : 'master';
-        render();
-      };
-
-      window.masterSetPlayerFilter = function (val) {
-        state.playerFilter = val || 'ALL';
-        render();
-      };
-
-      window.masterUpdateChatDraft = function (val) {
-        chatDraft = String(val || '');
-      };
-
-      window.masterSendChat = function () {
-        var inp = document.getElementById('master-chat-input');
-        var txt = String((inp ? inp.value : chatDraft) || '').trim();
-        if (!txt) return;
-
-        var isTraitor = state.chatTab === 'traitors';
-        var target = isTraitor ? null : (state.playerFilter !== 'ALL' ? state.playerFilter : null);
-        var msg = {
-          id: 'm_' + Date.now(),
-          fromMaster: true,
-          senderName: state.masterName || 'Master',
-          playerName: target,
-          text: txt,
-          createdAt: Date.now()
         };
+      });
+      state.assignmentCompleted = false;
+      state.boardOpened = false;
+      state.banner = {
+        text: 'Ruoli assegnati azzerati: i giocatori restano al tavolo.',
+        type: 'info'
+      };
+      await syncRoomToCloud({ assignmentCompleted: false });
+      render();
+    };
 
-        if (isTraitor) {
-          state.traitorChat = state.traitorChat.concat([msg]).slice(-100);
-        } else {
-          state.masterChat = state.masterChat.concat([msg]).slice(-150);
-        }
+    window.masterOpenBoard = async function () {
+      if (!state.assignmentCompleted) {
+        setBanner('Assegna prima i ruoli ai giocatori al tavolo per aprire la Plancia Master.', 'error');
+        return;
+      }
+      state.boardOpened = true;
+      state.banner = {
+        text: 'Plancia Master aperta. Puoi tornare a Cerimonia e Ruoli dal pulsante in alto.',
+        type: 'success'
+      };
+      await syncRoomToCloud();
+      render();
+    };
 
-        chatDraft = '';
-        if (inp) inp.value = '';
-        persist();
-        render();
+    window.masterOpenCeremony = function () {
+      state.boardOpened = false;
+      state.banner = null;
+      persistLocal();
+      render();
+    };
+
+    window.masterGoTo = function (page) {
+      window.location.href = page;
+    };
+
+    window.masterSetChatTab = function (tab) {
+      state.chatTab = tab === 'traitors' ? 'traitors' : 'master';
+      render();
+    };
+
+    window.masterSetPlayerFilter = function (val) {
+      state.playerFilter = val || 'ALL';
+      render();
+    };
+
+    window.masterUpdateChatDraft = function (val) {
+      chatDraft = String(val || '');
+    };
+
+    window.masterSendChat = async function () {
+      var inp = document.getElementById('master-chat-input');
+      var txt = String((inp ? inp.value : chatDraft) || '').trim();
+      if (!txt) return;
+
+      var isTraitor = state.chatTab === 'traitors';
+      var target = isTraitor ? null : (state.playerFilter !== 'ALL' ? state.playerFilter : null);
+      var msg = {
+        id: 'm_' + Date.now(),
+        fromMaster: true,
+        senderName: state.masterName || 'Master',
+        playerName: target,
+        text: txt,
+        createdAt: Date.now()
       };
 
-      function formatClock(ts) {
-        try {
-          if (!ts) return '';
-          return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        } catch (_e) {
-          return '';
-        }
+      if (isTraitor) {
+        state.traitorChat = state.traitorChat.concat([msg]).slice(-100);
+      } else {
+        state.masterChat = state.masterChat.concat([msg]).slice(-150);
       }
 
-      function renderChatSection() {
-        var isTraitor = state.chatTab === 'traitors';
-        var list = isTraitor
-          ? state.traitorChat
-          : state.masterChat.filter(function (m) {
-              if (state.playerFilter === 'ALL') return true;
-              return String(m.playerName || '').toLowerCase() === String(state.playerFilter).toLowerCase();
-            });
+      chatDraft = '';
+      if (inp) inp.value = '';
+      await syncRoomToCloud();
+      render();
+    };
 
-        var msgsHtml = list.length
-          ? list.map(function (m) {
-              var label = m.fromMaster
-                ? (escapeHtml(m.senderName || 'Master') + (m.playerName ? ' -> ' + escapeHtml(m.playerName) : ' (Tutti)'))
-                : escapeHtml(m.senderName || 'Giocatore');
-              return (
-                '<div class="msg-card ' + (m.fromMaster ? 'from-master' : '') + '">' +
-                  '<div class="msg-head">' +
-                    '<span class="msg-sender">' + label + '</span>' +
-                    '<span>' + escapeHtml(formatClock(m.createdAt)) + '</span>' +
-                  '</div>' +
-                  '<p class="msg-body">' + escapeHtml(m.text) + '</p>' +
-                '</div>'
-              );
-            }).join('')
-          : '<p class="subtext">Nessun messaggio in questo canale.</p>';
-
-        var optionsHtml = state.players.map(function (p) {
-          var sel = String(state.playerFilter).toLowerCase() === String(p.name).toLowerCase() ? ' selected' : '';
-          return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
-        }).join('');
-
-        return (
-          '<section class="card">' +
-            '<div class="section-head">' +
-              '<div>' +
-                '<span class="eyebrow">Console Comunicazioni Master</span>' +
-                '<h2>' + (isTraitor ? 'Osservatorio Chat Traditori' : 'Chat Diretta con i Giocatori') + '</h2>' +
-              '</div>' +
-              '<div class="btn-row">' +
-                '<button type="button" class="' + (!isTraitor ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetChatTab(\'master\')">Chat Diretta Giocatori</button>' +
-                '<button type="button" class="' + (isTraitor ? 'btn-crimson' : 'btn-ghost') + '" onclick="masterSetChatTab(\'traitors\')">Chat Traditori</button>' +
-              '</div>' +
-            '</div>' +
-            (!isTraitor
-              ? '<div style="max-width:340px;margin-bottom:10px;">' +
-                  '<label for="master-filter-sel">Destinatario / Filtro</label>' +
-                  '<select id="master-filter-sel" onchange="masterSetPlayerFilter(this.value)">' +
-                    '<option value="ALL"' + (state.playerFilter === 'ALL' ? ' selected' : '') + '>Tutti i giocatori</option>' +
-                    optionsHtml +
-                  '</select>' +
-                '</div>'
-              : '') +
-            '<div class="chat-box">' + msgsHtml + '</div>' +
-            '<div class="chat-form">' +
-              '<input id="master-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="masterUpdateChatDraft(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();masterSendChat();}" placeholder="' + (isTraitor ? 'Scrivi nella chat dei Traditori...' : 'Scrivi ai giocatori...') + '" />' +
-              '<button type="button" class="btn-gold" onclick="masterSendChat()">Invia</button>' +
-            '</div>' +
-          '</section>'
-        );
+    function formatClock(ts) {
+      try {
+        if (!ts) return '';
+        return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      } catch (_e) {
+        return '';
       }
+    }
 
-      function render() {
-        var root = document.getElementById('master-roles-app');
-        if (!root) return;
+    function renderChatSection() {
+      var isTraitor = state.chatTab === 'traitors';
+      var list = isTraitor
+        ? state.traitorChat
+        : state.masterChat.filter(function (m) {
+            if (state.playerFilter === 'ALL') return true;
+            return String(m.playerName || '').toLowerCase() === String(state.playerFilter).toLowerCase();
+          });
 
-        var totalRoles = Object.keys(ROLE_CATALOG).reduce(function (acc, k) {
-          return acc + Number(state.roleCounts[k] || 0);
-        }, 0);
-
-        var paragraphs = getParagraphs();
-        var activeIdx = paragraphs.length ? Math.min(state.activeParagraphIndex, paragraphs.length - 1) : 0;
-        var syncId = 'SYNC-' + state.roomCode;
-
-        var bannerHtml = state.banner
-          ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
-          : '';
-
-        if (state.boardOpened) {
-          var boardCards = state.players.length
-            ? state.players.map(function (p) {
-                var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
-                return (
-                  '<div class="board-card">' +
-                    '<div>' +
-                      '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
-                      '<div class="player-sub">' + (p.boardUnlocked ? 'Plancia attiva' : 'In attesa sulla stanza') + '</div>' +
-                    '</div>' +
-                    (r
-                      ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>'
-                      : '<span class="player-sub">Nessun ruolo</span>') +
-                  '</div>'
-                );
-              }).join('')
-            : '<p class="subtext">Nessun giocatore collegato a questa stanza.</p>';
-
-          root.innerHTML =
-            '<header class="card header-row">' +
-              '<div>' +
-                '<span class="eyebrow">Plancia Master</span>' +
-                '<h1>Tavolo di ' + escapeHtml(state.roomCode) + '</h1>' +
-                '<p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p>' +
-              '</div>' +
-              '<div class="btn-row">' +
-                '<button type="button" class="btn-gold" onclick="masterOpenCeremony()">Cerimonia e Ruoli</button>' +
-                '<button type="button" class="btn-ghost" onclick="masterGoTo(\'ruoli.html\')">Tutti i Ruoli</button>' +
-                '<button type="button" class="btn-ghost" onclick="masterGoTo(\'index.html\')">Torna ad Accesso</button>' +
-              '</div>' +
-            '</header>' +
-            bannerHtml +
-            '<section class="card">' +
-              '<div class="section-head">' +
-                '<h2>Riepilogo Giocatori e Ruoli al Tavolo (' + state.players.length + ')</h2>' +
-                '<span class="mono">Sessione Attiva</span>' +
-              '</div>' +
-              '<div class="board-grid">' + boardCards + '</div>' +
-            '</section>' +
-            renderChatSection();
-          return;
-        }
-
-        var speechItemsHtml = paragraphs.length
-          ? paragraphs.map(function (line, idx) {
-              var active = idx === activeIdx;
-              return (
-                '<div class="speech-item ' + (active ? 'active' : '') + '" onclick="masterSelectParagraph(' + idx + ')">' +
-                  '<div class="speech-meta">' +
-                    '<span style="color:' + (active ? 'var(--gold)' : 'var(--muted)') + ';">Parte ' + (idx + 1) + ' di ' + paragraphs.length + '</span>' +
-                    (active ? '<span class="pill-gold">In lettura</span>' : '') +
-                  '</div>' +
-                  '<p class="speech-text">' + escapeHtml(line) + '</p>' +
-                '</div>'
-              );
-            }).join('')
-          : '<div class="speech-item"><p class="subtext">Nessun paragrafo disponibile. Scrivi un testo qui sotto oppure scegli un tono.</p></div>';
-
-        var roleCardsHtml = Object.keys(ROLE_CATALOG).map(function (k) {
-          var role = ROLE_CATALOG[k];
-          var cnt = Number(state.roleCounts[k] || 0);
-          return (
-            '<div class="role-box">' +
-              '<div>' +
-                '<div class="role-top">' +
-                  '<span class="role-name">' + escapeHtml(role.name) + '</span>' +
-                  '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.faction) + '</span>' +
+      var msgsHtml = list.length
+        ? list.map(function (m) {
+            var label = m.fromMaster
+              ? (escapeHtml(m.senderName || 'Master') + (m.playerName ? ' -> ' + escapeHtml(m.playerName) : ' (Tutti)'))
+              : escapeHtml(m.senderName || 'Giocatore');
+            return (
+              '<div class="msg-card ' + (m.fromMaster ? 'from-master' : '') + '">' +
+                '<div class="msg-head">' +
+                  '<span class="msg-sender">' + label + '</span>' +
+                  '<span>' + escapeHtml(formatClock(m.createdAt)) + '</span>' +
                 '</div>' +
-                '<p class="role-summary">' + escapeHtml(role.summary) + '</p>' +
-              '</div>' +
-              '<div class="role-counter">' +
-                '<span>Copie:</span>' +
-                '<div class="counter-btns">' +
-                  '<button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', -1)">-</button>' +
-                  '<span class="count-val">' + cnt + '</span>' +
-                  '<button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', 1)">+</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>'
-          );
-        }).join('');
+                '<p class="msg-body">' + escapeHtml(m.text) + '</p>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun messaggio in questo canale.</p>';
 
-        var playersHtml = state.players.length
+      var optionsHtml = state.players.map(function (p) {
+        var sel = String(state.playerFilter).toLowerCase() === String(p.name).toLowerCase() ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
+      }).join('');
+
+      return (
+        '<section class="card">' +
+          '<div class="section-head">' +
+            '<div>' +
+              '<span class="eyebrow">Console Comunicazioni Master</span>' +
+              '<h2>' + (isTraitor ? 'Osservatorio Chat Traditori' : 'Chat Diretta con i Giocatori') + '</h2>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="' + (!isTraitor ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetChatTab(\'master\')">Chat Diretta Giocatori</button>' +
+              '<button type="button" class="' + (isTraitor ? 'btn-crimson' : 'btn-ghost') + '" onclick="masterSetChatTab(\'traitors\')">Chat Traditori</button>' +
+            '</div>' +
+          '</div>' +
+          (!isTraitor
+            ? '<div style="max-width:340px;margin-bottom:10px;">' +
+                '<label for="master-filter-sel">Destinatario / Filtro</label>' +
+                '<select id="master-filter-sel" onchange="masterSetPlayerFilter(this.value)">' +
+                  '<option value="ALL"' + (state.playerFilter === 'ALL' ? ' selected' : '') + '>Tutti i giocatori</option>' +
+                  optionsHtml +
+                '</select>' +
+              '</div>'
+            : '') +
+          '<div class="chat-box">' + msgsHtml + '</div>' +
+          '<div class="chat-form">' +
+            '<input id="master-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="masterUpdateChatDraft(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();masterSendChat();}" placeholder="' + (isTraitor ? 'Scrivi nella chat dei Traditori...' : 'Scrivi ai giocatori...') + '" />' +
+            '<button type="button" class="btn-gold" onclick="masterSendChat()">Invia</button>' +
+          '</div>' +
+        '</section>'
+      );
+    }
+
+    function render() {
+      var root = document.getElementById('master-roles-app');
+      if (!root) return;
+
+      var totalRoles = Object.keys(ROLE_CATALOG).reduce(function (acc, k) {
+        return acc + Number(state.roleCounts[k] || 0);
+      }, 0);
+
+      var paragraphs = getParagraphs();
+      var activeIdx = paragraphs.length ? Math.min(state.activeParagraphIndex, paragraphs.length - 1) : 0;
+      var syncId = 'SYNC-' + state.roomCode;
+
+      var bannerHtml = state.banner
+        ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
+        : '';
+
+      if (state.boardOpened) {
+        var boardCards = state.players.length
           ? state.players.map(function (p) {
-              var role = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
+              var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
               return (
-                '<div class="player-row">' +
+                '<div class="board-card">' +
                   '<div>' +
                     '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
-                    '<div class="player-sub">' +
-                      (role
-                        ? '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.name) + ' (' + escapeHtml(role.faction) + ')</span>'
-                        : 'In attesa di assegnazione ruolo') +
-                    '</div>' +
+                    '<div class="player-sub">' + (p.boardUnlocked ? 'Plancia attiva' : 'In attesa sulla stanza') + '</div>' +
                   '</div>' +
-                  '<button type="button" class="btn-small btn-remove" onclick="masterRemovePlayer(\'' + escapeHtml(p.id) + '\')">Rimuovi</button>' +
+                  (r
+                    ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>'
+                    : '<span class="player-sub">Nessun ruolo</span>') +
                 '</div>'
               );
             }).join('')
-          : '<p class="subtext">Nessun giocatore ancora al tavolo. Aggiungine uno qui sopra per assegnare i ruoli.</p>';
+          : '<p class="subtext">Nessun giocatore collegato a questa stanza.</p>';
 
         root.innerHTML =
           '<header class="card header-row">' +
             '<div>' +
-              '<span class="eyebrow">Pagina Master · Cerimonia e Gestione Ruoli</span>' +
-              '<h1>Cerimonia di Assegnazione Ruoli</h1>' +
-              '<p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p>' +
+              '<span class="eyebrow">Plancia Master · ' + escapeHtml(state.syncStatus) + '</span>' +
+              '<h1>Tavolo di ' + escapeHtml(state.roomCode) + '</h1>' +
+              '<p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p>' +
             '</div>' +
             '<div class="btn-row">' +
-              '<button type="button" class="btn-emerald" onclick="masterOpenBoard()">Vai alla Plancia Master</button>' +
+              '<button type="button" class="btn-gold" onclick="masterOpenCeremony()">Cerimonia e Ruoli</button>' +
               '<button type="button" class="btn-ghost" onclick="masterGoTo(\'ruoli.html\')">Tutti i Ruoli</button>' +
               '<button type="button" class="btn-ghost" onclick="masterGoTo(\'index.html\')">Torna ad Accesso</button>' +
-              '<button type="button" class="btn-gold" onclick="masterAssignRoles()">Assegna Ruoli Casualmente</button>' +
-              '<button type="button" class="btn-ghost" onclick="masterResetRoles()">Azzera Ruoli</button>' +
             '</div>' +
           '</header>' +
           bannerHtml +
-          '<section class="card card-gold">' +
+          '<section class="card">' +
             '<div class="section-head">' +
-              '<div>' +
-                '<span class="eyebrow">Prompter del Master</span>' +
-                '<h2>Discorso di Assegnazione Ruoli</h2>' +
-              '</div>' +
-              '<div class="btn-row">' +
-                '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'suspense' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'suspense\')">Suspense</button>' +
-                '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'solenne' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'solenne\')">Solenne</button>' +
-                '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'rapido' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'rapido\')">Rapido</button>' +
-                '<button type="button" class="btn-ghost" onclick="masterCopySpeech()">Copia Discorso</button>' +
-              '</div>' +
+              '<h2>Riepilogo Giocatori e Ruoli al Tavolo (' + state.players.length + ')</h2>' +
+              '<span class="mono">Sessione Attiva</span>' +
             '</div>' +
-            '<div class="speech-list">' + speechItemsHtml + '</div>' +
-            '<div class="speech-controls">' +
-              '<div class="btn-row">' +
-                '<button type="button" class="btn-ghost" onclick="masterSelectParagraph(' + (activeIdx - 1) + ')"' + (activeIdx <= 0 ? ' disabled' : '') + '>Parte Precedente</button>' +
-                '<button type="button" class="btn-indigo" onclick="masterSelectParagraph(' + (activeIdx + 1) + ')"' + (activeIdx >= paragraphs.length - 1 ? ' disabled' : '') + '>Parte Successiva</button>' +
-              '</div>' +
-              '<span class="subtext">Usa <code>{{STANZA}}</code> nel testo libero per inserire il codice stanza.</span>' +
-            '</div>' +
-            '<div class="custom-speech-box">' +
-              '<label for="master-custom-speech">Discorso personalizzato del Master (separa i paragrafi con una riga vuota)</label>' +
-              '<textarea id="master-custom-speech" rows="3" oninput="masterSetCustomSpeech(this.value)" placeholder="Scrivi qui il tuo discorso per la stanza {{STANZA}}...">' + escapeHtml(state.customSpeechText) + '</textarea>' +
-            '</div>' +
+            '<div class="board-grid">' + boardCards + '</div>' +
           '</section>' +
-          '<div class="two-col">' +
-            '<section class="card">' +
-              '<div class="section-head">' +
-                '<h2>1. Configurazione Ruoli</h2>' +
-                '<span class="subtext">Totale ruoli: <strong style="color:var(--gold);">' + totalRoles + '</strong></span>' +
-              '</div>' +
-              '<div class="roles-grid">' + roleCardsHtml + '</div>' +
-            '</section>' +
-            '<section class="card">' +
-              '<div class="section-head">' +
-                '<h2>2. Giocatori e Ruoli Assegnati (' + state.players.length + ')</h2>' +
-              '</div>' +
-              '<form class="add-form" onsubmit="event.preventDefault(); var inp = document.getElementById(\'master-player-input\'); masterAddPlayer(inp.value); inp.value = \'\';">' +
-                '<input id="master-player-input" type="text" maxlength="24" placeholder="Nome giocatore al tavolo..." />' +
-                '<button type="submit" class="btn-indigo">Aggiungi</button>' +
-              '</form>' +
-              '<div class="player-list">' + playersHtml + '</div>' +
-            '</section>' +
-          '</div>' +
-          '<div class="footer-action">' +
-            '<button type="button" class="btn-emerald-lg" onclick="masterOpenBoard()">Completa e Vai alla Plancia Master</button>' +
-          '</div>';
+          renderChatSection();
+        return;
       }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', render);
-      } else {
-        render();
-      }
-    })();
+      var speechItemsHtml = paragraphs.length
+        ? paragraphs.map(function (line, idx) {
+            var active = idx === activeIdx;
+            return (
+              '<div class="speech-item ' + (active ? 'active' : '') + '" onclick="masterSelectParagraph(' + idx + ')">' +
+                '<div class="speech-meta">' +
+                  '<span style="color:' + (active ? 'var(--gold)' : 'var(--muted)') + ';">Parte ' + (idx + 1) + ' di ' + paragraphs.length + '</span>' +
+                  (active ? '<span class="pill-gold">In lettura</span>' : '') +
+                '</div>' +
+                '<p class="speech-text">' + escapeHtml(line) + '</p>' +
+              '</div>'
+            );
+          }).join('')
+        : '<div class="speech-item"><p class="subtext">Nessun paragrafo disponibile. Scrivi un testo qui sotto oppure scegli un tono.</p></div>';
+
+      var roleCardsHtml = Object.keys(ROLE_CATALOG).map(function (k) {
+        var role = ROLE_CATALOG[k];
+        var cnt = Number(state.roleCounts[k] || 0);
+        return (
+          '<div class="role-box">' +
+            '<div>' +
+              '<div class="role-top">' +
+                '<span class="role-name">' + escapeHtml(role.name) + '</span>' +
+                '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.faction) + '</span>' +
+              '</div>' +
+              '<p class="role-summary">' + escapeHtml(role.summary) + '</p>' +
+            '</div>' +
+            '<div class="role-counter">' +
+              '<span>Copie:</span>' +
+              '<div class="counter-btns">' +
+                '<button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', -1)">-</button>' +
+                '<span class="count-val">' + cnt + '</span>' +
+                '<button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', 1)">+</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      var playersHtml = state.players.length
+        ? state.players.map(function (p) {
+            var role = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
+            return (
+              '<div class="player-row">' +
+                '<div>' +
+                  '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
+                  '<div class="player-sub">' +
+                    (role
+                      ? '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.name) + ' (' + escapeHtml(role.faction) + ')</span>'
+                      : 'In attesa di assegnazione ruolo') +
+                  '</div>' +
+                '</div>' +
+                '<button type="button" class="btn-small btn-remove" onclick="masterRemovePlayer(\'' + escapeHtml(p.id) + '\')">Rimuovi</button>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun giocatore ancora al tavolo. I giocatori che entrano nella stanza compaiono qui in automatico oppure puoi aggiungerli a mano.</p>';
+
+      root.innerHTML =
+        '<header class="card header-row">' +
+          '<div>' +
+            '<span class="eyebrow">Pagina Master · ' + escapeHtml(state.syncStatus) + '</span>' +
+            '<h1>Cerimonia di Assegnazione Ruoli</h1>' +
+            '<p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p>' +
+          '</div>' +
+          '<div class="btn-row">' +
+            '<button type="button" class="btn-emerald" onclick="masterOpenBoard()">Vai alla Plancia Master</button>' +
+            '<button type="button" class="btn-ghost" onclick="masterGoTo(\'ruoli.html\')">Tutti i Ruoli</button>' +
+            '<button type="button" class="btn-ghost" onclick="masterGoTo(\'index.html\')">Torna ad Accesso</button>' +
+            '<button type="button" class="btn-gold" onclick="masterAssignRoles()">Assegna Ruoli Casualmente</button>' +
+            '<button type="button" class="btn-ghost" onclick="masterResetRoles()">Azzera Ruoli</button>' +
+          '</div>' +
+        '</header>' +
+        bannerHtml +
+        '<section class="card card-gold">' +
+          '<div class="section-head">' +
+            '<div>' +
+              '<span class="eyebrow">Prompter del Master</span>' +
+              '<h2>Discorso di Assegnazione Ruoli</h2>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'suspense' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'suspense\')">Suspense</button>' +
+              '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'solenne' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'solenne\')">Solenne</button>' +
+              '<button type="button" class="' + (!state.customSpeechText && state.speechTone === 'rapido' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'rapido\')">Rapido</button>' +
+              '<button type="button" class="btn-ghost" onclick="masterCopySpeech()">Copia Discorso</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="speech-list">' + speechItemsHtml + '</div>' +
+          '<div class="speech-controls">' +
+            '<div class="btn-row">' +
+              '<button type="button" class="btn-ghost" onclick="masterSelectParagraph(' + (activeIdx - 1) + ')"' + (activeIdx <= 0 ? ' disabled' : '') + '>Parte Precedente</button>' +
+              '<button type="button" class="btn-indigo" onclick="masterSelectParagraph(' + (activeIdx + 1) + ')"' + (activeIdx >= paragraphs.length - 1 ? ' disabled' : '') + '>Parte Successiva</button>' +
+            '</div>' +
+            '<span class="subtext">Usa <code>{{STANZA}}</code> nel testo libero per inserire il codice stanza.</span>' +
+          '</div>' +
+          '<div class="custom-speech-box">' +
+            '<label for="master-custom-speech">Discorso personalizzato del Master (separa i paragrafi con una riga vuota)</label>' +
+            '<textarea id="master-custom-speech" rows="3" oninput="masterSetCustomSpeech(this.value)" placeholder="Scrivi qui il tuo discorso per la stanza {{STANZA}}...">' + escapeHtml(state.customSpeechText) + '</textarea>' +
+          '</div>' +
+        '</section>' +
+        '<div class="two-col">' +
+          '<section class="card">' +
+            '<div class="section-head">' +
+              '<h2>1. Configurazione Ruoli</h2>' +
+              '<span class="subtext">Totale ruoli: <strong style="color:var(--gold);">' + totalRoles + '</strong></span>' +
+            '</div>' +
+            '<div class="roles-grid">' + roleCardsHtml + '</div>' +
+          '</section>' +
+          '<section class="card">' +
+            '<div class="section-head">' +
+              '<h2>2. Giocatori e Ruoli Assegnati (' + state.players.length + ')</h2>' +
+            '</div>' +
+            '<form class="add-form" onsubmit="event.preventDefault(); var inp = document.getElementById(\'master-player-input\'); masterAddPlayer(inp.value); inp.value = \'\';">' +
+              '<input id="master-player-input" type="text" maxlength="24" placeholder="Nome giocatore al tavolo..." />' +
+              '<button type="submit" class="btn-indigo">Aggiungi</button>' +
+            '</form>' +
+            '<div class="player-list">' + playersHtml + '</div>' +
+          '</section>' +
+        '</div>' +
+        '<div class="footer-action">' +
+          '<button type="button" class="btn-emerald-lg" onclick="masterOpenBoard()">Completa e Vai alla Plancia Master</button>' +
+        '</div>';
+    }
+
+    render();
+    subscribeToRoomCloud();
   </script>
 </body>
 </html>
