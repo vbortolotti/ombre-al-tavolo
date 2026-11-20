@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
+    // Configurazione tema scuro e colori personalizzati di Tailwind
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -58,6 +59,7 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // Chiavi e costanti per persistenza locale, sessione scheda e sincronizzazione stanza
     const STORAGE_KEY = 'ombre_al_tavolo_v4_clean';
     const TAB_SESSION_KEY = 'ombre_al_tavolo_tab_session_v1';
     const SYNC_CHANNEL_NAME = 'ombre_al_tavolo_sync_v1';
@@ -72,6 +74,7 @@
     let roomUnsubscribe = null;
     let cloudReady = false;
 
+    // Definizione dei ruoli, fazioni e poteri del gioco
     const ROLE_DEFS = {
       investigatore: {
         name: 'Investigatore',
@@ -79,9 +82,8 @@
         factionLabel: 'Fazione Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
         powerName: 'Indagine Approfondita',
-        powerDesc: 'Spendi 1 punto potere per scoprire il ruolo esatto di un giocatore vivo a tua scelta. Puoi usarlo più volte finché hai punti.',
-        cost: 1,
-        usesPerConfrontationLimit: null
+        powerDesc: 'Spendi 1 punto potere per scoprire il ruolo esatto di un giocatore vivo a tua scelta.',
+        cost: 1
       },
       guardia: {
         name: 'Guardia',
@@ -89,9 +91,8 @@
         factionLabel: 'Fazione Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
         powerName: 'Scudo Protettivo',
-        powerDesc: 'Spendi 1 punto potere per proteggere un giocatore vivo (anche te stesso) dal prossimo attacco fino al prossimo turno. Puoi usarlo più volte finché hai punti.',
-        cost: 1,
-        usesPerConfrontationLimit: null
+        powerDesc: 'Spendi 1 punto potere per proteggere un giocatore vivo (anche te stesso) fino al prossimo turno.',
+        cost: 1
       },
       cacciatore: {
         name: 'Cacciatore',
@@ -100,8 +101,7 @@
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
         powerName: 'Colpo Mirato',
         powerDesc: 'Spendi 2 punti potere per eliminare un giocatore sospetto. Se colpisci un innocente, subisci contraccolpo.',
-        cost: 2,
-        usesPerConfrontationLimit: null
+        cost: 2
       },
       martire: {
         name: 'Martire',
@@ -109,9 +109,8 @@
         factionLabel: 'Fazione Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
         powerName: 'Ultima Testimonianza',
-        powerDesc: 'Non hai missioni standard: quando vieni eliminato, puoi dichiarare pubblicamente un ruolo al tavolo prima di uscire.',
-        cost: 0,
-        usesPerConfrontationLimit: 1
+        powerDesc: 'Dichiara pubblicamente un ruolo al tavolo prima o durante un momento chiave della partita.',
+        cost: 0
       },
       assassino: {
         name: 'Assassino',
@@ -119,9 +118,8 @@
         factionLabel: 'Fazione Traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
         powerName: 'Eliminazione Silenziosa',
-        powerDesc: 'Spendi 2 punti potere per eliminare un giocatore vivo. Limite: massimo 1 uccisione prima di ogni confronto/votazione al tavolo.',
-        cost: 2,
-        usesPerConfrontationLimit: 1
+        powerDesc: 'Spendi 2 punti potere per eliminare un giocatore vivo (massimo 1 volta per turno).',
+        cost: 2
       },
       sabotatore: {
         name: 'Sabotatore',
@@ -129,14 +127,26 @@
         factionLabel: 'Fazione Traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
         powerName: 'Intralcio Notturno',
-        powerDesc: 'Spendi 1 punto potere per bloccare l’azione/potere di un giocatore bersaglio nel turno corrente. Puoi usarlo più volte finché hai punti.',
-        cost: 1,
-        usesPerConfrontationLimit: null
+        powerDesc: 'Spendi 1 punto potere per bloccare l’azione/potere di un giocatore bersaglio nel turno corrente.',
+        cost: 1
       }
     };
 
     const PHASES = ['Esplorazione', 'Confronto al Tavolo', 'Votazione'];
 
+    // Quantità predefinita di copie per ciascun ruolo nel mazzo di estrazione
+    function createDefaultRolePool() {
+      return {
+        investigatore: 1,
+        guardia: 1,
+        cacciatore: 1,
+        martire: 0,
+        assassino: 1,
+        sabotatore: 1
+      };
+    }
+
+    // Genera missioni segrete coerenti con la fazione assegnata
     function buildMissionsForFaction(faction) {
       if (faction === 'traditori') {
         return [
@@ -157,6 +167,7 @@
       ];
     }
 
+    // Stato iniziale della partita
     function createInitialState() {
       return {
         roomCode: DEFAULT_ROOM_CODE,
@@ -167,6 +178,8 @@
         inspectingPlayerId: null,
         phase: 'Esplorazione',
         round: 1,
+        rolesAssigned: false,
+        rolePool: createDefaultRolePool(),
         players: [],
         logs: [],
         masterMessages: [],
@@ -265,6 +278,8 @@
         lastUpdatedAt: Number(state.lastUpdatedAt || Date.now()),
         phase: state.phase,
         round: state.round,
+        rolesAssigned: Boolean(state.rolesAssigned),
+        rolePool: state.rolePool || createDefaultRolePool(),
         players: state.players,
         logs: state.logs,
         masterMessages: state.masterMessages,
@@ -341,7 +356,7 @@
         try {
           roomUnsubscribe();
         } catch (err) {
-          // Ignora errore chiusura listener precedente
+          // Ignora chiusura listener precedente
         }
         roomUnsubscribe = null;
       }
@@ -407,6 +422,10 @@
         state.lastUpdatedAt = incomingTs || Date.now();
         if (snapshot.phase) state.phase = snapshot.phase;
         if (typeof snapshot.round === 'number') state.round = snapshot.round;
+        if (typeof snapshot.rolesAssigned === 'boolean') state.rolesAssigned = snapshot.rolesAssigned;
+        if (snapshot.rolePool && typeof snapshot.rolePool === 'object') {
+          state.rolePool = { ...createDefaultRolePool(), ...snapshot.rolePool };
+        }
         if (Array.isArray(snapshot.players)) state.players = snapshot.players;
         if (Array.isArray(snapshot.logs)) state.logs = snapshot.logs;
         if (Array.isArray(snapshot.masterMessages)) state.masterMessages = snapshot.masterMessages;
@@ -418,6 +437,8 @@
           lastUpdatedAt: state.lastUpdatedAt,
           phase: state.phase,
           round: state.round,
+          rolesAssigned: state.rolesAssigned,
+          rolePool: state.rolePool,
           players: state.players,
           logs: state.logs,
           masterMessages: state.masterMessages,
@@ -450,7 +471,7 @@
       }
     }
 
-    async function pullRemoteSnapshot() {
+    async function pullRemoteSnapshot(sourceLabel = 'poll') {
       if (isRemoteApplying) return;
       const roomCode = normalizeRoomCode(state.roomCode);
 
@@ -523,7 +544,7 @@
         clearInterval(syncPollTimer);
       }
       syncPollTimer = setInterval(() => {
-        pullRemoteSnapshot();
+        pullRemoteSnapshot('poll');
       }, SYNC_POLL_INTERVAL_MS);
     }
 
@@ -562,6 +583,8 @@
           lastUpdatedAt: state.lastUpdatedAt,
           phase: state.phase,
           round: state.round,
+          rolesAssigned: state.rolesAssigned,
+          rolePool: state.rolePool,
           players: state.players,
           logs: state.logs,
           masterMessages: state.masterMessages,
@@ -616,6 +639,69 @@
       return state.players.find(p => p.id === id) || null;
     }
 
+    // Gestione fotocamera e selfie opzionale
+    function stopCamera() {
+      if (cameraStream) {
+        try {
+          cameraStream.getTracks().forEach(t => t.stop());
+        } catch (err) {
+          // Ignora
+        }
+        cameraStream = null;
+      }
+    }
+
+    async function startCamera() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setBanner('Fotocamera non supportata in questo browser: puoi caricare un’immagine o entrare senza foto.', 'info');
+          return;
+        }
+        stopCamera();
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        });
+        const videoEl = document.getElementById('camera-preview');
+        const snapBtn = document.getElementById('btn-snap-selfie');
+        if (videoEl) {
+          videoEl.srcObject = cameraStream;
+          videoEl.classList.remove('hidden');
+          await videoEl.play();
+        }
+        if (snapBtn) {
+          snapBtn.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error('Errore accesso fotocamera:', err);
+        setBanner('Impossibile accedere alla fotocamera. Puoi caricare un’immagine o continuare senza selfie.', 'error');
+      }
+    }
+
+    function snapSelfie() {
+      const videoEl = document.getElementById('camera-preview');
+      if (!videoEl || !videoEl.videoWidth) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = 240;
+      canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      tempSelfieDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      stopCamera();
+      render();
+    }
+
+    function handleSelfieFileUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        tempSelfieDataUrl = typeof reader.result === 'string' ? reader.result : null;
+        render();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Cambio stanza ed uscita libera dalla sessione corrente
     function setRoomCodeAndReload(newCode, customBinId = '') {
       const normalized = normalizeRoomCode(newCode);
       if (customBinId && String(customBinId).trim()) {
@@ -639,7 +725,7 @@
       state.inspectingPlayerId = null;
       initSyncTransport();
       saveState({ skipBump: true });
-      pullRemoteSnapshot();
+      pullRemoteSnapshot('manual');
       setBanner(`Stanza impostata su ${normalized}.`, 'success');
     }
 
@@ -662,20 +748,6 @@
       render();
     }
 
-    function assignBalancedRole(existingPlayers) {
-      const allRoleKeys = Object.keys(ROLE_DEFS);
-      const usedRoles = existingPlayers.map(p => p.roleKey);
-      const unused = allRoleKeys.filter(rk => !usedRoles.includes(rk));
-      if (unused.length > 0) {
-        return unused[Math.floor(Math.random() * unused.length)];
-      }
-      const traitorsCount = existingPlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'traditori').length;
-      const citizensCount = existingPlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'cittadini').length;
-      const desiredFaction = traitorsCount * 2 < citizensCount ? 'traditori' : 'cittadini';
-      const candidates = allRoleKeys.filter(rk => ROLE_DEFS[rk].faction === desiredFaction);
-      return candidates[Math.floor(Math.random() * candidates.length)];
-    }
-
     function createPlayer(name, selfieDataUrl) {
       const cleanName = String(name || '').trim();
       if (!cleanName) {
@@ -691,15 +763,11 @@
         return null;
       }
 
-      const roleKey = assignBalancedRole(state.players);
-      const roleDef = ROLE_DEFS[roleKey];
-      const isMartyr = roleKey === 'martire';
-
       const newPlayer = {
         id: 'pl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: cleanName,
         selfie: selfieDataUrl || null,
-        roleKey,
+        roleKey: null,
         alive: true,
         powerPoints: 1,
         protectedUntilNextTurn: false,
@@ -707,7 +775,7 @@
         limitedUsesThisRound: 0,
         lastInvestigation: null,
         martyrDeclaration: null,
-        missions: isMartyr ? [] : buildMissionsForFaction(roleDef.faction),
+        missions: [],
         pendingSubmissions: [],
         reports: []
       };
@@ -718,254 +786,115 @@
       return newPlayer;
     }
 
-    function startCamera() {
-      const videoEl = document.getElementById('camera-preview');
-      if (!videoEl) return;
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setBanner('Fotocamera non supportata in questo browser: puoi caricare una foto o entrare senza selfie.', 'error');
-        return;
-      }
-
-      stopCamera();
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        .then(stream => {
-          cameraStream = stream;
-          const v = document.getElementById('camera-preview');
-          if (v) {
-            v.srcObject = stream;
-            v.classList.remove('hidden');
-            v.play().catch(() => {});
-          }
-          const snapBtn = document.getElementById('btn-snap-selfie');
-          if (snapBtn) snapBtn.classList.remove('hidden');
-        })
-        .catch(() => {
-          setBanner('Permesso fotocamera negato o non disponibile: puoi caricare un’immagine o proseguire senza selfie.', 'error');
-        });
-    }
-
-    function stopCamera() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-      }
-    }
-
-    function snapSelfie() {
-      const videoEl = document.getElementById('camera-preview');
-      if (!videoEl || !videoEl.videoWidth) {
-        setBanner('Attendi che la fotocamera mostri l’anteprima prima di scattare.', 'error');
-        return;
-      }
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 320;
-        canvas.height = 320;
-        const ctx = canvas.getContext('2d');
-        const size = Math.min(videoEl.videoWidth, videoEl.videoHeight);
-        const sx = (videoEl.videoWidth - size) / 2;
-        const sy = (videoEl.videoHeight - size) / 2;
-        ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, 320, 320);
-        tempSelfieDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        stopCamera();
-        render();
-      } catch (err) {
-        console.error('Errore scatto selfie:', err);
-        setBanner('Impossibile acquisire il selfie.', 'error');
-      }
-    }
-
-    function handleSelfieFileUpload(file) {
-      if (!file) return;
-      if (!file.type.startsWith('image/')) {
-        setBanner('Seleziona un file immagine valido.', 'error');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 320;
-          canvas.height = 320;
-          const ctx = canvas.getContext('2d');
-          const size = Math.min(img.width, img.height);
-          const sx = (img.width - size) / 2;
-          const sy = (img.height - size) / 2;
-          ctx.drawImage(img, sx, sy, size, size, 0, 0, 320, 320);
-          tempSelfieDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-          stopCamera();
-          render();
-        };
-        img.src = ev.target.result;
+    // Selezione quantità ruoli e assegnazione casuale da parte del Master
+    function adjustRolePoolCount(roleKey, delta) {
+      if (!ROLE_DEFS[roleKey]) return;
+      const current = Number(state.rolePool?.[roleKey] || 0);
+      const nextVal = Math.max(0, Math.min(12, current + delta));
+      state.rolePool = {
+        ...createDefaultRolePool(),
+        ...(state.rolePool || {}),
+        [roleKey]: nextVal
       };
-      reader.readAsDataURL(file);
+      saveState();
+      render();
     }
 
-    function submitMission(playerId, missionId, note) {
-      const player = getPlayerById(playerId);
-      if (!player || !player.alive) return;
-      const mission = player.missions.find(m => m.id === missionId);
-      if (!mission) return;
-
-      if (!mission.repeatable && mission.approvedCount > 0) {
-        setBanner('Questa missione è unica ed è già stata completata.', 'error');
-        return;
-      }
-      if (mission.status === 'pending') {
-        setBanner('Hai già inviato questa missione: attendi la verifica del Master.', 'error');
+    function applyRandomRolesToPlayers() {
+      if (state.players.length === 0) {
+        setBanner('Attendi che almeno un giocatore entri al tavolo prima di assegnare i ruoli.', 'error');
         return;
       }
 
-      mission.status = 'pending';
-      player.pendingSubmissions.push({
-        id: 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        missionId: mission.id,
-        missionText: mission.text,
-        points: mission.points,
-        repeatable: mission.repeatable,
-        note: String(note || '').trim(),
-        submittedAt: nowTimeStr()
+      const pool = state.rolePool || createDefaultRolePool();
+      const deck = [];
+      Object.keys(ROLE_DEFS).forEach((rk) => {
+        const count = Math.max(0, Number(pool[rk] || 0));
+        for (let i = 0; i < count; i += 1) {
+          deck.push(rk);
+        }
       });
 
-      addLog(`${player.name} ha inviato una missione per l’approvazione del Master.`);
-      saveState();
-      setBanner('Missione inviata al Master per la verifica.', 'success');
-    }
-
-    function approveSubmission(playerId, submissionId) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      const idx = player.pendingSubmissions.findIndex(s => s.id === submissionId);
-      if (idx === -1) return;
-      const sub = player.pendingSubmissions[idx];
-      player.pendingSubmissions.splice(idx, 1);
-
-      const mission = player.missions.find(m => m.id === sub.missionId);
-      if (mission) {
-        mission.approvedCount = (mission.approvedCount || 0) + 1;
-        mission.status = mission.repeatable ? 'idle' : 'approved';
-      }
-
-      player.powerPoints += sub.points;
-      addLog(`Master ha approvato la missione di ${player.name} (+${sub.points} punto potere).`);
-      saveState();
-      setBanner(`Approvata: ${player.name} ottiene +${sub.points} punto potere.`, 'success');
-    }
-
-    function rejectSubmission(playerId, submissionId) {
-      const player = getPlayerById(playerId);
-      if (!player) return;
-      const idx = player.pendingSubmissions.findIndex(s => s.id === submissionId);
-      if (idx === -1) return;
-      const sub = player.pendingSubmissions[idx];
-      player.pendingSubmissions.splice(idx, 1);
-
-      const mission = player.missions.find(m => m.id === sub.missionId);
-      if (mission && mission.status === 'pending') {
-        mission.status = mission.repeatable ? 'idle' : 'idle';
-      }
-
-      addLog(`Master ha respinto la richiesta di missione di ${player.name}.`);
-      saveState();
-      setBanner(`Richiesta di ${player.name} respinta.`, 'info');
-    }
-
-    function submitReport(playerId, targetId, reason) {
-      const reporter = getPlayerById(playerId);
-      const target = getPlayerById(targetId);
-      if (!reporter || !reporter.alive) return;
-      if (!target || !target.alive) {
-        setBanner('Seleziona un giocatore vivo da segnalare.', 'error');
-        return;
-      }
-      if (target.id === reporter.id) {
-        setBanner('Non puoi segnalare te stesso.', 'error');
-        return;
-      }
-      const cleanReason = String(reason || '').trim();
-      if (!cleanReason) {
-        setBanner('Scrivi il motivo o l’osservazione della segnalazione.', 'error');
+      if (deck.length < state.players.length) {
+        setBanner(
+          `Hai configurato ${deck.length} ruoli nel mazzo ma ci sono ${state.players.length} giocatori al tavolo: aumenta le copie di uno o più ruoli.`,
+          'error'
+        );
         return;
       }
 
-      reporter.reports.push({
-        id: 'rep_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        reporterId: reporter.id,
-        reporterName: reporter.name,
-        targetId: target.id,
-        targetName: target.name,
-        reason: cleanReason,
-        status: 'pending',
-        createdAt: nowTimeStr()
+      // Mescolamento Fisher-Yates
+      for (let i = deck.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = tmp;
+      }
+
+      const extracted = deck.slice(0, state.players.length);
+      state.players.forEach((player, idx) => {
+        const assignedKey = extracted[idx];
+        const rDef = ROLE_DEFS[assignedKey];
+        const isMartyr = assignedKey === 'martire';
+        player.roleKey = assignedKey;
+        player.alive = true;
+        player.powerPoints = 1;
+        player.protectedUntilNextTurn = false;
+        player.blockedThisRound = false;
+        player.limitedUsesThisRound = 0;
+        player.lastInvestigation = null;
+        player.martyrDeclaration = null;
+        player.missions = isMartyr ? [] : buildMissionsForFaction(rDef.faction);
+        player.pendingSubmissions = [];
       });
 
-      addLog(`${reporter.name} ha inviato una segnalazione su ${target.name} al Master.`);
+      state.rolesAssigned = true;
+      state.winner = null;
+      addLog(`Il Master ha estratto e assegnato casualmente i ruoli a ${state.players.length} giocatori al tavolo.`);
       saveState();
-      setBanner(`Segnalazione su ${target.name} inviata al Master.`, 'success');
+      setBanner(`Ruoli assegnati casualmente a tutti i ${state.players.length} giocatori al tavolo.`, 'success');
+      render();
     }
 
-    function resolveReport(reporterId, reportId, outcome) {
-      const reporter = getPlayerById(reporterId);
-      if (!reporter) return;
-      const rep = reporter.reports.find(r => r.id === reportId);
-      if (!rep) return;
-
-      rep.status = outcome === 'valid' ? 'valid' : 'dismissed';
-      if (outcome === 'valid') {
-        reporter.powerPoints += 1;
-        addLog(`Master ha convalidato la segnalazione di ${reporter.name} su ${rep.targetName} (+1 punto potere).`);
-        setBanner(`Segnalazione convalidata: +1 punto potere a ${reporter.name}.`, 'success');
-      } else {
-        addLog(`Master ha archiviato la segnalazione di ${reporter.name} su ${rep.targetName}.`);
-        setBanner('Segnalazione archiviata.', 'info');
-      }
-      saveState();
-    }
-
-    function sendMasterMessage(targetPlayerId, text) {
-      const cleanText = String(text || '').trim();
-      if (!cleanText) {
-        setBanner('Scrivi un messaggio prima di inviarlo.', 'error');
-        return;
-      }
-
-      const targetPlayer = targetPlayerId === 'ALL' ? null : getPlayerById(targetPlayerId);
-      state.masterMessages.unshift({
-        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        targetId: targetPlayerId === 'ALL' ? 'ALL' : targetPlayerId,
-        targetName: targetPlayer ? targetPlayer.name : 'Tutti i Giocatori',
-        text: cleanText,
-        time: nowTimeStr()
-      });
-      if (state.masterMessages.length > 40) {
-        state.masterMessages = state.masterMessages.slice(0, 40);
-      }
-
-      addLog(`Master ha inviato un messaggio a ${targetPlayer ? targetPlayer.name : 'tutti i giocatori'}.`);
-      saveState();
-      setBanner(`Messaggio inviato a ${targetPlayer ? targetPlayer.name : 'tutti i giocatori'}.`, 'success');
-    }
-
-    function useRolePower(actorId, targetId, martyrRoleDeclaration = '') {
+    // Azioni poteri, missioni, segnalazioni e gestione Master
+    function useRolePower(actorId, targetId, martyrDeclarationText = '') {
       const actor = getPlayerById(actorId);
-      if (!actor || !actor.alive) return;
+      if (!actor || !actor.roleKey) return;
       const roleDef = ROLE_DEFS[actor.roleKey];
-      if (!roleDef) return;
 
+      if (actor.roleKey === 'martire') {
+        if (actor.limitedUsesThisRound >= 1) {
+          setBanner('Hai già usato la tua Testimonianza.', 'error');
+          return;
+        }
+        const decl = String(martyrDeclarationText || '').trim();
+        if (!decl) {
+          setBanner('Seleziona un ruolo da dichiarare.', 'error');
+          return;
+        }
+        actor.limitedUsesThisRound += 1;
+        actor.martyrDeclaration = decl;
+        addLog(`${actor.name} (Martire) ha dichiarato pubblicamente il ruolo "${decl}" al tavolo.`);
+        saveState();
+        setBanner(`Hai dichiarato pubblicamente: ${decl}.`, 'success');
+        render();
+        return;
+      }
+
+      if (!actor.alive) {
+        setBanner('Non puoi usare poteri se sei stato eliminato.', 'error');
+        return;
+      }
       if (actor.blockedThisRound) {
-        setBanner('Il tuo potere è bloccato per questo turno (effetto Sabotatore).', 'error');
+        setBanner('Il tuo potere è bloccato per questo turno.', 'error');
         return;
       }
-
-      if (roleDef.usesPerConfrontationLimit && actor.limitedUsesThisRound >= roleDef.usesPerConfrontationLimit) {
-        setBanner('Hai già usato questo potere limitato prima del prossimo confronto/votazione.', 'error');
-        return;
-      }
-
       if (actor.powerPoints < roleDef.cost) {
-        setBanner(`Punti potere insufficienti (servono ${roleDef.cost}, hai ${actor.powerPoints}).`, 'error');
+        setBanner(`Punti potere insufficienti (servono ${roleDef.cost} PT).`, 'error');
+        return;
+      }
+      if (actor.roleKey === 'assassino' && actor.limitedUsesThisRound >= 1) {
+        setBanner('Hai già effettuato un’eliminazione in questo turno.', 'error');
         return;
       }
 
@@ -975,129 +904,226 @@
         return;
       }
 
+      actor.powerPoints -= roleDef.cost;
+      if (actor.roleKey === 'assassino') {
+        actor.limitedUsesThisRound += 1;
+      }
+
       if (actor.roleKey === 'investigatore') {
-        if (target.id === actor.id) {
-          setBanner('Scegli un altro giocatore da indagare.', 'error');
-          return;
-        }
-        actor.powerPoints -= roleDef.cost;
-        const targetRole = ROLE_DEFS[target.roleKey];
+        const tDef = ROLE_DEFS[target.roleKey] || ROLE_DEFS.investigatore;
         actor.lastInvestigation = {
           targetName: target.name,
-          roleName: targetRole.name,
-          factionLabel: targetRole.factionLabel,
-          round: state.round
+          roleName: tDef.name,
+          factionLabel: tDef.factionLabel
         };
-        addLog(`${actor.name} ha speso ${roleDef.cost} punto potere per indagare un giocatore.`);
+        addLog(`${actor.name} ha svolto un’indagine riservata.`);
         saveState();
-        setBanner(`Indagine completata: ${target.name} è ${targetRole.name} (${targetRole.factionLabel}).`, 'success');
+        setBanner(`Indagine completata: ${target.name} ha il ruolo ${tDef.name} (${tDef.factionLabel}).`, 'success');
+        render();
         return;
       }
 
       if (actor.roleKey === 'guardia') {
-        actor.powerPoints -= roleDef.cost;
         target.protectedUntilNextTurn = true;
-        addLog(`${actor.name} ha attivato Scudo Protettivo su ${target.name}.`);
+        addLog(`${actor.name} ha attivato una protezione su ${target.name}.`);
         saveState();
-        setBanner(`Scudo Protettivo attivo su ${target.name} fino al prossimo turno.`, 'success');
+        setBanner(`${target.name} è protetto fino al prossimo turno.`, 'success');
+        render();
         return;
       }
 
       if (actor.roleKey === 'sabotatore') {
-        if (target.id === actor.id) {
-          setBanner('Seleziona un avversario o un altro giocatore da intralciare.', 'error');
-          return;
-        }
-        actor.powerPoints -= roleDef.cost;
         target.blockedThisRound = true;
-        addLog(`${actor.name} ha usato Intralcio Notturno su ${target.name}.`);
+        addLog(`${actor.name} ha intralciato un giocatore durante il turno.`);
         saveState();
-        setBanner(`Intralcio Notturno applicato a ${target.name} per il turno corrente.`, 'success');
+        setBanner(`Hai bloccato il potere di ${target.name} per il turno corrente.`, 'success');
+        render();
         return;
       }
 
-      if (actor.roleKey === 'assassino') {
-        if (target.id === actor.id) {
-          setBanner('Non puoi selezionare te stesso come bersaglio.', 'error');
-          return;
-        }
-        actor.powerPoints -= roleDef.cost;
-        actor.limitedUsesThisRound += 1;
-
+      if (actor.roleKey === 'assassino' || actor.roleKey === 'cacciatore') {
         if (target.protectedUntilNextTurn) {
           target.protectedUntilNextTurn = false;
-          addLog(`Un tentativo notturno su ${target.name} è stato respinto da uno Scudo Protettivo!`);
+          addLog(`Un attacco contro ${target.name} è stato respinto da uno Scudo Protettivo!`);
           saveState();
-          setBanner(`L’attacco su ${target.name} è stato bloccato da una protezione!`, 'info');
+          setBanner(`L’attacco su ${target.name} è stato bloccato dalla protezione.`, 'info');
+          render();
           return;
         }
 
         target.alive = false;
-        addLog(`Notte oscura: ${target.name} è stato eliminato.`);
+        addLog(`${target.name} è stato eliminato durante la notte/azione.`);
+
+        if (actor.roleKey === 'cacciatore') {
+          const targetFaction = ROLE_DEFS[target.roleKey]?.faction;
+          if (targetFaction === 'cittadini') {
+            actor.alive = false;
+            addLog(`${actor.name} (Cacciatore) ha colpito un Cittadino ed è stato eliminato per contraccolpo.`);
+            saveState();
+            checkVictoryCondition();
+            saveState();
+            setBanner(`${target.name} era un Cittadino: hai subito il contraccolpo!`, 'error');
+            render();
+            return;
+          }
+        }
+
         checkVictoryCondition();
         saveState();
         setBanner(`${target.name} è stato eliminato.`, 'success');
+        render();
+      }
+    }
+
+    function submitMission(playerId, missionId, note) {
+      const player = getPlayerById(playerId);
+      if (!player || !player.alive) return;
+      const mission = player.missions.find(m => m.id === missionId);
+      if (!mission) return;
+      if (!mission.repeatable && mission.approvedCount > 0) return;
+      if (mission.status === 'pending') return;
+
+      mission.status = 'pending';
+      const subId = 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
+      player.pendingSubmissions.push({
+        id: subId,
+        missionId: mission.id,
+        missionText: mission.text,
+        points: mission.points,
+        note: String(note || '').trim(),
+        submittedAt: nowTimeStr()
+      });
+
+      addLog(`${player.name} ha inviato una missione in attesa di approvazione.`);
+      saveState();
+      setBanner('Missione inviata al Master per la verifica.', 'info');
+      render();
+    }
+
+    function approveSubmission(playerId, subId) {
+      const player = getPlayerById(playerId);
+      if (!player) return;
+      const subIdx = player.pendingSubmissions.findIndex(s => s.id === subId);
+      if (subIdx === -1) return;
+      const [sub] = player.pendingSubmissions.splice(subIdx, 1);
+
+      player.powerPoints += sub.points;
+      const mission = player.missions.find(m => m.id === sub.missionId);
+      if (mission) {
+        mission.approvedCount = (mission.approvedCount || 0) + 1;
+        mission.status = mission.repeatable ? 'idle' : 'completed';
+      }
+
+      addLog(`Master ha approvato la missione di ${player.name} (+${sub.points} PT).`);
+      saveState();
+      render();
+    }
+
+    function rejectSubmission(playerId, subId) {
+      const player = getPlayerById(playerId);
+      if (!player) return;
+      const subIdx = player.pendingSubmissions.findIndex(s => s.id === subId);
+      if (subIdx === -1) return;
+      const [sub] = player.pendingSubmissions.splice(subIdx, 1);
+
+      const mission = player.missions.find(m => m.id === sub.missionId);
+      if (mission) {
+        mission.status = 'idle';
+      }
+
+      addLog(`Master ha respinto la richiesta di missione di ${player.name}.`);
+      saveState();
+      render();
+    }
+
+    function submitReport(reporterId, targetId, reason) {
+      const reporter = getPlayerById(reporterId);
+      const target = getPlayerById(targetId);
+      const cleanReason = String(reason || '').trim();
+      if (!reporter || !reporter.alive) return;
+      if (!target || target.id === reporter.id) {
+        setBanner('Seleziona un altro giocatore valido da segnalare.', 'error');
+        return;
+      }
+      if (!cleanReason) {
+        setBanner('Inserisci un motivo per la segnalazione.', 'error');
         return;
       }
 
-      if (actor.roleKey === 'cacciatore') {
-        if (target.id === actor.id) {
-          setBanner('Seleziona un altro giocatore da colpire.', 'error');
-          return;
-        }
-        actor.powerPoints -= roleDef.cost;
+      const rep = {
+        id: 'rep_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        reporterId: reporter.id,
+        reporterName: reporter.name,
+        targetId: target.id,
+        targetName: target.name,
+        reason: cleanReason,
+        status: 'pending',
+        createdAt: nowTimeStr()
+      };
 
-        if (target.protectedUntilNextTurn) {
-          target.protectedUntilNextTurn = false;
-          addLog(`Il colpo di ${actor.name} su ${target.name} è stato deviato da una protezione.`);
-          saveState();
-          setBanner(`Bersaglio protetto: il colpo su ${target.name} non ha avuto effetto.`, 'info');
-          return;
-        }
+      reporter.reports.push(rep);
+      addLog(`${reporter.name} ha inviato una segnalazione su ${target.name}.`);
+      saveState();
+      setBanner('Segnalazione inviata al Master.', 'info');
+      render();
+    }
 
-        const targetRole = ROLE_DEFS[target.roleKey];
-        target.alive = false;
-        addLog(`${actor.name} ha scoccato un Colpo Mirato contro ${target.name}.`);
+    function resolveReport(reporterId, repId, decision) {
+      const reporter = getPlayerById(reporterId);
+      if (!reporter) return;
+      const rep = reporter.reports.find(r => r.id === repId);
+      if (!rep) return;
 
-        if (targetRole.faction === 'cittadini') {
-          actor.alive = false;
-          addLog(`Contraccolpo! ${target.name} era dei Cittadini: anche ${actor.name} è caduto.`);
-          checkVictoryCondition();
-          saveState();
-          setBanner(`Hai colpito un Cittadino (${target.name}): per il contraccolpo sei stato eliminato.`, 'error');
-        } else {
-          addLog(`${target.name} è stato eliminato dal Colpo Mirato.`);
-          checkVictoryCondition();
-          saveState();
-          setBanner(`Colpo a segno! ${target.name} è stato eliminato.`, 'success');
-        }
+      rep.status = decision;
+      if (decision === 'valid') {
+        reporter.powerPoints += 1;
+        addLog(`Master ha convalidato la segnalazione di ${reporter.name} su ${rep.targetName} (+1 PT).`);
+      } else {
+        addLog(`Master ha archiviato la segnalazione di ${reporter.name} su ${rep.targetName}.`);
+      }
+
+      saveState();
+      render();
+    }
+
+    function sendMasterMessage(targetId, text) {
+      const cleanText = String(text || '').trim();
+      if (!cleanText) {
+        setBanner('Scrivi un messaggio prima di inviarlo.', 'error');
         return;
       }
 
-      if (actor.roleKey === 'martire') {
-        const decl = String(martyrRoleDeclaration || '').trim();
-        if (!decl) {
-          setBanner('Indica un ruolo da dichiarare pubblicamente prima di attivare Ultima Testimonianza.', 'error');
-          return;
-        }
-        actor.limitedUsesThisRound += 1;
-        actor.martyrDeclaration = decl;
-        addLog(`ULTIMA TESTIMONIANZA di ${actor.name}: dichiara pubblicamente il ruolo "${decl}".`);
-        saveState();
-        setBanner(`Hai dichiarato pubblicamente il ruolo "${decl}" al tavolo.`, 'success');
+      let targetName = 'Tutti i Giocatori';
+      if (targetId !== 'ALL') {
+        const p = getPlayerById(targetId);
+        if (!p) return;
+        targetName = p.name;
       }
+
+      state.masterMessages.unshift({
+        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        targetId,
+        targetName,
+        text: cleanText,
+        time: nowTimeStr()
+      });
+
+      addLog(`Master ha inviato un messaggio a ${targetName}.`);
+      saveState();
+      setBanner(`Messaggio inviato a ${targetName}.`, 'success');
+      render();
     }
 
     function togglePlayerAlive(playerId) {
       const player = getPlayerById(playerId);
       if (!player) return;
       player.alive = !player.alive;
-      if (!player.alive) {
-        player.protectedUntilNextTurn = false;
-        addLog(`Master ha segnato ${player.name} come Eliminato.`);
+      if (player.alive) {
+        player.blockedThisRound = false;
       } else {
-        addLog(`Master ha reintegrato ${player.name} come Vivo.`);
+        player.protectedUntilNextTurn = false;
       }
+      addLog(`Master ha impostato ${player.name} come ${player.alive ? 'Vivo' : 'Eliminato'}.`);
       checkVictoryCondition();
       saveState();
       render();
@@ -1113,7 +1139,8 @@
     }
 
     function checkVictoryCondition() {
-      const alivePlayers = state.players.filter(p => p.alive);
+      if (!state.rolesAssigned) return;
+      const alivePlayers = state.players.filter(p => p.alive && p.roleKey);
       if (alivePlayers.length < 2) return;
       const aliveTraitors = alivePlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'traditori').length;
       const aliveCitizens = alivePlayers.filter(p => ROLE_DEFS[p.roleKey]?.faction === 'cittadini').length;
@@ -1170,6 +1197,7 @@
       render();
     }
 
+    // Componenti di interfaccia
     function renderBanner() {
       if (!state.bannerMessage) return '';
       const { text, type } = state.bannerMessage;
@@ -1269,7 +1297,7 @@
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-white">Modalità Master</h2>
                 <p class="text-sm text-gray-400 mt-2 leading-relaxed">
-                  Gestisci turni e fasi, approva o respingi missioni e segnalazioni, invia messaggi ai giocatori e monitora lo stato del tavolo.
+                  Gestisci turni e fasi, estrai casualmente i ruoli, approva missioni e segnalazioni, invia messaggi e monitora il tavolo.
                 </p>
               </div>
               <button
@@ -1288,7 +1316,7 @@
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-white">Modalità Giocatore</h2>
                 <p class="text-sm text-gray-400 mt-2 leading-relaxed">
-                  Registrati con il tuo nome e un selfie opzionale per ricevere un ruolo segreto, completare missioni e attivare i tuoi poteri.
+                  Registrati con il tuo nome e un selfie opzionale per sederti al tavolo, ricevere il tuo ruolo segreto, completare missioni e usare i poteri.
                 </p>
               </div>
               <button
@@ -1452,7 +1480,7 @@
                 type="submit"
                 class="w-full py-3.5 px-4 rounded-xl bg-indigo text-white font-semibold text-sm hover:brightness-110 transition shadow-lg cursor-pointer"
               >
-                Entra e Ricevi il Ruolo Segreto
+                Entra al Tavolo
               </button>
             </form>
           </div>
@@ -1481,6 +1509,66 @@
       const player = getCurrentPlayer();
       if (!player) {
         return renderPlayerJoinScreen();
+      }
+
+      if (!state.rolesAssigned || !player.roleKey) {
+        const displaySyncId = getOrCreateDisplaySyncId(state.roomCode);
+        return `
+          <div class="max-w-3xl w-full mx-auto px-4 py-8 space-y-6">
+            <div class="rounded-2xl bg-surface border border-white/10 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-3.5">
+                ${renderAvatar(player, 'w-12 h-12')}
+                <div>
+                  <h1 class="font-serif text-xl sm:text-2xl font-bold text-white">${escapeHtml(player.name)}</h1>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    Stanza <strong class="text-gold">${escapeHtml(state.roomCode)}</strong> · ID Sync: <strong class="font-mono text-emerald">${escapeHtml(displaySyncId)}</strong>
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="pullRemoteSnapshot('manual')"
+                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
+                >
+                  Aggiorna
+                </button>
+                <button
+                  type="button"
+                  onclick="exitToEntry()"
+                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
+                >
+                  Esci
+                </button>
+              </div>
+            </div>
+
+            ${renderBanner()}
+
+            <div class="rounded-2xl bg-surface border border-gold/30 p-6 sm:p-8 text-center shadow-xl space-y-3">
+              <span class="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gold/15 text-gold border border-gold/30">
+                Sala d'Attesa al Tavolo
+              </span>
+              <h2 class="font-serif text-2xl sm:text-3xl font-bold text-white">Sei seduto al tavolo</h2>
+              <p class="text-sm text-gray-300 max-w-lg mx-auto leading-relaxed">
+                Il Master sta radunando i giocatori e scegliendo i ruoli della partita. Appena il Master avvierà l'assegnazione casuale, qui appariranno il tuo ruolo segreto, i poteri e le missioni.
+              </p>
+              <div class="pt-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+                  Giocatori già al tavolo (${state.players.length})
+                </h3>
+                <div class="flex flex-wrap justify-center gap-2.5">
+                  ${state.players.map(p => `
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-bgdark border border-white/10 text-xs">
+                      ${renderAvatar(p, 'w-6 h-6')}
+                      <span class="font-medium text-gray-200">${escapeHtml(p.name)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
       }
 
       const roleDef = ROLE_DEFS[player.roleKey] || ROLE_DEFS.investigatore;
@@ -1533,18 +1621,6 @@
           ${renderBanner()}
           ${renderVictoryBanner()}
 
-          ${player.blockedThisRound ? `
-            <div class="rounded-xl bg-crimson/15 border border-crimson/40 px-4 py-3 text-sm text-crimson font-medium">
-              Intralcio attivo: il tuo potere è bloccato per il turno corrente.
-            </div>
-          ` : ''}
-
-          ${player.protectedUntilNextTurn ? `
-            <div class="rounded-xl bg-emerald/15 border border-emerald/40 px-4 py-3 text-sm text-emerald font-medium">
-              Scudo Protettivo attivo: sei protetto fino al prossimo turno.
-            </div>
-          ` : ''}
-
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-1 space-y-6">
               <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
@@ -1587,9 +1663,6 @@
                   <p class="text-sm text-gray-400 mt-2">Sei stato eliminato: non puoi più attivare poteri.</p>
                 ` : isMartyr ? `
                   <form onsubmit="handleMartyrSubmit(event, '${player.id}')" class="mt-3 space-y-3">
-                    <p class="text-xs text-gray-400">
-                      Dichiara pubblicamente un ruolo al tavolo (disponibile quando vieni eliminato o in momento chiave).
-                    </p>
                     <select id="martyr-role-select" class="w-full rounded-xl bg-bgdark border border-white/15 px-3 py-2.5 text-sm text-white">
                       ${Object.values(ROLE_DEFS).map(r => `<option value="${escapeAttr(r.name)}">${escapeHtml(r.name)}</option>`).join('')}
                     </select>
@@ -1646,21 +1719,17 @@
 
             <div class="lg:col-span-2 space-y-6">
               <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 class="font-serif text-xl font-bold text-white">Missioni Segrete</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">
-                      Invia il completamento al Master: se approvato, ricevi Punti Potere.
-                    </p>
-                  </div>
-                </div>
+                <h2 class="font-serif text-xl font-bold text-white">Missioni Segrete</h2>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Invia il completamento al Master: se approvato, ricevi Punti Potere.
+                </p>
 
                 ${isMartyr ? `
-                  <div class="p-4 rounded-xl bg-bgdark border border-white/10 text-sm text-gray-300">
+                  <div class="mt-4 p-4 rounded-xl bg-bgdark border border-white/10 text-sm text-gray-300">
                     Come <strong>Martire</strong> non hai missioni standard: il tuo potere speciale è <strong>Ultima Testimonianza</strong>.
                   </div>
                 ` : `
-                  <div class="space-y-3.5">
+                  <div class="mt-4 space-y-3.5">
                     ${player.missions.map(m => {
                       const isDoneUnique = !m.repeatable && m.approvedCount > 0;
                       const isPending = m.status === 'pending';
@@ -1674,25 +1743,18 @@
                               <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-surface2 text-gray-300">
                                 ${m.repeatable ? 'Ripetibile' : 'Unica'}
                               </span>
-                              ${m.approvedCount > 0 ? `
-                                <span class="text-xs font-semibold text-emerald">
-                                  Completata ${m.approvedCount} ${m.approvedCount === 1 ? 'volta' : 'volte'}
-                                </span>
-                              ` : ''}
                             </div>
                             <span class="text-xs font-semibold ${isPending ? 'text-gold' : isDoneUnique ? 'text-emerald' : 'text-gray-400'}">
                               ${isPending ? 'In attesa di verifica' : isDoneUnique ? 'Completata' : 'Disponibile'}
                             </span>
                           </div>
-
                           <p class="text-sm text-gray-100 leading-relaxed">${escapeHtml(m.text)}</p>
-
                           ${player.alive && !isDoneUnique && !isPending ? `
                             <div class="mt-3 flex flex-col sm:flex-row gap-2">
                               <input
                                 id="note-${m.id}"
                                 type="text"
-                                placeholder="Nota opzionale per il Master (es. contesto o dettaglio)..."
+                                placeholder="Nota opzionale per il Master..."
                                 class="flex-1 rounded-xl bg-surface border border-white/10 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo"
                               />
                               <button
@@ -1713,10 +1775,6 @@
 
               <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
                 <h2 class="font-serif text-xl font-bold text-white">Segnala un Giocatore al Master</h2>
-                <p class="text-xs text-gray-400 mt-0.5">
-                  Segnala un comportamento sospetto o un’osservazione emersa al tavolo.
-                </p>
-
                 ${!player.alive ? `
                   <p class="text-sm text-gray-400 mt-3">I giocatori eliminati non possono inviare nuove segnalazioni.</p>
                 ` : `
@@ -1752,23 +1810,6 @@
                     </button>
                   </form>
                 `}
-
-                ${player.reports.length > 0 ? `
-                  <div class="mt-5 pt-4 border-t border-white/10 space-y-2">
-                    <div class="text-xs font-bold uppercase tracking-wider text-gray-400">Le Tue Segnalazioni</div>
-                    ${player.reports.slice().reverse().map(r => `
-                      <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-bgdark border border-white/10 text-xs">
-                        <div>
-                          <span class="font-semibold text-white">Su ${escapeHtml(r.targetName)}:</span>
-                          <span class="text-gray-300 ml-1">${escapeHtml(r.reason)}</span>
-                        </div>
-                        <span class="font-semibold shrink-0 ${r.status === 'valid' ? 'text-emerald' : r.status === 'dismissed' ? 'text-gray-500' : 'text-gold'}">
-                          ${r.status === 'valid' ? 'Convalidata' : r.status === 'dismissed' ? 'Archiviata' : 'In attesa'}
-                        </span>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
               </div>
             </div>
           </div>
@@ -1831,7 +1872,7 @@
               </div>
               <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-2">Plancia del Tavolo</h1>
               <p class="text-xs text-emerald mt-1">
-                ID Sync stanza: <strong class="font-mono text-white">${escapeHtml(displaySyncId)}</strong> · Condividi Codice Stanza <strong class="text-gold">${escapeHtml(state.roomCode)}</strong> con i giocatori
+                ID Sync stanza: <strong class="font-mono text-white">${escapeHtml(displaySyncId)}</strong> · Codice Stanza: <strong class="text-gold">${escapeHtml(state.roomCode)}</strong>
               </p>
             </div>
 
@@ -1871,9 +1912,61 @@
           ${renderVictoryBanner()}
 
           <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 class="font-serif text-xl font-bold text-white">Selezione Ruoli e Assegnazione Casuale</h2>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Scegli quante copie di ciascun ruolo includere, poi estrai casualmente per i ${state.players.length} giocatori al tavolo.
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-3 py-1.5 rounded-full bg-bgdark border border-white/10 text-gray-300">
+                  Mazzo: <strong class="text-gold">${Object.values(state.rolePool || createDefaultRolePool()).reduce((a, b) => a + Number(b || 0), 0)}</strong> / Giocatori: <strong class="text-white">${state.players.length}</strong>
+                </span>
+                <button
+                  type="button"
+                  onclick="applyRandomRolesToPlayers()"
+                  class="px-4 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                >
+                  ${state.rolesAssigned ? 'Riassegna Ruoli Casualmente' : 'Assegna Ruoli Casualmente'}
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              ${Object.entries(ROLE_DEFS).map(([rk, rDef]) => {
+                const count = Number((state.rolePool && state.rolePool[rk]) || 0);
+                return `
+                  <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <div class="font-semibold text-sm text-white">${escapeHtml(rDef.name)}</div>
+                      <span class="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${rDef.badgeClass}">
+                        ${rDef.faction === 'traditori' ? 'Traditore' : 'Cittadino'}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onclick="adjustRolePoolCount('${rk}', -1)"
+                        class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
+                      >-</button>
+                      <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
+                      <button
+                        type="button"
+                        onclick="adjustRolePoolCount('${rk}', 1)"
+                        class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
+                      >+</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
             <div class="flex items-center justify-between mb-4">
               <h2 class="font-serif text-xl font-bold text-white">Giocatori al Tavolo (${state.players.length})</h2>
-              <span class="text-xs text-gray-400">Clicca “Scheda Completa” per ispezionare ruolo, fazione e missioni</span>
+              <span class="text-xs text-gray-400">Clicca “Scheda Completa” per ispezionare ruolo e missioni</span>
             </div>
 
             ${state.players.length === 0 ? `
@@ -1883,7 +1976,7 @@
             ` : `
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 ${state.players.map(p => {
-                  const rDef = ROLE_DEFS[p.roleKey] || ROLE_DEFS.investigatore;
+                  const rDef = p.roleKey ? (ROLE_DEFS[p.roleKey] || ROLE_DEFS.investigatore) : null;
                   const isInspected = state.inspectingPlayerId === p.id;
                   return `
                     <div class="rounded-xl bg-bgdark border ${isInspected ? 'border-gold' : 'border-white/10'} p-4 flex flex-col justify-between gap-4">
@@ -1897,8 +1990,6 @@
                                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full ${p.alive ? 'bg-emerald/15 text-emerald' : 'bg-crimson/15 text-crimson'}">
                                   ${p.alive ? 'Vivo' : 'Eliminato'}
                                 </span>
-                                ${p.protectedUntilNextTurn ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo/15 text-indigo">Protetto</span>` : ''}
-                                ${p.blockedThisRound ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-crimson/15 text-crimson">Bloccato</span>` : ''}
                               </div>
                             </div>
                           </div>
@@ -1909,10 +2000,16 @@
                         </div>
 
                         <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                          <span class="text-gray-400">Ruolo: <strong class="text-gray-200">${escapeHtml(rDef.name)}</strong></span>
-                          <span class="px-2 py-0.5 rounded-full border ${rDef.badgeClass} text-[11px] font-semibold">
-                            ${rDef.faction === 'traditori' ? 'Traditore' : 'Cittadino'}
-                          </span>
+                          <span class="text-gray-400">Ruolo: <strong class="text-gray-200">${rDef ? escapeHtml(rDef.name) : 'Da assegnare'}</strong></span>
+                          ${rDef ? `
+                            <span class="px-2 py-0.5 rounded-full border ${rDef.badgeClass} text-[11px] font-semibold">
+                              ${rDef.faction === 'traditori' ? 'Traditore' : 'Cittadino'}
+                            </span>
+                          ` : `
+                            <span class="px-2 py-0.5 rounded-full bg-surface2 text-gray-400 text-[11px] font-semibold">
+                              In attesa
+                            </span>
+                          `}
                         </div>
                       </div>
 
@@ -1922,13 +2019,11 @@
                             type="button"
                             onclick="adjustPlayerPoints('${p.id}', -1)"
                             class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                            title="Rimuovi 1 punto potere"
                           >-</button>
                           <button
                             type="button"
                             onclick="adjustPlayerPoints('${p.id}', 1)"
                             class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200"
-                            title="Aggiungi 1 punto potere"
                           >+</button>
                           <button
                             type="button"
@@ -1980,7 +2075,6 @@
                           <span class="text-gold font-semibold">+${sub.points} PT · ${escapeHtml(sub.submittedAt)}</span>
                         </div>
                         <p class="text-sm text-gray-200">${escapeHtml(sub.missionText)}</p>
-                        ${sub.note ? `<p class="text-xs text-gray-400 italic">Nota: "${escapeHtml(sub.note)}"</p>` : ''}
                         <div class="flex gap-2 pt-1">
                           <button
                             type="button"
@@ -2024,7 +2118,7 @@
                             onclick="resolveReport('${player.id}', '${rep.id}', 'valid')"
                             class="px-3 py-1.5 rounded-lg bg-emerald text-bgdark text-xs font-semibold hover:brightness-110 transition"
                           >
-                            Convalida (+1 PT a ${escapeHtml(rep.reporterName)})
+                            Convalida (+1 PT)
                           </button>
                           <button
                             type="button"
@@ -2044,8 +2138,6 @@
             <div class="space-y-6">
               <div class="rounded-2xl bg-surface border border-white/10 p-5 shadow-lg">
                 <h2 class="font-serif text-xl font-bold text-white">Invia Messaggio</h2>
-                <p class="text-xs text-gray-400 mt-0.5">Comunica un indizio, esito o avviso a un singolo giocatore o a tutti.</p>
-
                 <form onsubmit="handleMasterMessageSubmit(event)" class="mt-4 space-y-3">
                   <div>
                     <label for="master-msg-target" class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
@@ -2135,9 +2227,6 @@
               <div class="p-3.5 rounded-xl bg-bgdark border border-white/10 text-xs space-y-1.5">
                 <div><strong class="text-gold">${escapeHtml(rDef.powerName)}:</strong> <span class="text-gray-300">${escapeHtml(rDef.powerDesc)}</span></div>
                 <div><strong class="text-gray-400">Stato vitale:</strong> <span class="text-white">${p.alive ? 'Vivo' : 'Eliminato'}</span></div>
-                <div><strong class="text-gray-400">Protezione attiva:</strong> <span class="text-white">${p.protectedUntilNextTurn ? 'Sì' : 'No'}</span></div>
-                <div><strong class="text-gray-400">Bloccato nel turno:</strong> <span class="text-white">${p.blockedThisRound ? 'Sì' : 'No'}</span></div>
-                ${p.martyrDeclaration ? `<div><strong class="text-gold">Dichiarazione Martire:</strong> <span class="text-white">"${escapeHtml(p.martyrDeclaration)}"</span></div>` : ''}
               </div>
             </div>
 
@@ -2230,6 +2319,7 @@
       }
     }
 
+    // Esposizione funzioni usate dagli handler inline nell'HTML generato
     window.clearBanner = clearBanner;
     window.setRoomCodeAndReload = setRoomCodeAndReload;
     window.exitToEntry = exitToEntry;
@@ -2254,6 +2344,8 @@
     window.toggleInspectPlayer = toggleInspectPlayer;
     window.handleMasterMessageSubmit = handleMasterMessageSubmit;
     window.pullRemoteSnapshot = pullRemoteSnapshot;
+    window.adjustRolePoolCount = adjustRolePoolCount;
+    window.applyRandomRolesToPlayers = applyRandomRolesToPlayers;
 
     state = loadState();
     initSyncTransport();
