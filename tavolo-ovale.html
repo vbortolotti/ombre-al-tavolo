@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Tavolo Ovale</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --surface: #151924;
+      --surface-2: #1d2230;
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --gold: #e5b85c;
+      --crimson: #e05260;
+      --emerald: #3ec98c;
+      --indigo: #7c8cff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    .app-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .card-gold {
+      border-color: rgba(229, 184, 92, 0.38);
+    }
+
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: block;
+    }
+
+    h1 {
+      margin: 2px 0 0;
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .subtext {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--emerald);
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(229, 184, 92, 0.35);
+      background: rgba(229, 184, 92, 0.14);
+      color: var(--gold);
+    }
+
+    .badge-open {
+      border-color: rgba(62, 201, 140, 0.45);
+      background: rgba(62, 201, 140, 0.14);
+      color: var(--emerald);
+    }
+
+    .badge-closed {
+      border-color: rgba(224, 82, 96, 0.45);
+      background: rgba(224, 82, 96, 0.14);
+      color: var(--crimson);
+    }
+
+    button, select {
+      font-family: inherit;
+      border-radius: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      transition: opacity 0.15s ease;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.92; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    select {
+      width: 100%;
+      background: var(--bg);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 11px 12px;
+      font-size: 14px;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #0c0e14;
+      border: none;
+      padding: 10px 15px;
+      font-size: 13px;
+    }
+
+    .btn-emerald {
+      background: var(--emerald);
+      color: #0c0e14;
+      border: none;
+      padding: 10px 15px;
+      font-size: 13px;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 12px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .selfie-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .selfie-thumb {
+      width: 84px;
+      height: 84px;
+      border-radius: 16px;
+      border: 2px solid var(--gold);
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .selfie-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .banner {
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .banner-ok {
+      background: rgba(62, 201, 140, 0.14);
+      border-color: rgba(62, 201, 140, 0.4);
+      color: var(--emerald);
+    }
+
+    .banner-warn {
+      background: rgba(229, 184, 92, 0.14);
+      border-color: rgba(229, 184, 92, 0.4);
+      color: var(--gold);
+    }
+
+    .banner-err {
+      background: rgba(224, 82, 96, 0.14);
+      border-color: rgba(224, 82, 96, 0.4);
+      color: var(--crimson);
+    }
+
+    .votes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .vote-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+    }
+  </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+</head>
+<body>
+  <div id="oval-app" class="app-wrap"></div>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    function initDb() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    var db = initDb();
+
+    function readAccess() {
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        var p = JSON.parse(raw);
+        return {
+          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          playerName: String(p.playerName || 'Giocatore').trim() || 'Giocatore'
+        };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+      }
+    }
+
+    var access = readAccess();
+    var state = {
+      roomCode: access.roomCode,
+      playerName: access.playerName,
+      syncStatus: db ? 'Cloud Firestore attivo' : 'Locale',
+      ovalActive: false,
+      ovalRunoffActive: false,
+      ovalRunoffCandidates: [],
+      ovalVotes: [],
+      players: [],
+      playerSelfies: {},
+      selectedTarget: '',
+      useMediatorVote: false,
+      feedback: null
+    };
+
+    function getRoomRef() {
+      if (!db) return null;
+      return doc(db, 'stanze', state.roomCode);
+    }
+
+    function loadLocal() {
+      try {
+        var raw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+        return raw ? JSON.parse(raw) : {};
+      } catch (_e) {
+        return {};
+      }
+    }
+
+    function saveLocal() {
+      try {
+        var cur = loadLocal();
+        var next = Object.assign({}, cur, {
+          roomCode: state.roomCode,
+          ovalActive: state.ovalActive,
+          ovalRunoffActive: state.ovalRunoffActive,
+          ovalRunoffCandidates: state.ovalRunoffCandidates,
+          ovalVotes: state.ovalVotes,
+          players: state.players,
+          playerSelfies: state.playerSelfies,
+          updatedAt: Date.now()
+        });
+        localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(next));
+      } catch (_e) {}
+    }
+
+    function applyRoomData(data) {
+      if (!data || typeof data !== 'object') return;
+      state.ovalActive = Boolean(data.ovalActive);
+      state.ovalRunoffActive = Boolean(data.ovalRunoffActive);
+      state.ovalRunoffCandidates = Array.isArray(data.ovalRunoffCandidates) ? data.ovalRunoffCandidates : [];
+      state.ovalVotes = Array.isArray(data.ovalVotes) ? data.ovalVotes : [];
+      state.players = Array.isArray(data.players) ? data.players : [];
+      state.playerSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
+
+      var candidates = getVotingCandidates();
+      if (!candidates.includes(state.selectedTarget)) {
+        state.selectedTarget = candidates[0] || '';
+      }
+      saveLocal();
+    }
+
+    async function syncRoom(patch) {
+      saveLocal();
+      var ref = getRoomRef();
+      if (!ref) return;
+      try {
+        await setDoc(ref, Object.assign({
+          roomCode: state.roomCode,
+          ovalActive: state.ovalActive,
+          ovalRunoffActive: state.ovalRunoffActive,
+          ovalRunoffCandidates: state.ovalRunoffCandidates,
+          ovalVotes: state.ovalVotes,
+          playerSelfies: state.playerSelfies,
+          updatedAt: Date.now()
+        }, patch || {}), { merge: true });
+        state.syncStatus = 'Cloud Firestore attivo';
+      } catch (_e) {
+        state.syncStatus = 'Locale';
+      }
+    }
+
+    function getMyRoleKey() {
+      var me = state.players.find(function (p) {
+        return String(p.name || '').trim().toLowerCase() === state.playerName.toLowerCase();
+      });
+      return me ? me.assignedRoleKey : null;
+    }
+
+    function getVotingCandidates() {
+      var allNames = state.players
+        .map(function (p) { return String(p.name || '').trim(); })
+        .filter(function (n) {
+          return n && n.toLowerCase() !== state.playerName.toLowerCase();
+        });
+
+      if (state.ovalRunoffActive && Array.isArray(state.ovalRunoffCandidates) && state.ovalRunoffCandidates.length) {
+        var runoffSet = {};
+        state.ovalRunoffCandidates.forEach(function (c) {
+          runoffSet[String(c || '').trim().toLowerCase()] = true;
+        });
+        var filtered = allNames.filter(function (n) { return Boolean(runoffSet[n.toLowerCase()]); });
+        if (filtered.length) return filtered;
+      }
+      return allNames;
+    }
+
+    function getMySelfie() {
+      var key = state.playerName.trim().toLowerCase();
+      return state.playerSelfies[key] || '';
+    }
+
+    window.handleSelfieInput = function (inputEl) {
+      var file = inputEl && inputEl.files && inputEl.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        var img = new Image();
+        img.onload = async function () {
+          var canvas = document.createElement('canvas');
+          var size = 320;
+          canvas.width = size;
+          canvas.height = size;
+          var ctx = canvas.getContext('2d');
+          var minSide = Math.min(img.width, img.height);
+          var sx = (img.width - minSide) / 2;
+          var sy = (img.height - minSide) / 2;
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          var key = state.playerName.trim().toLowerCase();
+          state.playerSelfies[key] = dataUrl;
+          state.feedback = { text: 'Selfie salvato e sincronizzato per la rivelazione sulla TV.', type: 'ok' };
+          await syncRoom();
+          render();
+        };
+        img.src = String(ev.target.result || '');
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.setOvalTarget = function (val) {
+      state.selectedTarget = String(val || '');
+    };
+
+    window.toggleMediatorVote = function (checked) {
+      state.useMediatorVote = Boolean(checked);
+    };
+
+    window.submitOvalVote = async function () {
+      if (!state.ovalActive) {
+        state.feedback = { text: 'Il Tavolo Ovale non è attualmente aperto dal Master.', type: 'err' };
+        render();
+        return;
+      }
+      var candidates = getVotingCandidates();
+      var target = state.selectedTarget || candidates[0] || '';
+      if (!target) {
+        state.feedback = { text: 'Nessun candidato disponibile per il voto.', type: 'err' };
+        render();
+        return;
+      }
+
+      var myKey = state.playerName.trim().toLowerCase();
+      var selfie = getMySelfie();
+      var isMediator = getMyRoleKey() === 'mediatore';
+
+      // Rimuove eventuale voto precedente dello stesso giocatore nello stesso giro
+      var filteredVotes = state.ovalVotes.filter(function (v) {
+        return String(v.voterKey || v.voterName || '').trim().toLowerCase() !== myKey;
+      });
+
+      filteredVotes.push({
+        voterKey: myKey,
+        voterName: state.playerName,
+        voterSelfie: selfie,
+        targetName: target,
+        isRunoff: Boolean(state.ovalRunoffActive),
+        isExtraMediatorVote: Boolean(isMediator && state.useMediatorVote),
+        createdAt: Date.now()
+      });
+
+      if (isMediator && state.useMediatorVote) {
+        filteredVotes.push({
+          voterKey: myKey + '_med',
+          voterName: state.playerName + ' (+1 Mediatore)',
+          voterSelfie: selfie,
+          targetName: target,
+          isRunoff: Boolean(state.ovalRunoffActive),
+          isExtraMediatorVote: true,
+          createdAt: Date.now() + 1
+        });
+      }
+
+      state.ovalVotes = filteredVotes;
+      state.feedback = { text: 'Voto espresso su ' + target + '.', type: 'ok' };
+      await syncRoom({ ovalVotes: state.ovalVotes });
+      render();
+    };
+
+    window.backToPlayerBoard = function () {
+      window.location.href = 'giocatore.html';
+    };
+
+    function escapeHtml(v) {
+      return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function render() {
+      var root = document.getElementById('oval-app');
+      if (!root) return;
+
+      var candidates = getVotingCandidates();
+      if (!candidates.includes(state.selectedTarget)) {
+        state.selectedTarget = candidates[0] || '';
+      }
+
+      var selfie = getMySelfie();
+      var isMediator = getMyRoleKey() === 'mediatore';
+      var myKey = state.playerName.trim().toLowerCase();
+      var hasVoted = state.ovalVotes.some(function (v) {
+        return String(v.voterKey || v.voterName || '').trim().toLowerCase() === myKey;
+      });
+
+      var bannerHtml = state.feedback
+        ? '<div class="banner banner-' + state.feedback.type + '">' + escapeHtml(state.feedback.text) + '</div>'
+        : '';
+
+      var statusBanner = state.ovalActive
+        ? '<div class="banner banner-ok">' +
+            (state.ovalRunoffActive
+              ? 'BALLOTTAGGIO ATTIVO: esprimi il tuo voto tra i due candidati in parità (' + escapeHtml(state.ovalRunoffCandidates.join(' e ')) + ').'
+              : 'TAVOLO OVALE APERTO: carica o scatta il tuo selfie e seleziona chi votare.') +
+          '</div>'
+        : '<div class="banner banner-warn">Tavolo Ovale in pausa o chiuso: in attesa che il Master apra la sessione.</div>';
+
+      var candOptions = candidates.length
+        ? candidates.map(function (c) {
+            return '<option value="' + escapeHtml(c) + '"' + (state.selectedTarget === c ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+          }).join('')
+        : '<option value="">Nessun giocatore votabile</option>';
+
+      var mediator
