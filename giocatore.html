@@ -373,17 +373,17 @@
       assassino: {
         name: 'Assassino',
         faction: 'Traditori',
-        powerDesc: 'Ogni missione completata sblocca un colpo con cui eliminare un giocatore (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
+        powerDesc: 'Può colpire chi vuole (tranne chi è protetto da Scudo). Se in partita c’è il Traditore Segreto, l’Assassino sceglie 2 persone e il Traditore Segreto decide chi eliminare. Costa 1 punto missione e richiede un giro di Tavolo Ovale prima di poter essere riutilizzata.'
       },
       sabotatore: {
         name: 'Sabotatore',
         faction: 'Traditori',
-        powerDesc: 'Puoi bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
+        powerDesc: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
       },
       traditore_segreto: {
         name: 'Traditore Segreto',
         faction: 'Traditori',
-        powerDesc: 'Conosci gli altri Traditori e puoi scegliere a chi rivolgere le abilità dei Traditori (puoi fare missioni anche con gli altri Traditori).'
+        powerDesc: 'Conosci gli altri Traditori e, quando l’Assassino indica 2 bersagli, decidi tu quale dei due eliminare.'
       },
       investigatore: {
         name: 'Investigatore',
@@ -478,6 +478,15 @@
       hunterLastAnswer: null,
       tripleNames: ['', '', ''],
       tripleRoles: ['assassino', 'guardia', 'investigatore'],
+      assassinTarget1: '',
+      assassinTarget2: '',
+      assassinUsedSinceOval: false,
+      ovalRoundCount: 0,
+      shieldedPlayers: [],
+      martyrShieldedPlayers: [],
+      sabotagedPlayers: [],
+      pendingAssassinPair: null,
+      confirmPrompt: null,
       actionResultText: null,
       masterChat: [],
       banner: null
@@ -540,6 +549,14 @@
       if (Array.isArray(data.masterChat)) {
         state.masterChat = data.masterChat;
       }
+      state.shieldedPlayers = Array.isArray(data.shieldedPlayers) ? data.shieldedPlayers : [];
+      state.martyrShieldedPlayers = Array.isArray(data.martyrShieldedPlayers) ? data.martyrShieldedPlayers : [];
+      state.sabotagedPlayers = Array.isArray(data.sabotagedPlayers) ? data.sabotagedPlayers : [];
+      state.ovalRoundCount = Number(data.ovalRoundCount || 0);
+      state.pendingAssassinPair = data.pendingAssassinPair || null;
+      if (typeof data.assassinUsedSinceOval === 'boolean') {
+        state.assassinUsedSinceOval = data.assassinUsedSinceOval;
+      }
 
       if (!state.hunterTargetName) {
         var other = state.players.find(function (p) {
@@ -581,6 +598,12 @@
           players: state.players,
           missionAssignments: nextAssignments,
           masterChat: state.masterChat,
+          shieldedPlayers: state.shieldedPlayers,
+          martyrShieldedPlayers: state.martyrShieldedPlayers,
+          sabotagedPlayers: state.sabotagedPlayers,
+          ovalRoundCount: state.ovalRoundCount,
+          pendingAssassinPair: state.pendingAssassinPair,
+          assassinUsedSinceOval: state.assassinUsedSinceOval,
           updatedAt: Date.now()
         }, extra || {}), { merge: true });
         state.syncStatus = 'Cloud Firestore attivo';
@@ -776,6 +799,277 @@
         .replace(/'/g, '&#39;');
     }
 
+    
+
+    var ASSASSIN_LOW_DIFF_MISSIONS = [
+      'Sussurro Semplice (Molto semplice) — Fai una domanda innocua a un giocatore non Traditore e ringrazialo sorridendo.',
+      'Cenno al Tavolo (Molto semplice) — Fai un cenno d’intesa o un saluto discreto a un altro giocatore durante il giro.',
+      'Piccolo Prestito (Molto semplice) — Chiedi in prestito un oggetto qualunque (es. penna o accendino) e restituiscilo entro due minuti.'
+    ];
+
+    function spendOneMissionPoint() {
+      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
+      if (doneIdx === -1) return false;
+      state.missions[doneIdx].done = false;
+      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+      return true;
+    }
+
+    function isPlayerSabotaged(name) {
+      var k = String(name || '').trim().toLowerCase();
+      return (state.sabotagedPlayers || []).some(function (s) {
+        return String(s || '').trim().toLowerCase() === k;
+      });
+    }
+
+    function removePlayerFromShields(name) {
+      var k = String(name || '').trim().toLowerCase();
+      state.shieldedPlayers = (state.shieldedPlayers || []).filter(function (s) {
+        return String(s || '').trim().toLowerCase() !== k;
+      });
+      state.martyrShieldedPlayers = (state.martyrShieldedPlayers || []).filter(function (s) {
+        return String(s || '').trim().toLowerCase() !== k;
+      });
+    }
+
+    window.requestAbilityConfirm = function (actionKind, targetName, extra) {
+      if (state.missionPoints <= 0) {
+        state.banner = { text: 'Ti serve almeno 1 punto missione per usare questa abilità.', type: 'error' };
+        render();
+        return;
+      }
+      state.confirmPrompt = {
+        actionKind: actionKind,
+        targetName: targetName || '',
+        extra: extra || {}
+      };
+      render();
+    };
+
+    window.cancelAbilityConfirm = function () {
+      state.confirmPrompt = null;
+      render();
+    };
+
+    window.confirmAbilityExecution = async function () {
+      var prompt = state.confirmPrompt;
+      state.confirmPrompt = null;
+      if (!prompt) return;
+
+      if (!spendOneMissionPoint()) {
+        state.banner = { text: 'Nessun punto missione disponibile.', type: 'error' };
+        render();
+        return;
+      }
+
+      var kind = prompt.actionKind;
+      var target = prompt.targetName || '';
+
+      if (kind === 'guardia_scudo') {
+        if (isPlayerSabotaged(state.playerName)) {
+          // Malus silenzioso del Sabotatore: il punto è speso ma lo scudo non viene assegnato e il giocatore non sa del malus
+          state.actionResultText = 'Hai speso 1 punto missione per assegnare lo Scudo Protettivo (valido per 1 notte) a ' + target + '.';
+          state.masterChat = state.masterChat.concat([{
+            id: 'grd_' + Date.now(),
+            fromMaster: false,
+            senderName: state.playerName,
+            playerName: state.playerName,
+            text: '[GUARDIA · SABOTATA SILENZIOSAMENTE] ' + state.playerName + ' ha speso 1 pt su ' + target + ', ma lo scudo NON è stato applicato per sabotaggio.',
+            createdAt: Date.now()
+          }]).slice(-150);
+          state.banner = { text: 'Azione completata (1 punto missione speso).', type: 'info' };
+        } else {
+          if (!state.shieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
+            state.shieldedPlayers.push(target);
+          }
+          state.actionResultText = 'Scudo Protettivo (dura 1 notte) assegnato a ' + target + ' (-1 punto missione).';
+          state.masterChat = state.masterChat.concat([{
+            id: 'grd_' + Date.now(),
+            fromMaster: false,
+            senderName: state.playerName,
+            playerName: state.playerName,
+            text: '[GUARDIA] ' + state.playerName + ' assegna Scudo (1 notte) a ' + target + ' (-1 pt missione).',
+            createdAt: Date.now()
+          }]).slice(-150);
+          state.banner = { text: state.actionResultText, type: 'success' };
+        }
+      } else if (kind === 'investigatore_missione') {
+        var picked = ASSASSIN_LOW_DIFF_MISSIONS[Math.floor(Math.random() * ASSASSIN_LOW_DIFF_MISSIONS.length)];
+        state.actionResultText = 'Missione degli Assassini (bassa difficoltà) rivelata: ' + picked;
+        state.masterChat = state.masterChat.concat([{
+          id: 'inv_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[INVESTIGATORE] ' + state.playerName + ' ha speso 1 pt missione per ottenere una missione Assassini a bassa difficoltà.',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: 'Nuova missione Assassini a bassa difficoltà sbloccata (-1 punto missione).', type: 'success' };
+      } else if (kind === 'martire_rileva') {
+        var pObj = state.players.find(function (p) { return String(p.name || '').toLowerCase() === target.toLowerCase(); });
+        var rName = (pObj && pObj.assignedRoleKey && ROLE_DETAILS[pObj.assignedRoleKey])
+          ? ROLE_DETAILS[pObj.assignedRoleKey].name
+          : 'Ruolo non ancora assegnato';
+        state.actionResultText = 'Rilevazione del Martire: il ruolo di ' + target + ' è ' + rName + ' (-1 punto missione).';
+        state.masterChat = state.masterChat.concat([{
+          id: 'mrt_det_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[MARTIRE · RILEVA RUOLO] ' + state.playerName + ' verifica ' + target + ' -> ' + rName + ' (-1 pt missione).',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: state.actionResultText, type: 'success' };
+      } else if (kind === 'martire_scudo') {
+        if (!state.martyrShieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
+          state.martyrShieldedPlayers.push(target);
+        }
+        state.actionResultText = 'Scudo del Martire assegnato a ' + target + ': resta attivo finché non viene colpito dall’Assassino o dal Sabotatore (-1 punto missione).';
+        state.masterChat = state.masterChat.concat([{
+          id: 'mrt_shd_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[MARTIRE · SCUDO PERSISTENTE] ' + state.playerName + ' protegge ' + target + ' fino a colpo di Assassino o Sabotatore (-1 pt missione).',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: state.actionResultText, type: 'success' };
+      } else if (kind === 'sabotatore_annulla') {
+        if (!state.sabotagedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
+          state.sabotagedPlayers.push(target);
+        }
+        removePlayerFromShields(target);
+        state.actionResultText = 'Hai sabotato ' + target + ': se userà la sua abilità, spenderà il punto ma l’effetto verrà annullato senza che lo sappia (-1 punto missione).';
+        state.masterChat = state.masterChat.concat([{
+          id: 'sab_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[SABOTATORE · MALUS SILENZIOSO] ' + state.playerName + ' sabota ' + target + ' (-1 pt missione).',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: state.actionResultText, type: 'info' };
+      }
+
+      await pushRoomUpdate();
+      render();
+    };
+
+    function hasSecretTraitorInRoom() {
+      return state.players.some(function (p) {
+        return p && p.assignedRoleKey === 'traditore_segreto';
+      });
+    }
+
+    function isPlayerShielded(name) {
+      var k = String(name || '').trim().toLowerCase();
+      return (state.shieldedPlayers || []).some(function (s) {
+        return String(s || '').trim().toLowerCase() === k;
+      });
+    }
+
+    window.setAssassinTarget1 = function (val) {
+      state.assassinTarget1 = String(val || '');
+    };
+
+    window.setAssassinTarget2 = function (val) {
+      state.assassinTarget2 = String(val || '');
+    };
+
+    window.assassinExecuteStrike = async function () {
+      if (state.assignedRoleKey !== 'assassino') return;
+      if (state.missionPoints <= 0) {
+        state.banner = { text: 'Ti serve almeno 1 punto missione per usare l’abilità dell’Assassino.', type: 'error' };
+        render();
+        return;
+      }
+      if (state.assassinUsedSinceOval) {
+        state.banner = { text: 'Hai già usato l’abilità dell’Assassino in questo ciclo: attendi o avvia un giro di Tavolo Ovale per sbloccarla di nuovo.', type: 'error' };
+        render();
+        return;
+      }
+
+      var candidates = state.players.filter(function (p) {
+        return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase();
+      });
+      var t1 = state.assassinTarget1 || (candidates[0] && candidates[0].name) || '';
+      var hasST = hasSecretTraitorInRoom();
+      var t2 = state.assassinTarget2 || (candidates[1] && candidates[1].name) || '';
+
+      if (!t1) {
+        state.banner = { text: 'Seleziona un bersaglio da eliminare.', type: 'error' };
+        render();
+        return;
+      }
+      if (hasST && (!t2 || t1.toLowerCase() === t2.toLowerCase())) {
+        state.banner = { text: 'È presente il Traditore Segreto: devi scegliere 2 persone distinte tra cui deciderà lui.', type: 'error' };
+        render();
+        return;
+      }
+
+      // Consuma 1 punto missione e blocca il riutilizzo fino al prossimo Tavolo Ovale
+      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
+      if (doneIdx !== -1) state.missions[doneIdx].done = false;
+      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+      state.assassinUsedSinceOval = true;
+
+      if (hasST) {
+        state.pendingAssassinPair = {
+          assassinName: state.playerName,
+          targetA: t1,
+          targetB: t2,
+          createdAt: Date.now()
+        };
+        state.actionResultText = 'Hai indicato 2 bersagli (' + t1 + ' e ' + t2 + ') e speso 1 punto missione. Il Traditore Segreto deciderà chi eliminare (abilità bloccata fino al prossimo Tavolo Ovale).';
+        state.masterChat = state.masterChat.concat([{
+          id: 'ass_pair_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[ASSASSINO · SCELTA DOPPIA] ' + state.playerName + ' indica ' + t1 + ' e ' + t2 + ' (1 pt missione speso; in attesa della scelta del Traditore Segreto).',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: 'Scelta inviata al Traditore Segreto. Riutilizzo bloccato fino al prossimo Tavolo Ovale.', type: 'info' };
+      } else {
+        var shielded = isPlayerShielded(t1);
+        state.actionResultText = shielded
+          ? ('Colpo su ' + t1 + ' PARATO dallo Scudo Protettivo! (1 pt missione speso; abilità bloccata fino al prossimo Tavolo Ovale).')
+          : ('Colpo eseguito su ' + t1 + '! Giocatore eliminato (1 pt missione speso; abilità bloccata fino al prossimo Tavolo Ovale).');
+        state.masterChat = state.masterChat.concat([{
+          id: 'ass_hit_' + Date.now(),
+          fromMaster: false,
+          senderName: state.playerName,
+          playerName: state.playerName,
+          text: '[ASSASSINO] ' + state.playerName + ' -> ' + t1 + ': ' + (shielded ? 'PARATO DA SCUDO' : 'ELIMINATO') + ' (1 pt missione speso).',
+          createdAt: Date.now()
+        }]).slice(-150);
+        state.banner = { text: state.actionResultText, type: shielded ? 'info' : 'success' };
+      }
+
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.secretTraitorPickTarget = async function (chosenName) {
+      if (!state.pendingAssassinPair || !chosenName) return;
+      var shielded = isPlayerShielded(chosenName);
+      var pairInfo = state.pendingAssassinPair;
+      state.pendingAssassinPair = null;
+      state.actionResultText = shielded
+        ? ('Hai scelto ' + chosenName + ' tra ' + pairInfo.targetA + ' e ' + pairInfo.targetB + ', ma era protetto da Scudo!')
+        : ('Hai scelto ' + chosenName + ' tra ' + pairInfo.targetA + ' e ' + pairInfo.targetB + ': bersaglio eliminato!');
+      state.masterChat = state.masterChat.concat([{
+        id: 'st_pick_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: '[TRADITORE SEGRETO] ' + state.playerName + ' sceglie di eliminare ' + chosenName + ' (coppia ' + pairInfo.targetA + ' / ' + pairInfo.targetB + ') -> ' + (shielded ? 'PARATO DA SCUDO' : 'ELIMINATO'),
+        createdAt: Date.now()
+      }]).slice(-150);
+      await pushRoomUpdate();
+      render();
+    };
+
     function renderRoleAbilitySection(roleKey) {
       if (!roleKey || !ROLE_DETAILS[roleKey]) return '';
       var role = ROLE_DETAILS[roleKey];
@@ -829,18 +1123,145 @@
         );
       }
 
-      var extraBtn = '';
+      if (roleKey === 'assassino') {
+        var targets = state.players.filter(function (p) {
+          return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase();
+        });
+        var hasST = hasSecretTraitorInRoom();
+        var curT1 = state.assassinTarget1 || (targets[0] && targets[0].name) || '';
+        var curT2 = state.assassinTarget2 || (targets[1] && targets[1].name) || '';
+        var opts1 = targets.map(function (p) {
+          return '<option value="' + escapeHtml(p.name) + '"' + (curT1 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>';
+        }).join('');
+        var opts2 = targets.map(function (p) {
+          return '<option value="' + escapeHtml(p.name) + '"' + (curT2 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>';
+        }).join('');
+        var canUse = state.missionPoints > 0 && !state.assassinUsedSinceOval && targets.length > 0;
+
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row">' +
+              '<strong>Abilità Assassino</strong>' +
+              '<span class="badge badge-Traditori">Punti missione: ' + state.missionPoints + ' · ' + (state.assassinUsedSinceOval ? 'In attesa Tavolo Ovale' : 'Pronta') + '</span>' +
+            '</div>' +
+            '<p class="subtext">' + (hasST
+              ? 'In partita c’è il <strong>Traditore Segreto</strong>: scegli <strong>2 persone</strong> e sarà lui a decidere chi eliminare (esclusi protetti da Scudo). Costa 1 punto missione e si riattiva dopo un giro di <strong>Tavolo Ovale</strong>.'
+              : 'Puoi colpire chi vuoi (tranne chi è protetto da Scudo). Costa 1 punto missione e si riattiva dopo un giro di <strong>Tavolo Ovale</strong>.') + '</p>' +
+            '<div class="ability-grid">' +
+              '<select onchange="setAssassinTarget1(this.value)">' + opts1 + '</select>' +
+              (hasST ? '<select onchange="setAssassinTarget2(this.value)">' + opts2 + '</select>' : '') +
+              '<button type="button" class="btn-gold" ' + (!canUse ? 'disabled' : '') + ' onclick="assassinExecuteStrike()">Usa Colpo Assassino</button>' +
+            '</div>' +
+          '</div>'
+        );
+      }
+
+      if (roleKey === 'traditore_segreto') {
+        var pairBox = '';
+        if (state.pendingAssassinPair && state.pendingAssassinPair.targetA && state.pendingAssassinPair.targetB) {
+          pairBox =
+            '<div class="answer-box answer-yes">' +
+              '<div style="margin-bottom:8px;">L’Assassino (' + escapeHtml(state.pendingAssassinPair.assassinName || 'Assassino') + ') ha indicato due bersagli: scegli chi eliminare:</div>' +
+              '<div class="btn-row">' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + escapeHtml(state.pendingAssassinPair.targetA).replace(/'/g, "\'") + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetA) + '</button>' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + escapeHtml(state.pendingAssassinPair.targetB).replace(/'/g, "\'") + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetB) + '</button>' +
+              '</div>' +
+            '</div>';
+        }
+        return (
+          '<div class="ability-box">' +
+            '<strong>Potere del Ruolo (Traditore Segreto)</strong>' +
+            '<p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' +
+            (pairBox || '<p class="subtext">Nessuna doppia scelta dell’Assassino in attesa al momento.</p>') +
+          '</div>'
+        );
+      }
+
+      var confirmBox = '';
+      if (state.confirmPrompt) {
+        confirmBox =
+          '<div class="answer-box answer-yes" style="margin-bottom:8px;">' +
+            '<div style="margin-bottom:8px;">Sei sicuro? Verrà speso <strong>1 punto missione</strong>' +
+              (state.confirmPrompt.targetName ? ' su <strong>' + escapeHtml(state.confirmPrompt.targetName) + '</strong>' : '') + '.</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="btn-emerald" onclick="confirmAbilityExecution()">Sì</button>' +
+              '<button type="button" class="btn-ghost" onclick="cancelAbilityConfirm()">No</button>' +
+            '</div>' +
+          '</div>';
+      }
+
+      var playerButtons = state.players.map(function (p) {
+        var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+        return '<button type="button" class="btn-ghost" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('' + roleKey + '_TARGET','' + safeN + '')">' + escapeHtml(p.name) + '</button>';
+      }).join('');
+
       if (roleKey === 'guardia') {
-        extraBtn = '<button type="button" class="btn-emerald" onclick="triggerQuickAbility(\'Assegna Scudo Protettivo\')">Assegna Scudo Protettivo</button>';
-      } else if (roleKey === 'assassino') {
-        extraBtn = '<button type="button" class="btn-gold" onclick="triggerQuickAbility(\'Usa Colpo Assassino\')">Usa Colpo Assassino</button>';
-      } else if (roleKey === 'sabotatore') {
-        extraBtn = '<button type="button" class="btn-gold" onclick="triggerQuickAbility(\'Blocca Attivazione Turno\')">Blocca Attivazione Turno</button>';
-      } else if (roleKey === 'investigatore') {
-        extraBtn = '<button type="button" class="btn-indigo" onclick="triggerQuickAbility(\'Indaga Missione Traditore\')">Indaga Missione Traditore</button>';
-      } else if (roleKey === 'martire') {
-        extraBtn = '<button type="button" class="btn-indigo" onclick="triggerQuickAbility(\'Attiva Voce dell’Aldilà (Scudo)\')">Voce dell’Aldilà (Scudo)</button>';
-      } else if (roleKey === 'mediatore') {
+        var gButtons = state.players.map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('guardia_scudo','' + safeN + '')">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
+        }).join('');
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row"><strong>Abilità Guardia (Scudo di 1 Notte)</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
+            '<p class="subtext">Premi il nome del giocatore a cui assegnare lo Scudo Protettivo (dura solo una notte, costa 1 punto missione).</p>' +
+            confirmBox +
+            '<div class="btn-row">' + (gButtons || '<span class="subtext">Nessun giocatore disponibile.</span>') + '</div>' +
+          '</div>'
+        );
+      }
+
+      if (roleKey === 'investigatore') {
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row"><strong>Abilità Investigatore</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
+            '<p class="subtext">Spendi 1 punto missione per ottenere una missione degli Assassini abbastanza semplice da svolgere.</p>' +
+            confirmBox +
+            '<div class="btn-row"><button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('investigatore_missione','')">Ottieni Missione Assassini (Bassa Difficoltà)</button></div>' +
+          '</div>'
+        );
+      }
+
+      if (roleKey === 'martire') {
+        var mRevealBtns = state.players.filter(function (p) {
+          return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase();
+        }).map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_rileva','' + safeN + '')">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
+        }).join('');
+        var mShieldBtns = state.players.map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_scudo','' + safeN + '')">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
+        }).join('');
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row"><strong>Abilità Martire</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
+            '<p class="subtext">Ottieni punti subendo missioni. Con 1 punto puoi rilevare il ruolo di un giocatore o dargli uno Scudo attivo finché non viene colpito dall’Assassino o dal Sabotatore.</p>' +
+            confirmBox +
+            '<div class="btn-row">' + mRevealBtns + '</div>' +
+            '<div class="btn-row">' + mShieldBtns + '</div>' +
+          '</div>'
+        );
+      }
+
+      if (roleKey === 'sabotatore') {
+        var sButtons = state.players.filter(function (p) {
+          return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase();
+        }).map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('sabotatore_annulla','' + safeN + '')">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
+        }).join('');
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row"><strong>Abilità Sabotatore</strong><span class="badge badge-Traditori">Punti missione: ' + state.missionPoints + '</span></div>' +
+            '<p class="subtext">Spendi 1 punto missione per annullare l’abilità del bersaglio: spenderà comunque il punto ma l’effetto non avverrà, senza che il malus venga mai svelato.</p>' +
+            confirmBox +
+            '<div class="btn-row">' + sButtons + '</div>' +
+          '</div>'
+        );
+      }
+
+      var extraBtn = '';
+      if (roleKey === 'mediatore') {
         extraBtn = '<span class="badge badge-Fedeli">Voto Extra +1 Attivo alla Tavola Rotonda</span>';
       }
 
@@ -848,6 +1269,7 @@
         '<div class="ability-box">' +
           '<strong>Potere del Ruolo (' + escapeHtml(role.name) + ')</strong>' +
           '<p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' +
+          confirmBox +
           (extraBtn ? '<div class="btn-row">' + extraBtn + '</div>' : '') +
         '</div>'
       );
@@ -925,8 +1347,9 @@
             '</div>' +
           '</div>' +
           '<div class="btn-row">' +
+            '<button type="button" class="btn-indigo" onclick="window.location.href='abilita.html'">Scheda Abilità</button>' +
             '<button type="button" class="btn-gold" onclick="goToRoles()">Tutti i Ruoli</button>' +
-            '<button type="button" class="btn-ghost" onclick="goToMissionsCatalog()">Catalogo Missioni</button>' +
+            '' +
             '<button type="button" class="btn-ghost" onclick="goToAccess()">Cambia Stanza</button>' +
           '</div>' +
         '</header>' +
