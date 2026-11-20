@@ -42,11 +42,16 @@
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased">
   <div id="player-app" class="max-w-3xl mx-auto px-4 py-8 space-y-6"></div>
 
-  <script>
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
     // Chiavi condivise con la schermata di accesso e la pagina Master
     const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
     const PLAYER_STORAGE_KEY = 'ombre_giocatore_sessione_v1';
-    const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
+    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
+    const DEFAULT_APP_ID = 'ombre-al-tavolo-default';
 
     // Dettagli visuali dei ruoli assegnabili dal Master
     const PLAYER_ROLE_DETAILS = {
@@ -89,6 +94,11 @@
     };
 
     let activeMediaStream = null;
+    let db = null;
+    let auth = null;
+    let appId = DEFAULT_APP_ID;
+    let cloudReady = false;
+    let roomUnsubscribe = null;
 
     // Legge codice stanza e nome giocatore salvati nella pagina di accesso
     function readPlayerAccessContext() {
@@ -106,23 +116,34 @@
       }
     }
 
-    // Cerca un ruolo eventualmente già assegnato dal Master per questo giocatore
-    function readAssignedRoleFromMaster(playerName) {
+    // Legge i dati condivisi della stanza (locale o sincronizzati)
+    function readRoomSyncData(roomCode) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
       try {
-        const raw = localStorage.getItem(MASTER_ROLES_STORAGE_KEY);
-        if (!raw) return null;
+        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
+        if (!raw) return { roomCode: cleanRoom, players: [] };
         const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed.players)) return null;
-        const normalized = String(playerName || '').trim().toLowerCase();
-        const match = parsed.players.find(p => String(p.name || '').trim().toLowerCase() === normalized);
-        if (!match || !match.assignedRoleKey || !PLAYER_ROLE_DETAILS[match.assignedRoleKey]) {
-          return null;
-        }
-        return match.assignedRoleKey;
+        return {
+          roomCode: cleanRoom,
+          players: Array.isArray(parsed.players) ? parsed.players : []
+        };
       } catch (err) {
-        console.error('Errore lettura ruolo assegnato dal Master:', err);
+        console.error('Errore lettura dati stanza sincronizzati:', err);
+        return { roomCode: cleanRoom, players: [] };
+      }
+    }
+
+    // Cerca un ruolo assegnato dal Master per questo giocatore nella stanza
+    function readAssignedRoleFromRoom(roomCode, playerName) {
+      const roomData = readRoomSyncData(roomCode);
+      const normalized = String(playerName || '').trim().toLowerCase();
+      const match = roomData.players.find(
+        p => String(p.name || '').trim().toLowerCase() === normalized
+      );
+      if (!match || !match.assignedRoleKey || !PLAYER_ROLE_DETAILS[match.assignedRoleKey]) {
         return null;
       }
+      return match.assignedRoleKey;
     }
 
     // Crea lo stato iniziale della pagina Giocatore
@@ -133,9 +154,10 @@
         playerName: ctx.playerName,
         selfieDataUrl: null,
         cameraActive: false,
-        boardUnlocked: false, // Prima sessione: chiede il selfie, poi apre la plancia
+        boardUnlocked: false,
         privateCardOpen: false,
-        assignedRoleKey: readAssignedRoleFromMaster(ctx.playerName),
+        assignedRoleKey: readAssignedRoleFromRoom(ctx.roomCode, ctx.playerName),
+        syncLabel: 'Locale',
         banner: null
       };
     }
@@ -151,21 +173,27 @@
             ...base,
             roomCode: ctx.roomCode,
             playerName: ctx.playerName,
-            assignedRoleKey: readAssignedRoleFromMaster(ctx.playerName)
+            assignedRoleKey: readAssignedRoleFromRoom(ctx.roomCode, ctx.playerName)
           };
         }
         const parsed = JSON.parse(raw);
-        const name = ctx.playerName || String(parsed.playerName || 'Giocatore');
+        const sameRoom = String(parsed.roomCode || '').trim().toUpperCase() === ctx.roomCode;
+        const sameName = String(parsed.playerName || '').trim().toLowerCase() === ctx.playerName.toLowerCase();
+        const roleFromRoom = readAssignedRoleFromRoom(ctx.roomCode, ctx.playerName);
+        const keptSelfie = sameRoom && sameName && typeof parsed.selfieDataUrl === 'string'
+          ? parsed.selfieDataUrl
+          : null;
+
         return {
           ...base,
           ...parsed,
           roomCode: ctx.roomCode,
-          playerName: name,
-          selfieDataUrl: typeof parsed.selfieDataUrl === 'string' ? parsed.selfieDataUrl : null,
+          playerName: ctx.playerName,
+          selfieDataUrl: keptSelfie,
           cameraActive: false,
-          boardUnlocked: Boolean(parsed.boardUnlocked && parsed.selfieDataUrl),
-          privateCardOpen: Boolean(parsed.privateCardOpen),
-          assignedRoleKey: parsed.assignedRoleKey || readAssignedRoleFromMaster(name)
+          boardUnlocked: Boolean(sameRoom && sameName && parsed.boardUnlocked && keptSelfie),
+          privateCardOpen: Boolean(roleFromRoom && parsed.privateCardOpen),
+          assignedRoleKey: roleFromRoom
         };
       } catch (err) {
         console.error('Errore caricamento stato giocatore:', err);
@@ -192,6 +220,156 @@
       }
     }
 
+    // Sincronizza il giocatore e il suo selfie nella stanza condivisa
+    async function syncPlayerToRoomRecord() {
+      const cleanRoom = String(playerState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const cleanName = String(playerState.playerName || '').trim() || 'Giocatore';
+      const currentRoom = readRoomSyncData(cleanRoom);
+      const normalized = cleanName.toLowerCase();
+      const idx = currentRoom.players.findIndex(
+        p => String(p.name || '').trim().toLowerCase() === normalized
+      );
+
+      const entry = {
+        id: idx >= 0 && currentRoom.players[idx].id
+          ? currentRoom.players[idx].id
+          : 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: cleanName,
+        hasSelfie: Boolean(playerState.selfieDataUrl),
+        assignedRoleKey: idx >= 0 ? (currentRoom.players[idx].assignedRoleKey || null) : null,
+        updatedAt: Date.now()
+      };
+
+      if (idx >= 0) {
+        currentRoom.players[idx] = { ...currentRoom.players[idx], ...entry };
+      } else {
+        currentRoom.players.push(entry);
+      }
+
+      const payload = {
+        roomCode: cleanRoom,
+        players: currentRoom.players,
+        updatedAt: Date.now()
+      };
+
+      try {
+        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(payload));
+      } catch (err) {
+        console.error('Errore salvataggio stanza locale giocatore:', err);
+      }
+
+      if (cloudReady && db) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
+          await setDoc(ref, payload, { merge: true });
+        } catch (err) {
+          console.error('Errore salvataggio Firestore stanza giocatore:', err);
+        }
+      }
+    }
+
+    // Ascolta in tempo reale i cambiamenti della stanza (es. ruolo assegnato dal Master)
+    function startRoomListener() {
+      const cleanRoom = String(playerState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      if (typeof roomUnsubscribe === 'function') {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+
+      window.addEventListener('storage', evt => {
+        if (evt.key === ROOM_SYNC_PREFIX + cleanRoom) {
+          const nextRole = readAssignedRoleFromRoom(cleanRoom, playerState.playerName);
+          if (nextRole !== playerState.assignedRoleKey) {
+            playerState.assignedRoleKey = nextRole;
+            if (!nextRole) playerState.privateCardOpen = false;
+            savePlayerState();
+            renderPlayerPage();
+          }
+        }
+      });
+
+      if (cloudReady && db) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
+          roomUnsubscribe = onSnapshot(ref, snap => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            const normalizedPayload = {
+              roomCode: cleanRoom,
+              players: Array.isArray(data.players) ? data.players : [],
+              roleCounts: data.roleCounts || {},
+              updatedAt: Number(data.updatedAt || Date.now())
+            };
+            try {
+              localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(normalizedPayload));
+            } catch (err) {
+              console.error('Errore scrittura cache stanza giocatore:', err);
+            }
+            const nextRole = readAssignedRoleFromRoom(cleanRoom, playerState.playerName);
+            if (nextRole !== playerState.assignedRoleKey) {
+              playerState.assignedRoleKey = nextRole;
+              if (!nextRole) playerState.privateCardOpen = false;
+              savePlayerState();
+              renderPlayerPage();
+            }
+          }, err => {
+            console.error('Errore listener Firestore giocatore:', err);
+          });
+        } catch (err) {
+          console.error('Errore avvio listener Firestore giocatore:', err);
+        }
+      }
+    }
+
+    // Inizializza la sincronizzazione cloud se disponibile
+    async function initPlayerCloud() {
+      try {
+        const cfgRaw = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
+        if (!cfgRaw) {
+          playerState.syncLabel = 'Locale';
+          await syncPlayerToRoomRecord();
+          startRoomListener();
+          renderPlayerPage();
+          return;
+        }
+
+        const firebaseConfig = typeof cfgRaw === 'string' ? JSON.parse(cfgRaw) : cfgRaw;
+        if (!firebaseConfig || !firebaseConfig.apiKey) {
+          playerState.syncLabel = 'Locale';
+          await syncPlayerToRoomRecord();
+          startRoomListener();
+          renderPlayerPage();
+          return;
+        }
+
+        if (typeof window.__app_id === 'string' && window.__app_id.trim()) {
+          appId = window.__app_id.trim();
+        }
+
+        const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+
+        if (typeof window.__initial_auth_token === 'string' && window.__initial_auth_token.trim()) {
+          await signInWithCustomToken(auth, window.__initial_auth_token.trim());
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        cloudReady = true;
+        playerState.syncLabel = 'Cloud Attivo';
+        await syncPlayerToRoomRecord();
+        startRoomListener();
+        renderPlayerPage();
+      } catch (err) {
+        console.error('Errore inizializzazione cloud giocatore:', err);
+        playerState.syncLabel = 'Locale';
+        await syncPlayerToRoomRecord();
+        startRoomListener();
+        renderPlayerPage();
+      }
+    }
+
     // Ferma eventuali stream della fotocamera attivi
     function stopCameraStream() {
       if (activeMediaStream && typeof activeMediaStream.getTracks === 'function') {
@@ -215,7 +393,7 @@
     // Avvia la fotocamera frontale per il selfie iniziale
     async function startSelfieCamera() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setPlayerBanner('Fotocamera non disponibile in questo browser: puoi caricare una foto dal dispositivo.', 'error');
+        setPlayerBanner('Fotocamera non disponibile in questo browser: puoi caricare una foto dalla galleria.', 'error');
         return;
       }
 
@@ -261,6 +439,7 @@
         stopCameraStream();
         playerState.banner = { text: 'Selfie acquisito! Ora puoi entrare nella tua plancia.', type: 'success' };
         savePlayerState();
+        syncPlayerToRoomRecord();
         renderPlayerPage();
       } catch (err) {
         console.error('Errore cattura selfie:', err);
@@ -268,11 +447,11 @@
       }
     }
 
-    // Carica un'immagine come selfie da file/galleria
+    // Carica un'immagine come selfie direttamente dalla galleria/archivio
     function handleSelfieFileUpload(file) {
       if (!file) return;
       if (!file.type || !file.type.startsWith('image/')) {
-        setPlayerBanner('Seleziona un file immagine valido per il selfie.', 'error');
+        setPlayerBanner('Seleziona un file immagine valido dalla galleria.', 'error');
         return;
       }
 
@@ -282,8 +461,9 @@
         if (typeof result === 'string') {
           playerState.selfieDataUrl = result;
           stopCameraStream();
-          playerState.banner = { text: 'Foto caricata! Ora puoi entrare nella tua plancia.', type: 'success' };
+          playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi entrare nella tua plancia.', type: 'success' };
           savePlayerState();
+          syncPlayerToRoomRecord();
           renderPlayerPage();
         }
       };
@@ -294,7 +474,7 @@
     }
 
     // Conferma il selfie e reindirizza alla plancia del giocatore
-    function enterPlayerBoardWithSelfie() {
+    async function enterPlayerBoardWithSelfie() {
       if (!playerState.selfieDataUrl) {
         setPlayerBanner('Scatta o carica prima il tuo selfie per proseguire verso la plancia.', 'error');
         return;
@@ -302,11 +482,13 @@
       stopCameraStream();
       playerState.boardUnlocked = true;
       playerState.privateCardOpen = false;
+      playerState.assignedRoleKey = readAssignedRoleFromRoom(playerState.roomCode, playerState.playerName);
       playerState.banner = {
         text: 'Benvenuto sulla plancia. La scheda privata resta bloccata finché il Master non assegna un ruolo.',
         type: 'info'
       };
       savePlayerState();
+      await syncPlayerToRoomRecord();
       renderPlayerPage();
     }
 
@@ -322,7 +504,7 @@
 
     // Controlla/apre la scheda privata SOLO se il Master ha assegnato un ruolo
     function togglePrivateCard() {
-      const roleKey = playerState.assignedRoleKey || readAssignedRoleFromMaster(playerState.playerName);
+      const roleKey = readAssignedRoleFromRoom(playerState.roomCode, playerState.playerName) || playerState.assignedRoleKey;
       playerState.assignedRoleKey = roleKey;
 
       if (!roleKey) {
@@ -338,8 +520,26 @@
     }
 
     // Controlla se il Master ha assegnato un ruolo a questo giocatore
-    function refreshAssignedRoleFromMaster() {
-      const roleKey = readAssignedRoleFromMaster(playerState.playerName);
+    async function refreshAssignedRoleFromMaster() {
+      if (cloudReady && db) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', playerState.roomCode);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            const d = snap.data();
+            localStorage.setItem(ROOM_SYNC_PREFIX + playerState.roomCode, JSON.stringify({
+              roomCode: playerState.roomCode,
+              players: Array.isArray(d.players) ? d.players : [],
+              roleCounts: d.roleCounts || {},
+              updatedAt: Number(d.updatedAt || Date.now())
+            }));
+          }
+        } catch (err) {
+          console.error('Errore aggiornamento ruolo da cloud:', err);
+        }
+      }
+
+      const roleKey = readAssignedRoleFromRoom(playerState.roomCode, playerState.playerName);
       playerState.assignedRoleKey = roleKey;
       if (roleKey) {
         setPlayerBanner('Il Master ti ha assegnato un ruolo: ora puoi aprire la tua scheda privata.', 'success');
@@ -409,7 +609,8 @@
                 <p class="text-xs text-gray-400 mt-1">
                   Giocatore: <strong class="text-gray-200">${escapeHtml(playerState.playerName)}</strong> ·
                   Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
-                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                  <span class="text-gray-300">${escapeHtml(playerState.syncLabel)}</span>
                 </p>
               </div>
               <button
@@ -459,7 +660,6 @@
                     <input
                       type="file"
                       accept="image/*"
-                      capture="user"
                       class="hidden"
                       onchange="if (this.files && this.files[0]) handleSelfieFileUpload(this.files[0]);"
                     />
@@ -497,7 +697,8 @@
                 <h1 class="font-serif text-2xl font-bold text-white">${escapeHtml(playerState.playerName)}</h1>
                 <p class="text-xs text-gray-400">
                   Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
-                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                  <span class="text-gray-300">${escapeHtml(playerState.syncLabel)}</span>
                 </p>
               </div>
             </div>
@@ -605,6 +806,7 @@
     window.goToAccessPage = goToAccessPage;
 
     renderPlayerPage();
+    initPlayerCloud();
   </script>
 </body>
 </html>
