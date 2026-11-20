@@ -32,7 +32,6 @@
     };
   </script>
   <style>
-    /* Stile base per la lettura del discorso e la gestione al tavolo */
     body {
       background-color: #0c0e14;
       color: #f3f4f6;
@@ -43,10 +42,16 @@
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased">
   <div id="master-roles-app" class="max-w-6xl mx-auto px-4 py-8 space-y-6"></div>
 
-  <script>
-    // Chiavi condivise per mantenere coerenti accesso, assegnazione ruoli e pagina Master
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // Chiavi condivise per mantenere coerenti accesso, sincronizzazione stanza e pagina Master
     const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
     const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
+    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
+    const DEFAULT_APP_ID = 'ombre-al-tavolo-default';
 
     // Catalogo dei ruoli assegnabili dal Master
     const ROLE_CATALOG = {
@@ -107,6 +112,12 @@
       ]
     };
 
+    let db = null;
+    let auth = null;
+    let appId = DEFAULT_APP_ID;
+    let cloudReady = false;
+    let roomUnsubscribe = null;
+
     // Legge codice stanza e nome Master salvati nella schermata di accesso
     function readAccessContext() {
       try {
@@ -122,9 +133,29 @@
       }
     }
 
+    // Legge i giocatori entrati nella stanza sincronizzata
+    function readRoomPlayers(roomCode) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      try {
+        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed.players) ? parsed.players : [];
+      } catch (err) {
+        console.error('Errore lettura giocatori stanza:', err);
+        return [];
+      }
+    }
+
     // Crea lo stato iniziale della pagina Master
     function createInitialMasterRoleState() {
       const ctx = readAccessContext();
+      const syncedPlayers = readRoomPlayers(ctx.roomCode).map(p => ({
+        id: p.id || ('m_p_' + Math.random().toString(36).slice(2, 7)),
+        name: String(p.name || '').trim(),
+        assignedRoleKey: p.assignedRoleKey && ROLE_CATALOG[p.assignedRoleKey] ? p.assignedRoleKey : null
+      })).filter(p => p.name);
+
       return {
         roomCode: ctx.roomCode,
         masterName: ctx.masterName,
@@ -136,19 +167,45 @@
           assassino: 1,
           sabotatore: 1
         },
-        players: [
-          { id: 'm_p1', name: 'Elena', assignedRoleKey: null },
-          { id: 'm_p2', name: 'Marco', assignedRoleKey: null },
-          { id: 'm_p3', name: 'Sofia', assignedRoleKey: null },
-          { id: 'm_p4', name: 'Luca', assignedRoleKey: null }
-        ],
+        players: syncedPlayers,
         speechTone: 'suspense',
         customSpeech: '',
         activeParagraphIndex: 0,
         assignmentCompleted: false,
-        boardOpened: false, // false -> cerimonia e gestione ruoli; true -> plancia Master
+        boardOpened: false,
+        syncLabel: 'Locale',
         banner: null
       };
+    }
+
+    // Unisce i giocatori già presenti nella stanza sincronizzata con quelli della pagina Master
+    function mergeSyncedPlayersIntoMaster(existingPlayers, syncedPlayers) {
+      const result = Array.isArray(existingPlayers) ? existingPlayers.map(p => ({ ...p })) : [];
+      const syncedList = Array.isArray(syncedPlayers) ? syncedPlayers : [];
+
+      syncedList.forEach(sp => {
+        const cleanName = String(sp.name || '').trim();
+        if (!cleanName) return;
+        const normalized = cleanName.toLowerCase();
+        const foundIndex = result.findIndex(
+          ep => String(ep.name || '').trim().toLowerCase() === normalized
+        );
+        if (foundIndex >= 0) {
+          result[foundIndex] = {
+            ...result[foundIndex],
+            name: cleanName,
+            assignedRoleKey: sp.assignedRoleKey || result[foundIndex].assignedRoleKey || null
+          };
+        } else {
+          result.push({
+            id: sp.id || ('sync_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+            name: cleanName,
+            assignedRoleKey: sp.assignedRoleKey && ROLE_CATALOG[sp.assignedRoleKey] ? sp.assignedRoleKey : null
+          });
+        }
+      });
+
+      return result;
     }
 
     // Carica lo stato salvato in sicurezza tramite try/catch
@@ -156,25 +213,38 @@
       try {
         const ctx = readAccessContext();
         const base = createInitialMasterRoleState();
+        const syncedPlayers = readRoomPlayers(ctx.roomCode);
         const raw = localStorage.getItem(MASTER_ROLES_STORAGE_KEY);
+
         if (!raw) {
-          return { ...base, roomCode: ctx.roomCode, masterName: ctx.masterName };
+          return {
+            ...base,
+            roomCode: ctx.roomCode,
+            masterName: ctx.masterName,
+            players: mergeSyncedPlayersIntoMaster([], syncedPlayers)
+          };
         }
+
         const parsed = JSON.parse(raw);
+        const sameRoom = String(parsed.roomCode || '').trim().toUpperCase() === ctx.roomCode;
         const mergedCounts = { ...base.roleCounts };
         if (parsed.roleCounts && typeof parsed.roleCounts === 'object') {
           Object.keys(mergedCounts).forEach(key => {
             mergedCounts[key] = Math.max(0, Math.min(12, Number(parsed.roleCounts[key] ?? mergedCounts[key])));
           });
         }
+
+        const basePlayers = sameRoom && Array.isArray(parsed.players) ? parsed.players : [];
+        const mergedPlayers = mergeSyncedPlayersIntoMaster(basePlayers, syncedPlayers);
+
         return {
           ...base,
-          ...parsed,
+          ...(sameRoom ? parsed : {}),
           roomCode: ctx.roomCode,
           masterName: ctx.masterName,
           roleCounts: mergedCounts,
-          players: Array.isArray(parsed.players) ? parsed.players : base.players,
-          boardOpened: Boolean(parsed.boardOpened)
+          players: mergedPlayers,
+          boardOpened: Boolean(sameRoom && parsed.boardOpened)
         };
       } catch (err) {
         console.error('Errore caricamento stato assegnazione ruoli Master:', err);
@@ -184,19 +254,162 @@
 
     let masterState = loadMasterRoleState();
 
-    // Salva lo stato della pagina Master
-    function saveMasterRoleState() {
+    // Salva lo stato della pagina Master e sincronizza giocatori e ruoli nella stanza
+    async function saveMasterRoleState(syncRoom = true) {
       try {
-        localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify(masterState));
+        localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify({
+          roomCode: masterState.roomCode,
+          masterName: masterState.masterName,
+          roleCounts: masterState.roleCounts,
+          players: masterState.players,
+          speechTone: masterState.speechTone,
+          customSpeech: masterState.customSpeech,
+          activeParagraphIndex: masterState.activeParagraphIndex,
+          assignmentCompleted: masterState.assignmentCompleted,
+          boardOpened: masterState.boardOpened,
+          banner: masterState.banner
+        }));
       } catch (err) {
         console.error('Errore salvataggio stato assegnazione ruoli Master:', err);
+      }
+
+      if (!syncRoom) return;
+
+      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const payload = {
+        roomCode: cleanRoom,
+        players: masterState.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          assignedRoleKey: p.assignedRoleKey || null
+        })),
+        roleCounts: masterState.roleCounts,
+        updatedAt: Date.now()
+      };
+
+      try {
+        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(payload));
+      } catch (err) {
+        console.error('Errore salvataggio locale stanza Master:', err);
+      }
+
+      if (cloudReady && db) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
+          await setDoc(ref, payload, { merge: true });
+        } catch (err) {
+          console.error('Errore scrittura Firestore stanza Master:', err);
+        }
+      }
+    }
+
+    // Applica una lista aggiornata di giocatori sincronizzati senza perdere ruoli già estratti
+    function applyIncomingSyncedPlayers(incomingPlayers) {
+      const cleanIncoming = Array.isArray(incomingPlayers) ? incomingPlayers : [];
+      masterState.players = mergeSyncedPlayersIntoMaster(masterState.players, cleanIncoming);
+      saveMasterRoleState(false);
+      renderMasterRolePage();
+    }
+
+    // Avvia l'ascolto in tempo reale dei giocatori che entrano nella stanza
+    function startMasterRoomListener() {
+      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      if (typeof roomUnsubscribe === 'function') {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+
+      window.addEventListener('storage', evt => {
+        if (evt.key === ROOM_SYNC_PREFIX + cleanRoom && evt.newValue) {
+          try {
+            const parsed = JSON.parse(evt.newValue);
+            applyIncomingSyncedPlayers(parsed.players);
+          } catch (err) {
+            console.error('Errore lettura evento storage stanza:', err);
+          }
+        }
+      });
+
+      if (cloudReady && db) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
+          roomUnsubscribe = onSnapshot(ref, snap => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            const normalized = {
+              roomCode: cleanRoom,
+              players: Array.isArray(data.players) ? data.players : [],
+              roleCounts: data.roleCounts || masterState.roleCounts,
+              updatedAt: Number(data.updatedAt || Date.now())
+            };
+            try {
+              localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(normalized));
+            } catch (err) {
+              console.error('Errore cache stanza Master:', err);
+            }
+            applyIncomingSyncedPlayers(normalized.players);
+          }, err => {
+            console.error('Errore listener Firestore Master:', err);
+          });
+        } catch (err) {
+          console.error('Errore avvio listener Firestore Master:', err);
+        }
+      }
+    }
+
+    // Inizializza la sincronizzazione cloud per la pagina Master
+    async function initMasterCloud() {
+      try {
+        const cfgRaw = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
+        if (!cfgRaw) {
+          masterState.syncLabel = 'Locale';
+          await saveMasterRoleState(true);
+          startMasterRoomListener();
+          renderMasterRolePage();
+          return;
+        }
+
+        const firebaseConfig = typeof cfgRaw === 'string' ? JSON.parse(cfgRaw) : cfgRaw;
+        if (!firebaseConfig || !firebaseConfig.apiKey) {
+          masterState.syncLabel = 'Locale';
+          await saveMasterRoleState(true);
+          startMasterRoomListener();
+          renderMasterRolePage();
+          return;
+        }
+
+        if (typeof window.__app_id === 'string' && window.__app_id.trim()) {
+          appId = window.__app_id.trim();
+        }
+
+        const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+
+        if (typeof window.__initial_auth_token === 'string' && window.__initial_auth_token.trim()) {
+          await signInWithCustomToken(auth, window.__initial_auth_token.trim());
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        cloudReady = true;
+        masterState.syncLabel = 'Cloud Attivo';
+        await saveMasterRoleState(true);
+        startMasterRoomListener();
+        renderMasterRolePage();
+      } catch (err) {
+        console.error('Errore inizializzazione cloud Master:', err);
+        masterState.syncLabel = 'Locale';
+        await saveMasterRoleState(true);
+        startMasterRoomListener();
+        renderMasterRolePage();
       }
     }
 
     // Imposta un messaggio di feedback per il Master
     function setMasterBanner(text, type = 'info') {
       masterState.banner = { text, type };
-      saveMasterRoleState();
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
@@ -207,8 +420,11 @@
         return;
       }
       masterState.boardOpened = true;
-      masterState.banner = { text: 'Plancia del Master aperta. Puoi tornare in qualsiasi momento a Cerimonia e Ruoli dal pulsante in alto.', type: 'success' };
-      saveMasterRoleState();
+      masterState.banner = {
+        text: 'Plancia del Master aperta. Puoi tornare in qualsiasi momento a Cerimonia e Ruoli dal pulsante in alto.',
+        type: 'success'
+      };
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
@@ -216,7 +432,7 @@
     function openCeremonyAndRolesSection() {
       masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
@@ -264,7 +480,7 @@
       masterState.customSpeech = '';
       masterState.activeParagraphIndex = 0;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(false);
       renderMasterRolePage();
     }
 
@@ -273,7 +489,7 @@
       masterState.customSpeech = String(value || '');
       masterState.activeParagraphIndex = 0;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(false);
       renderMasterRolePage();
     }
 
@@ -284,7 +500,7 @@
       const next = (masterState.activeParagraphIndex + delta + paragraphs.length) % paragraphs.length;
       masterState.activeParagraphIndex = next;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(false);
       renderMasterRolePage();
     }
 
@@ -317,15 +533,22 @@
       masterState.assignmentCompleted = false;
       masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
-    // Aggiunge un giocatore al tavolo del Master
+    // Aggiunge manualmente un giocatore al tavolo del Master
     function addMasterPlayer(rawName) {
       const cleanName = String(rawName || '').trim();
       if (!cleanName) {
         setMasterBanner('Inserisci il nome del giocatore da aggiungere al tavolo.', 'error');
+        return;
+      }
+      const exists = masterState.players.some(
+        p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+      );
+      if (exists) {
+        setMasterBanner('Questo giocatore è già presente al tavolo.', 'info');
         return;
       }
       masterState.players.push({
@@ -336,7 +559,7 @@
       masterState.assignmentCompleted = false;
       masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
@@ -346,14 +569,14 @@
       masterState.assignmentCompleted = false;
       masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState();
+      saveMasterRoleState(true);
       renderMasterRolePage();
     }
 
     // Estrae casualmente i ruoli configurati e li assegna ai giocatori al tavolo
     function assignRolesRandomly() {
       if (masterState.players.length === 0) {
-        setMasterBanner('Aggiungi almeno un giocatore al tavolo prima di assegnare i ruoli.', 'error');
+        setMasterBanner('Attendi che entri un giocatore nella stanza o aggiungilo al tavolo prima di assegnare i ruoli.', 'error');
         return;
       }
 
@@ -373,7 +596,6 @@
         return;
       }
 
-      // Mescolamento Fisher-Yates per estrazione casuale equa
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const temp = pool[i];
@@ -389,7 +611,7 @@
       masterState.assignmentCompleted = true;
 
       setMasterBanner(
-        `Assegnati casualmente ${extracted.length} ruoli: ora puoi leggere il discorso o aprire la Plancia Master.`,
+        `Assegnati casualmente ${extracted.length} ruoli e sincronizzati con la stanza: ora puoi leggere il discorso o aprire la Plancia Master.`,
         'success'
       );
     }
@@ -447,7 +669,8 @@
                 <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tavolo di ${escapeHtml(masterState.roomCode)}</h1>
                 <p class="text-xs text-gray-400 mt-1">
                   Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
-                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                  <span class="text-gray-300">${escapeHtml(masterState.syncLabel)}</span>
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
@@ -508,7 +731,8 @@
               <p class="text-xs text-gray-400 mt-1">
                 Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
                 Stanza: <strong class="text-gray-200">${escapeHtml(masterState.roomCode)}</strong> ·
-                ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                <span class="text-gray-300">${escapeHtml(masterState.syncLabel)}</span>
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -703,6 +927,7 @@
             <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
               <div class="flex items-center justify-between gap-2">
                 <h2 class="font-serif text-xl font-bold text-white">2. Giocatori al Tavolo (${masterState.players.length})</h2>
+                <span class="text-[11px] font-semibold text-emerald">Aggiunta automatica stanza</span>
               </div>
 
               <form
@@ -727,7 +952,7 @@
               <div class="space-y-2.5">
                 ${masterState.players.length === 0
                   ? `<div class="rounded-xl bg-bgdark border border-white/10 p-4 text-xs text-gray-400 text-center">
-                       Nessun giocatore al tavolo. Aggiungine uno qui sopra.
+                       In attesa che i giocatori entrino con il codice stanza ${escapeHtml(masterState.roomCode)} (oppure aggiungine uno qui sopra).
                      </div>`
                   : masterState.players.map(player => {
                       const roleInfo = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
@@ -792,6 +1017,7 @@
     window.goToPage = goToPage;
 
     renderMasterRolePage();
+    initMasterCloud();
   </script>
 </body>
 </html>
