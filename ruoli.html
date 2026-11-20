@@ -44,7 +44,6 @@
   <script>
     const CUSTOM_ROLES_STORAGE_KEY = 'ombre_catalogo_tutti_ruoli_v2';
 
-    // Elenco ufficiale degli 8 ruoli di Ombre al Tavolo
     const DEFAULT_ROLES = [
       {
         id: 'assassino',
@@ -131,3 +130,276 @@
         localStorage.setItem(CUSTOM_ROLES_STORAGE_KEY, JSON.stringify(rolesState.roles));
       } catch (err) {
         console.error('Errore salvataggio catalogo ruoli:', err);
+      }
+    }
+
+    function setFilter(nextFilter) {
+      rolesState.filter = nextFilter;
+      renderRolesCatalog();
+    }
+
+    function addCustomRole(name, faction, description) {
+      const cleanName = String(name || '').trim();
+      const cleanDesc = String(description || '').trim();
+      if (!cleanName || !cleanDesc) {
+        rolesState.banner = { text: 'Inserisci sia il nome del ruolo sia la sua descrizione.', type: 'error' };
+        renderRolesCatalog();
+        return;
+      }
+      rolesState.roles.push({
+        id: 'role_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: cleanName,
+        faction: normalizeFaction(faction),
+        description: cleanDesc
+      });
+      rolesState.banner = { text: `Ruolo "${cleanName}" aggiunto al catalogo.`, type: 'success' };
+      saveAllRoles();
+      renderRolesCatalog();
+    }
+
+    function removeRoleItem(roleId) {
+      rolesState.roles = rolesState.roles.filter(r => r.id !== roleId);
+      rolesState.banner = { text: 'Ruolo rimosso dal catalogo.', type: 'info' };
+      saveAllRoles();
+      renderRolesCatalog();
+    }
+
+    function restoreDefaultRoles() {
+      rolesState.roles = DEFAULT_ROLES.slice();
+      rolesState.banner = { text: 'Catalogo degli 8 ruoli ufficiali ripristinato.', type: 'info' };
+      saveAllRoles();
+      renderRolesCatalog();
+    }
+
+    function goToPage(target) {
+      try {
+        window.location.href = target;
+      } catch (err) {
+        console.error('Errore navigazione:', err);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getFactionBadge(faction) {
+      if (faction === 'Traditori') {
+        return 'bg-crimson/15 text-crimson border-crimson/40';
+      }
+      if (faction === 'Neutro') {
+        return 'bg-gold/15 text-gold border-gold/40';
+      }
+      return 'bg-emerald/15 text-emerald border-emerald/40';
+    }
+
+    function renderRolesCatalog() {
+      const container = document.getElementById('roles-catalog-app');
+      if (!container) return;
+
+      try {
+        const filtered = rolesState.roles.filter(r => {
+          if (rolesState.filter === 'tutti') return true;
+          return r.faction === rolesState.filter;
+        });
+
+        const bannerHtml = rolesState.banner
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              rolesState.banner.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : rolesState.banner.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(rolesState.banner.text)}</div>`
+          : '';
+
+        container.innerHTML = `
+          <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-gold">Archivio Completo · 8 Ruoli</span>
+              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tutti i Ruoli del Gioco</h1>
+              <p class="text-xs text-gray-400 mt-1">
+                3 Traditori, 4 Fedeli e 1 Neutro — consulta poteri, fazioni e regole delle missioni.
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onclick="goToPage('master.html')"
+                class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+              >
+                Torna al Master
+              </button>
+              <button
+                type="button"
+                onclick="goToPage('index.html')"
+                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Accesso
+              </button>
+              <button
+                type="button"
+                onclick="restoreDefaultRoles()"
+                class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Ripristina 8 Ruoli
+              </button>
+            </div>
+          </header>
+
+          ${bannerHtml}
+
+          <section class="rounded-2xl bg-surface border border-gold/25 p-5 space-y-2">
+            <span class="text-[11px] font-bold uppercase tracking-widest text-gold">Regole Generali delle Missioni</span>
+            <h2 class="font-serif text-lg font-bold text-white">Struttura, Stili per Fazione e Vincoli</h2>
+            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+              Ogni ruolo con missioni ha <strong class="text-white">5 missioni</strong> di cui <strong class="text-white">3 ripetibili</strong> (il <strong class="text-white">Martire</strong> non ha missioni).
+              I <strong class="text-crimson">Traditori</strong> hanno missioni prevalentemente di <strong class="text-white">contatto</strong> e non possono fare missioni tra loro, <strong class="text-white">ad eccezione del Traditore Segreto</strong>.
+              I <strong class="text-emerald">Fedeli</strong> hanno missioni prevalentemente <strong class="text-white">verbali</strong>, mentre il <strong class="text-gold">Neutro</strong> (Cacciatore) ha missioni prevalentemente di <strong class="text-white">confronto</strong>.
+            </p>
+          </section>
+
+          <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <h2 class="font-serif text-lg font-bold text-white">Aggiungi un Ruolo all’Elenco</h2>
+            <form
+              onsubmit="event.preventDefault(); const n = document.getElementById('role-name-input'); const f = document.getElementById('role-faction-select'); const d = document.getElementById('role-desc-input'); addCustomRole(n.value, f.value, d.value); n.value = ''; d.value = '';"
+              class="grid grid-cols-1 sm:grid-cols-3 gap-3"
+            >
+              <input
+                id="role-name-input"
+                type="text"
+                maxlength="32"
+                placeholder="Nome ruolo..."
+                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
+              />
+              <select
+                id="role-faction-select"
+                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
+              >
+                <option value="Fedeli">Fedeli</option>
+                <option value="Traditori">Traditori</option>
+                <option value="Neutro">Neutro</option>
+              </select>
+              <input
+                id="role-desc-input"
+                type="text"
+                maxlength="240"
+                placeholder="Effetto, potere e note sulle missioni..."
+                class="rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
+              />
+              <div class="sm:col-span-3 flex justify-end">
+                <button
+                  type="submit"
+                  class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
+                >
+                  Salva Ruolo nell’Elenco
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs text-gray-400">Ruoli visualizzati: <strong class="text-white">${filtered.length}</strong></span>
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onclick="setFilter('tutti')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    rolesState.filter === 'tutti'
+                      ? 'bg-gold text-bgdark border-gold'
+                      : 'bg-surface text-gray-300 border-white/15'
+                  }"
+                >
+                  Tutti
+                </button>
+                <button
+                  type="button"
+                  onclick="setFilter('Traditori')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    rolesState.filter === 'Traditori'
+                      ? 'bg-crimson text-white border-crimson'
+                      : 'bg-surface text-gray-300 border-white/15'
+                  }"
+                >
+                  Traditori
+                </button>
+                <button
+                  type="button"
+                  onclick="setFilter('Fedeli')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    rolesState.filter === 'Fedeli'
+                      ? 'bg-emerald text-bgdark border-emerald'
+                      : 'bg-surface text-gray-300 border-white/15'
+                  }"
+                >
+                  Fedeli
+                </button>
+                <button
+                  type="button"
+                  onclick="setFilter('Neutro')"
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    rolesState.filter === 'Neutro'
+                      ? 'bg-gold text-bgdark border-gold'
+                      : 'bg-surface text-gray-300 border-white/15'
+                  }"
+                >
+                  Neutro
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${filtered.map(role => {
+                const badgeClass = getFactionBadge(role.faction);
+                return `
+                  <article class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-col justify-between gap-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <h3 class="font-serif text-lg font-bold text-white">${escapeHtml(role.name)}</h3>
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${badgeClass}">
+                          ${escapeHtml(role.faction)}
+                        </span>
+                      </div>
+                      <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(role.description)}</p>
+                    </div>
+                    <div class="flex justify-end pt-2 border-t border-white/10">
+                      <button
+                        type="button"
+                        onclick="removeRoleItem('${role.id}')"
+                        class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
+                      >
+                        Rimuovi
+                      </button>
+                    </div>
+                  </article>
+                `;
+              }).join('')}
+            </div>
+          </section>
+        `;
+      } catch (err) {
+        console.error('Errore rendering catalogo ruoli:', err);
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Errore durante il caricamento dell’archivio ruoli.
+          </div>
+        `;
+      }
+    }
+
+    window.setFilter = setFilter;
+    window.addCustomRole = addCustomRole;
+    window.removeRoleItem = removeRoleItem;
+    window.restoreDefaultRoles = restoreDefaultRoles;
+    window.goToPage = goToPage;
+
+    renderRolesCatalog();
+  </script>
+</body>
+</html>
