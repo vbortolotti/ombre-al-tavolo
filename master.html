@@ -147,7 +147,7 @@
     let unsubscribeRoom = null;
     let latestTraitorChat = [];
     let latestMasterChat = [];
-    let masterChatTab = 'master'; // 'master' | 'traitors'
+    let masterChatTab = 'master';
     let selectedMasterPlayerFilter = 'ALL';
     let masterChatDraft = '';
     let syncStatusLabel = 'Connessione cloud...';
@@ -440,9 +440,7 @@
       const customRaw = String(masterState.customSpeechText || '').trim();
       if (customRaw) {
         return customRaw
-          .split(/
-\s*
-/)
+          .split(/\n\s*\n/)
           .map(part => part.replace(/\{\{STANZA\}\}/gi, cleanRoom).trim())
           .filter(Boolean);
       }
@@ -475,9 +473,7 @@
     }
 
     function copyFullSpeech() {
-      const fullText = getSpeechParagraphs().join('
-
-');
+      const fullText = getSpeechParagraphs().join('\n\n');
       if (!fullText) {
         setMasterBanner('Nessun testo del discorso da copiare.', 'error');
         return;
