@@ -1527,5 +1527,77 @@
 })();
 </script>
 
+
+<script>
+(function () {
+  var ROOM_PREFIX = 'ombre_stanza_sync_';
+  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+
+  var GAME_PHASES = [
+    { step: 1, title: 'Cerimonia dei Ruoli', tip: 'Ricevi e consulta la tua scheda privata in segreto.' },
+    { step: 2, title: 'Interludio Ludico', tip: 'Gioca al tavolo, osserva i comportamenti e porta avanti le tue missioni.' },
+    { step: 3, title: 'Notte (Primo Assassinio)', tip: 'Silenzio al tavolo: fase del primo colpo notturno.' },
+    { step: 4, title: 'Risveglio', tip: 'Scopri cosa è accaduto durante la notte.' },
+    { step: 5, title: 'Interludio Ludico', tip: 'Nuovo momento di gioco al tavolo, missioni e confronti.' },
+    { step: 6, title: 'Tavolo Ovale', tip: 'Confronto collettivo: preparati alla discussione e alle decisioni del tavolo.' },
+    { step: 7, title: 'Notte (Assassino)', tip: 'Nuova fase notturna: il ciclo prosegue fino alla conclusione.' }
+  ];
+
+  function getAccessInfo() {
+    try {
+      var raw = localStorage.getItem(ACCESS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        return {
+          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase(),
+          playerName: String(p.playerName || '').trim()
+        };
+      }
+    } catch (_e) {}
+    return { roomCode: 'TAVOLO1', playerName: '' };
+  }
+
+  function loadRoom() {
+    var info = getAccessInfo();
+    try {
+      var raw = localStorage.getItem(ROOM_PREFIX + info.roomCode);
+      return raw ? JSON.parse(raw) : { phaseIndex: 0, cycleCount: 1 };
+    } catch (_e) {
+      return { phaseIndex: 0, cycleCount: 1 };
+    }
+  }
+
+  function renderPlayerPhaseBanner() {
+    var host = document.getElementById('player-current-phase-banner');
+    if (!host) return;
+    var data = loadRoom();
+    var idx = Number(data.phaseIndex || 0);
+    if (idx < 0 || idx >= GAME_PHASES.length) idx = 0;
+    var ph = GAME_PHASES[idx];
+    var cycle = Number(data.cycleCount || 1);
+
+    host.innerHTML =
+      '<div style="max-width:960px;margin:16px auto 0;padding:0 16px;">' +
+        '<div style="border:1px solid rgba(124,140,255,0.4);border-radius:14px;padding:14px 18px;background:#151924;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#7c8cff;">Fase Attuale · Ciclo #' + cycle + '</div>' +
+            '<div style="font-size:17px;font-weight:800;color:#fff;margin-top:2px;">' + ph.step + '. ' + ph.title + '</div>' +
+            '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">' + ph.tip + '</div>' +
+          '</div>' +
+          '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(124,140,255,0.16);color:#7c8cff;border:1px solid rgba(124,140,255,0.35);">Fase ' + ph.step + ' / 7</span>' +
+        '</div>' +
+      '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var wrap = document.createElement('div');
+    wrap.id = 'player-current-phase-banner';
+    document.body.insertBefore(wrap, document.body.firstChild);
+    renderPlayerPhaseBanner();
+    setInterval(renderPlayerPhaseBanner, 2000);
+  });
+})();
+</script>
+
 </body>
 </html>
