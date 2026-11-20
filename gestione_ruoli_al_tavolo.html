@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Gestione Ruoli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+          },
+          colors: {
+            bgdark: '#0c0e14',
+            surface: '#151924',
+            surface2: '#1d2230',
+            gold: '#e5b85c',
+            crimson: '#e05260',
+            emerald: '#3ec98c',
+            indigo: '#7c8cff',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #0c0e14;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-bgdark text-gray-100 antialiased">
+  <div id="role-app" class="max-w-5xl mx-auto px-4 py-8 space-y-6"></div>
+
+  <script>
+    const ROLE_DEFS = {
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'cittadini',
+        factionLabel: 'Cittadini',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Indaga sul ruolo segreto di un giocatore vivo.'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'cittadini',
+        factionLabel: 'Cittadini',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Protegge un giocatore dagli attacchi fino al turno successivo.'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'cittadini',
+        factionLabel: 'Cittadini',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Può colpire un bersaglio sospetto a costo di rischiare il contraccolpo.'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'cittadini',
+        factionLabel: 'Cittadini',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        desc: 'Lascia una testimonianza pubblica sul ruolo di un giocatore.'
+      },
+      assassino: {
+        name: 'Assassino',
+        faction: 'traditori',
+        factionLabel: 'Traditori',
+        badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
+        desc: 'Elimina silenziosamente un bersaglio entro i limiti del turno.'
+      },
+      sabotatore: {
+        name: 'Sabotatore',
+        faction: 'traditori',
+        factionLabel: 'Traditori',
+        badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
+        desc: 'Ostacola o blocca l’azione di un avversario nel turno.'
+      }
+    };
+
+    const STORAGE_RUOLI_KEY = 'ombre_ruoli_tavolo_standalone_v1';
+
+    function createDefaultState() {
+      return {
+        roomCode: 'TAVOLO1',
+        rolePool: {
+          investigatore: 1,
+          guardia: 1,
+          cacciatore: 1,
+          martire: 0,
+          assassino: 1,
+          sabotatore: 1
+        },
+        players: [
+          { id: 'p1', name: 'Elena', assignedRole: null },
+          { id: 'p2', name: 'Marco', assignedRole: null },
+          { id: 'p3', name: 'Sofia', assignedRole: null },
+          { id: 'p4', name: 'Luca', assignedRole: null }
+        ],
+        banner: null
+      };
+    }
+
+    let state = loadRoleState();
+
+    function loadRoleState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_RUOLI_KEY);
+        if (!raw) return createDefaultState();
+        const parsed = JSON.parse(raw);
+        return {
+          ...createDefaultState(),
+          ...parsed,
+          rolePool: { ...createDefaultState().rolePool, ...(parsed.rolePool || {}) },
+          players: Array.isArray(parsed.players) ? parsed.players : createDefaultState().players
+        };
+      } catch (e) {
+        return createDefaultState();
+      }
+    }
+
+    function saveRoleState() {
+      try {
+        localStorage.setItem(STORAGE_RUOLI_KEY, JSON.stringify(state));
+      } catch (e) {
+        // Ignora errori storage
+      }
+    }
+
+    function setBanner(text, type = 'info') {
+      state.banner = { text, type };
+      saveRoleState();
+      renderRolePage();
+    }
+
+    function addPlayer(name) {
+      const clean = String(name || '').trim();
+      if (!clean) {
+        setBanner('Inserisci il nome del giocatore da aggiungere al tavolo.', 'error');
+        return;
+      }
+      state.players.push({
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        name: clean,
+        assignedRole: null
+      });
+      state.banner = null;
+      saveRoleState();
+      renderRolePage();
+    }
+
+    function removePlayer(id) {
+      state.players = state.players.filter(p => p.id !== id);
+      saveRoleState();
+      renderRolePage();
+    }
+
+    function adjustRole(roleKey, delta) {
+      if (!ROLE_DEFS[roleKey]) return;
+      const cur = Number(state.rolePool[roleKey] || 0);
+      state.rolePool[roleKey] = Math.max(0, Math.min(12, cur + delta));
+      saveRoleState();
+      renderRolePage();
+    }
+
+    function drawRolesRandomly() {
+      if (state.players.length === 0) {
+        setBanner('Aggiungi almeno un giocatore al tavolo prima di estrarre i ruoli.', 'error');
+        return;
+      }
+
+      const deck = [];
+      Object.keys(ROLE_DEFS).forEach(rk => {
+        const count = Number(state.rolePool[rk] || 0);
+        for (let i = 0; i < count; i++) {
+          deck.push(rk);
+        }
+      });
+
+      if (deck.length < state.players.length) {
+        setBanner(
+          `Hai ${deck.length} ruoli nel mazzo ma ${state.players.length} giocatori al tavolo: aumenta uno o più ruoli.`,
+          'error'
+        );
+        return;
+      }
+
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = tmp;
+      }
+
+      const picked = deck.slice(0, state.players.length);
+      state.players = state.players.map((p, idx) => ({
+        ...p,
+        assignedRole: picked[idx]
+      }));
+
+      setBanner(`Estratti e assegnati casualmente ${picked.length} ruoli ai giocatori al tavolo.`, 'success');
+    }
+
+    function clearAssignedRoles() {
+      state.players = state.players.map(p => ({ ...p, assignedRole: null }));
+      setBanner('Assegnazioni dei ruoli azzerate: i giocatori restano al tavolo.', 'info');
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderRolePage() {
+      const totalDeck = Object.values(state.rolePool).reduce((a, b) => a + Number(b || 0), 0);
+      const app = document.getElementById('role-app');
+      if (!app) return;
+
+      const bannerHtml = state.banner
+        ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+            state.banner.type === 'success'
+              ? 'bg-emerald/15 border-emerald/40 text-emerald'
+              : state.banner.type === 'error'
+              ? 'bg-crimson/15 border-crimson/40 text-crimson'
+              : 'bg-indigo/15 border-indigo/40 text-indigo'
+          }">${escapeHtml(state.banner.text)}</div>`
+        : '';
+
+      app.innerHTML = `
+        <div class="rounded-2xl bg-surface border border-white/10 p-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-gold">Modulo Separato · Ruoli al Tavolo</span>
+            <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Scelta e Estrazione Casuale Ruoli</h1>
+            <p class="text-xs text-gray-400 mt-1">
+              Prima raduna i giocatori al tavolo, imposta quanti ruoli vuoi inserire e poi estraili a sorte.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="drawRolesRandomly()"
+              class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+            >
+              Estrai Ruoli Casualmente
+            </button>
+            <button
+              type="button"
+              onclick="clearAssignedRoles()"
+              class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+            >
+              Azzera Estrazione
+            </button>
+          </div>
+        </div>
+
+        ${bannerHtml}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="font-serif text-xl font-bold text-white">1. Ruoli Disponibili</h2>
+              <span class="text-xs px-3 py-1 rounded-full bg-bgdark border border-white/10 text-gray-300">
+                Totale nel mazzo: <strong class="text-gold">${totalDeck}</strong>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${Object.entries(ROLE_DEFS).map(([rk, rDef]) => {
+                const count = Number(state.rolePool[rk] || 0);
+                return `
+                  <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex flex-col justify-between gap-3">
+                    <div>
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="font-semibold text-sm text-white">${escapeHtml(rDef.name)}</span>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${rDef.badgeClass}">
+                          ${escapeHtml(rDef.factionLabel)}
+                        </span>
+                      </div>
+                      <p class="text-xs text-gray-400 mt-1.5">${escapeHtml(rDef.desc)}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/10">
+                      <span class="text-xs text-gray-400">Copie:</span>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onclick="adjustRole('${rk}', -1)"
+                          class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200 cursor-pointer"
+                        >-</button>
+                        <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
+                        <button
+                          type="button"
+                          onclick="adjustRole('${rk}', 1)"
+                          class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200 cursor-pointer"
+                        >+</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="font-serif text-xl font-bold text-white">2. Giocatori al Tavolo (${state.players.length})</h2>
+            </div>
+
+            <form onsubmit="event.preventDefault(); const inp = document.getElementById('new-p-name'); addPlayer(inp.value); inp.value = '';" class="flex gap-2">
+              <input
+                id="new-p-name"
+                type="text"
+                maxlength="24"
+                placeholder="Nome nuovo giocatore..."
+                class="flex-1 rounded-xl bg-bgdark border border-white/15 px-3.5 py-2 text-sm text-white focus:outline-none focus:border-indigo"
+              />
+              <button
+                type="submit"
+                class="px-4 py-2 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
+              >
+                Aggiungi
+              </button>
+            </form>
+
+            <div class="space-y-2.5">
+              ${state.players.map(p => {
+                const roleObj = p.assignedRole ? ROLE_DEFS[p.assignedRole] : null;
+                return `
+                  <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <div class="font-semibold text-sm text-white">${escapeHtml(p.name)}</div>
+                      <div class="text-xs mt-1">
+                        ${roleObj
+                          ? `<span class="font-semibold px-2 py-0.5 rounded-full border ${roleObj.badgeClass}">${escapeHtml(roleObj.name)} (${escapeHtml(roleObj.factionLabel)})</span>`
+                          : `<span class="text-gray-400">In attesa di estrazione</span>`
+                        }
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onclick="removePlayer('${p.id}')"
+                      class="px-2.5 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
+                    >
+                      Rimuovi
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    renderRolePage();
+  </script>
+</body>
+</html>
