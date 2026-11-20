@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Scheda Giocatore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    // Configurazione tema scuro per la pagina del giocatore
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+          },
+          colors: {
+            bgdark: '#0c0e14',
+            surface: '#151924',
+            surface2: '#1d2230',
+            gold: '#e5b85c',
+            crimson: '#e05260',
+            emerald: '#3ec98c',
+            indigo: '#7c8cff',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Stile base della scheda giocatore */
+    body {
+      background-color: #0c0e14;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-bgdark text-gray-100 antialiased">
+  <div id="player-app" class="max-w-3xl mx-auto px-4 py-8 space-y-6"></div>
+
+  <script>
+    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
+    const PLAYER_CARD_STORAGE_KEY = 'ombre_scheda_giocatore_v1';
+    const PLACEHOLDER_SELFIE = 'https://placehold.co/320x320/1d2230/e5b85c?text=Selfie+Giocatore';
+
+    let mediaStream = null;
+
+    // Legge i dati provenienti dalla pagina di accesso se presenti
+    function readAccessInfo() {
+      try {
+        const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        const parsed = JSON.parse(raw);
+        const roomCode = String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+        const playerName = String(parsed.playerName || '').trim() || 'Giocatore';
+        return { roomCode, playerName };
+      } catch (err) {
+        console.error('Errore lettura dati accesso:', err);
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+      }
+    }
+
+    // Crea lo stato iniziale della scheda giocatore
+    function createInitialPlayerState() {
+      const info = readAccessInfo();
+      return {
+        roomCode: info.roomCode,
+        playerName: info.playerName,
+        roleTitle: 'In attesa di assegnazione',
+        factionLabel: 'Da definire',
+        roleDescription: 'Il Master assegnerà i ruoli al tavolo quando tutti i giocatori saranno pronti.',
+        selfieUrl: '',
+        cameraActive: false,
+        feedback: null
+      };
+    }
+
+    // Carica la scheda giocatore salvata in sicurezza
+    function loadPlayerState() {
+      try {
+        const accessInfo = readAccessInfo();
+        const raw = localStorage.getItem(PLAYER_CARD_STORAGE_KEY);
+        const base = createInitialPlayerState();
+        if (!raw) {
+          return { ...base, roomCode: accessInfo.roomCode, playerName: accessInfo.playerName };
+        }
+        const parsed = JSON.parse(raw);
+        return {
+          ...base,
+          ...parsed,
+          roomCode: accessInfo.roomCode,
+          playerName: accessInfo.playerName,
+          cameraActive: false
+        };
+      } catch (err) {
+        console.error('Errore lettura scheda giocatore:', err);
+        return createInitialPlayerState();
+      }
+    }
+
+    let playerState = loadPlayerState();
+
+    // Salva lo stato della scheda giocatore
+    function savePlayerState() {
+      try {
+        const toSave = { ...playerState, cameraActive: false };
+        localStorage.setItem(PLAYER_CARD_STORAGE_KEY, JSON.stringify(toSave));
+      } catch (err) {
+        console.error('Errore salvataggio scheda giocatore:', err);
+      }
+    }
+
+    // Imposta un messaggio di feedback
+    function setFeedback(text, type = 'info') {
+      playerState.feedback = { text, type };
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    // Ferma eventuali stream attivi della fotocamera
+    function stopCameraStream() {
+      if (mediaStream) {
+        try {
+          mediaStream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+          console.error('Errore arresto fotocamera:', err);
+        }
+        mediaStream = null;
+      }
+      playerState.cameraActive = false;
+    }
+
+    // Avvia la fotocamera frontale per scattare un selfie
+    async function startSelfieCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setFeedback('Fotocamera non supportata in questo browser: puoi comunque caricare una foto dal dispositivo.', 'error');
+        return;
+      }
+
+      try {
+        stopCameraStream();
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        });
+        playerState.cameraActive = true;
+        playerState.feedback = null;
+        renderPlayerPage();
+
+        const videoEl = document.getElementById('selfie-video');
+        if (videoEl) {
+          videoEl.srcObject = mediaStream;
+          await videoEl.play();
+        }
+      } catch (err) {
+        console.error('Errore accesso fotocamera:', err);
+        playerState.cameraActive = false;
+        setFeedback('Impossibile accedere alla fotocamera. Controlla i permessi o scegli una foto dal telefono.', 'error');
+      }
+    }
+
+    // Cattura il fotogramma dalla fotocamera attiva e lo salva come immagine del selfie
+    function captureSelfiePhoto() {
+      const videoEl = document.getElementById('selfie-video');
+      if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
+        setFeedback('Attendi che l’anteprima della fotocamera sia visibile prima di scattare.', 'error');
+        return;
+      }
+
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        playerState.selfieUrl = canvas.toDataURL('image/jpeg', 0.82);
+        stopCameraStream();
+        setFeedback('Selfie acquisito e salvato sulla tua scheda giocatore.', 'success');
+      } catch (err) {
+        console.error('Errore cattura selfie:', err);
+        setFeedback('Non è stato possibile scattare il selfie.', 'error');
+      }
+    }
+
+    // Permette di selezionare un file immagine/selfie dal telefono o PC
+    function handleSelfieFileUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        playerState.selfieUrl = String(reader.result || '');
+        stopCameraStream();
+        setFeedback('Foto caricata sulla tua scheda giocatore.', 'success');
+      };
+      reader.onerror = () => {
+        setFeedback('Errore durante il caricamento della foto.', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Rimuove il selfie corrente ripristinando il segnaposto
+    function removeSelfiePhoto() {
+      stopCameraStream();
+      playerState.selfieUrl = '';
+      setFeedback('Selfie rimosso.', 'info');
+    }
+
+    // Escape di sicurezza per il testo renderizzato
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Renderizza la pagina del giocatore
+    function renderPlayerPage() {
+      const container = document.getElementById('player-app');
+      if (!container) return;
+
+      try {
+        const syncId = 'SYNC-' + playerState.roomCode;
+        const activePhoto = playerState.selfieUrl || PLACEHOLDER_SELFIE;
+        const fb = playerState.feedback;
+
+        const feedbackHtml = fb
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              fb.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : fb.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(fb.text)}</div>`
+          : '';
+
+        container.innerHTML = `
+          <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-indigo">Pagina Giocatore · Scheda Personale</span>
+              <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">${escapeHtml(playerState.playerName)}</h1>
+              <p class="text-xs text-gray-400 mt-1">
+                Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> · ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              onclick="stopCameraStream(); renderPlayerPage();"
+              class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+            >
+              Chiudi Fotocamera
+            </button>
+          </header>
+
+          ${feedbackHtml}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-3">
+              <div class="text-xs font-bold uppercase tracking-wider text-gold">La Tua Scheda Ruolo</div>
+              <h2 class="font-serif text-xl font-bold text-white">${escapeHtml(playerState.roleTitle)}</h2>
+              <div class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-bgdark border border-white/15 text-gray-300">
+                Fazione: ${escapeHtml(playerState.factionLabel)}
+              </div>
+              <p class="text-sm text-gray-300 leading-relaxed pt-1">
+                ${escapeHtml(playerState.roleDescription)}
+              </p>
+            </section>
+
+            <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo">Il Tuo Selfie al Tavolo</div>
+
+              <div class="flex flex-col items-center gap-3">
+                ${
+                  playerState.cameraActive
+                    ? `<video id="selfie-video" autoplay playsinline class="w-48 h-48 rounded-2xl object-cover bg-bgdark border border-indigo/40"></video>`
+                    : `<img
+                        src="${escapeHtml(activePhoto)}"
+                        alt="Selfie di ${escapeHtml(playerState.playerName)}"
+                        onerror="this.onerror=null;this.src='${PLACEHOLDER_SELFIE}';"
+                        class="w-48 h-48 rounded-2xl object-cover bg-bgdark border border-white/15"
+                      />`
+                }
+              </div>
+
+              <div class="flex flex-wrap gap-2 justify-center">
+                ${
+                  playerState.cameraActive
+                    ? `<button
+                        type="button"
+                        onclick="captureSelfiePhoto()"
+                        class="px-4 py-2 rounded-xl bg-emerald text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                      >
+                        Scatta Selfie
+                      </button>`
+                    : `<button
+                        type="button"
+                        onclick="startSelfieCamera()"
+                        class="px-4 py-2 rounded-xl bg-indigo text-white text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                      >
+                        Apri Fotocamera
+                      </button>`
+                }
+
+                <label class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
+                  Carica Foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    onchange="if (this.files && this.files[0]) { handleSelfieFileUpload(this.files[0]); this.value = ''; }"
+                    class="hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onclick="removeSelfiePhoto()"
+                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-crimson/20 border border-white/15 text-xs font-semibold text-gray-300 hover:text-crimson transition cursor-pointer"
+                >
+                  Rimuovi
+                </button>
+              </div>
+            </section>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Errore rendering pagina giocatore:', err);
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Errore durante il caricamento della scheda giocatore. Ricarica la pagina.
+          </div>
+        `;
+      }
+    }
+
+    // Esposizione esplicita delle funzioni usate nei pulsanti HTML
+    window.startSelfieCamera = startSelfieCamera;
+    window.captureSelfiePhoto = captureSelfiePhoto;
+    window.handleSelfieFileUpload = handleSelfieFileUpload;
+    window.removeSelfiePhoto = removeSelfiePhoto;
+    window.stopCameraStream = stopCameraStream;
+
+    renderPlayerPage();
+  </script>
+</body>
+</html>
