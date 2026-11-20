@@ -1,45 +1,345 @@
 <!DOCTYPE html>
-<html lang="it" class="dark">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Giocatore: Selfie e Plancia</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            serif: ['Cinzel', 'serif'],
-          },
-          colors: {
-            bgdark: '#0c0e14',
-            surface: '#151924',
-            surface2: '#1d2230',
-            gold: '#e5b85c',
-            crimson: '#e05260',
-            emerald: '#3ec98c',
-            indigo: '#7c8cff',
-          }
-        }
-      }
-    };
-  </script>
+  <title>Ombre al Tavolo — Scheda Giocatore</title>
   <style>
-    body {
-      background-color: #0c0e14;
-      color: #f3f4f6;
-      font-family: 'Inter', sans-serif;
+    :root {
+      --bg: #0c0e14;
+      --surface: #151924;
+      --surface-2: #1d2230;
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --gold: #e5b85c;
+      --crimson: #e05260;
+      --emerald: #3ec98c;
+      --indigo: #7c8cff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    .app-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .card-gold {
+      border-color: rgba(229, 184, 92, 0.35);
+    }
+
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .profile-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: block;
+    }
+
+    h1 {
+      margin: 2px 0 0;
+      font-size: 25px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .subtext {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--emerald);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button, select, input[type="text"] {
+      font-family: inherit;
+      border-radius: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.92; }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      color: #ffffff;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #0c0e14;
+      border: none;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn-emerald {
+      background: var(--emerald);
+      color: #0c0e14;
+      border: none;
+      padding: 9px 13px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn-indigo {
+      background: var(--indigo);
+      color: #ffffff;
+      border: none;
+      padding: 10px 14px;
+      font-size: 12px;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 12px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-Traditori {
+      background: rgba(224, 82, 96, 0.15);
+      color: var(--crimson);
+      border-color: rgba(224, 82, 96, 0.4);
+    }
+
+    .badge-Fedeli {
+      background: rgba(62, 201, 140, 0.15);
+      color: var(--emerald);
+      border-color: rgba(62, 201, 140, 0.4);
+    }
+
+    .badge-Neutro {
+      background: rgba(229, 184, 92, 0.15);
+      color: var(--gold);
+      border-color: rgba(229, 184, 92, 0.4);
+    }
+
+    .banner {
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .banner-success {
+      background: rgba(62, 201, 140, 0.14);
+      border-color: rgba(62, 201, 140, 0.4);
+      color: var(--emerald);
+    }
+
+    .banner-error {
+      background: rgba(224, 82, 96, 0.14);
+      border-color: rgba(224, 82, 96, 0.4);
+      color: var(--crimson);
+    }
+
+    .banner-info {
+      background: rgba(124, 140, 255, 0.14);
+      border-color: rgba(124, 140, 255, 0.4);
+      color: var(--indigo);
+    }
+
+    .mission-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .mission-row {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .mission-row.done {
+      border-color: rgba(62, 201, 140, 0.45);
+      background: rgba(62, 201, 140, 0.06);
+    }
+
+    .mission-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .mission-desc {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .ability-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ability-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+    }
+
+    .answer-box {
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .answer-yes {
+      background: rgba(62, 201, 140, 0.16);
+      border: 1px solid rgba(62, 201, 140, 0.45);
+      color: var(--emerald);
+    }
+
+    .answer-no {
+      background: rgba(224, 82, 96, 0.16);
+      border: 1px solid rgba(224, 82, 96, 0.45);
+      color: var(--crimson);
+    }
+
+    .chat-box {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .msg-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+    }
+
+    .msg-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .msg-body {
+      margin: 0;
+      font-size: 13px;
+      color: #e5e7eb;
+    }
+
+    .chat-form {
+      display: flex;
+      gap: 8px;
     }
   </style>
-</head>
-<body class="min-h-screen bg-bgdark text-gray-100 antialiased">
-  <div id="player-app" class="max-w-2xl mx-auto px-4 py-8 space-y-6"></div>
 
   <script>
     window.OMBRE_FIREBASE_CONFIG = {
@@ -52,6 +352,9 @@
       measurementId: "G-BZ4K22W409"
     };
   </script>
+</head>
+<body>
+  <div id="player-board-app" class="app-wrap"></div>
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -63,585 +366,409 @@
       onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const ROLE_DETAILS = {
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    var ROLE_DETAILS = {
       assassino: {
         name: 'Assassino',
         faction: 'Traditori',
-        factionKey: 'traditori',
-        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; no missioni con altri Traditori tranne il Traditore Segreto).',
-        badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        power: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore.'
+        powerDesc: 'Ogni missione completata sblocca un colpo con cui eliminare un giocatore (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
       },
       sabotatore: {
         name: 'Sabotatore',
         faction: 'Traditori',
-        factionKey: 'traditori',
-        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; no missioni con altri Traditori tranne il Traditore Segreto).',
-        badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        power: 'Può bloccare l’attivazione di un altro giocatore per il turno.'
+        powerDesc: 'Puoi bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
       },
       traditore_segreto: {
         name: 'Traditore Segreto',
         faction: 'Traditori',
-        factionKey: 'traditori',
-        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; può fare missioni anche con gli altri Traditori).',
-        badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        power: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori.'
+        powerDesc: 'Conosci gli altri Traditori e puoi scegliere a chi rivolgere le abilità dei Traditori (puoi fare missioni anche con gli altri Traditori).'
       },
       investigatore: {
         name: 'Investigatore',
         faction: 'Fedeli',
-        factionKey: 'fedeli',
-        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Può scoprire una delle missioni dei Traditori.'
+        powerDesc: 'Puoi scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili; missioni prevalentemente verbali).'
       },
       guardia: {
         name: 'Guardia',
         faction: 'Fedeli',
-        factionKey: 'fedeli',
-        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore.'
+        powerDesc: 'Puoi assegnare uno Scudo Protettivo a te stesso o a un altro giocatore (5 missioni, 3 ripetibili; missioni prevalentemente verbali).'
       },
       martire: {
         name: 'Martire',
         faction: 'Fedeli',
-        factionKey: 'fedeli',
-        missionStyle: 'Non ha missioni.',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo presente in partita e, se è in gioco, sblocca la Voce dell’Aldilà per proteggere un giocatore con uno Scudo.'
+        powerDesc: 'Non hai missioni; se subisci una missione altrui puoi dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.'
       },
       mediatore: {
         name: 'Mediatore',
         faction: 'Fedeli',
-        factionKey: 'fedeli',
-        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Ha un voto extra (+1) alla Tavola Rotonda.'
+        powerDesc: 'Hai un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili; missioni prevalentemente verbali).'
       },
       cacciatore: {
         name: 'Cacciatore',
         faction: 'Neutro',
-        factionKey: 'neutro',
-        missionStyle: 'Missioni prevalentemente di confronto (5 missioni, di cui 3 ripetibili): i punti missione permettono di fare la domanda "giocatore X è ruolo Y?", mentre il tentativo finale sui 3 giocatori è sempre disponibile senza spendere punti.',
-        badge: 'bg-gold/15 text-gold border-gold/40',
-        power: 'Può usare i punti missione per chiedere "giocatore X è ruolo Y?" e, in qualsiasi momento senza punti, può indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato.'
+        powerDesc: 'Usa i punti missione per chiedere "giocatore X è ruolo Y?" con risposta automatica Sì/No; oppure (0 punti) indica il ruolo di 3 giocatori.'
       }
     };
 
-    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
-    const PLAYER_STORAGE_KEY = 'ombre_giocatore_sessione_v1';
-    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
-
-    let activeCameraStream = null;
-    let firestoreDb = null;
-    let unsubscribeRoom = null;
-    let latestRoomPlayers = [];
-    let latestTraitorMessages = [];
-    let latestMasterMessages = [];
-    let activeTraitorTab = 'traitors'; // 'traitors' | 'master'
-    let chatDraft = '';
+    var DEFAULT_MISSIONS_BY_FACTION = {
+      Traditori: [
+        { slot: 1, title: 'Missione 1 · Contatto Cauto', desc: 'Avvia un contatto discreto con un giocatore non Traditore durante il turno.', done: false },
+        { slot: 2, title: 'Missione 2 · Sussurro al Tavolo', desc: 'Fai passare una frase ambigua senza destare sospetti immediati.', done: false },
+        { slot: 3, title: 'Missione 3 · Devianza del Voto', desc: 'Orienta il sospetto verso un giocatore Fedele durante il confronto.', done: false },
+        { slot: 4, title: 'Missione 4 · Scambio Silenzioso', desc: 'Completa un piccolo scambio o gesto concordato senza farti notare.', done: false },
+        { slot: 5, title: 'Missione 5 · Colpo nell’Ombra', desc: 'Porta a termine l’obiettivo del turno mantenendo coperta la tua fazione.', done: false }
+      ],
+      Fedeli: [
+        { slot: 1, title: 'Missione 1 · Raccolta Indizi', desc: 'Ascolta con attenzione e riporta un dettaglio utile emerso al tavolo.', done: false },
+        { slot: 2, title: 'Missione 2 · Domanda Mirata', desc: 'Poni una domanda incisiva per verificare la coerenza di un giocatore.', done: false },
+        { slot: 3, title: 'Missione 3 · Alleanza Verbale', desc: 'Costruisci un confronto costruttivo con un altro giocatore al tavolo.', done: false },
+        { slot: 4, title: 'Missione 4 · Difesa del Giusto', desc: 'Sostieni con argomenti chiari un giocatore che ritieni affidabile.', done: false },
+        { slot: 5, title: 'Missione 5 · Verità alla Luce', desc: 'Aiuta il tavolo a individuare un comportamento incoerente prima del voto.', done: false }
+      ],
+      Neutro: [
+        { slot: 1, title: 'Missione 1 · Osservazione Diretta', desc: 'Osserva le interazioni tra due giocatori per ricavare un indizio.', done: false },
+        { slot: 2, title: 'Missione 2 · Analisi dei Ruoli', desc: 'Confronta le dichiarazioni al tavolo con i ruoli possibili in gioco.', done: false },
+        { slot: 3, title: 'Missione 3 · Caccia Silenziosa', desc: 'Individua un bersaglio su cui concentrare la tua prossima domanda.', done: false },
+        { slot: 4, title: 'Missione 4 · Verifica Incrociata', desc: 'Controlla la reazione di un giocatore quando viene nominato un altro ruolo.', done: false },
+        { slot: 5, title: 'Missione 5 · Mira Finale', desc: 'Prepara la tua verifica conclusiva o la chiamata da 3 giocatori.', done: false }
+      ]
+    };
 
     function initFirestore() {
       try {
-        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) {
-          return null;
-        }
-        const app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
         return getFirestore(app);
       } catch (err) {
-        console.error('Errore inizializzazione Firestore:', err);
+        console.error('Errore Firestore su giocatore.html:', err);
         return null;
       }
     }
 
-    function getRoomDocRef(roomCode) {
-      if (!firestoreDb) return null;
-      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-      return doc(firestoreDb, 'stanze', cleanRoom);
-    }
+    var firestoreDb = initFirestore();
 
-    function readPlayerAccessContext() {
+    function readAccess() {
       try {
-        const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
-        if (!raw) {
-          return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
-        }
-        const parsed = JSON.parse(raw);
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        var parsed = JSON.parse(raw);
         return {
           roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
           playerName: String(parsed.playerName || 'Giocatore').trim() || 'Giocatore'
         };
-      } catch (err) {
-        console.error('Errore lettura contesto giocatore:', err);
+      } catch (_e) {
         return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
       }
     }
 
-    function findRoleInPlayersList(players, playerName) {
-      const cleanName = String(playerName || '').trim().toLowerCase();
-      if (!Array.isArray(players) || !cleanName) return null;
-      const match = players.find(p => String(p.name || '').trim().toLowerCase() === cleanName);
-      if (match && match.assignedRoleKey && ROLE_DETAILS[match.assignedRoleKey]) {
-        return match.assignedRoleKey;
-      }
-      return null;
+    var access = readAccess();
+    var state = {
+      roomCode: access.roomCode,
+      playerName: access.playerName,
+      syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Locale',
+      players: [],
+      assignedRoleKey: null,
+      privateCardOpen: false,
+      missions: [],
+      missionPoints: 0,
+      hunterTargetName: '',
+      hunterTargetRole: 'assassino',
+      hunterLastAnswer: null,
+      tripleNames: ['', '', ''],
+      tripleRoles: ['assassino', 'guardia', 'investigatore'],
+      actionResultText: null,
+      masterChat: [],
+      banner: null
+    };
+
+    var chatDraft = '';
+
+    function getRoomRef() {
+      if (!firestoreDb) return null;
+      return doc(firestoreDb, 'stanze', state.roomCode);
     }
 
-    function readAssignedRoleFromLocalRoom(roomCode, playerName) {
-      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+    function ensureFiveMissions(existingList, faction, cloudList) {
+      var source = Array.isArray(cloudList) && cloudList.length
+        ? cloudList
+        : (Array.isArray(existingList) && existingList.length
+            ? existingList
+            : (DEFAULT_MISSIONS_BY_FACTION[faction] || DEFAULT_MISSIONS_BY_FACTION.Fedeli));
+
+      var out = [];
+      for (var i = 0; i < 5; i++) {
+        var base = source[i] || (DEFAULT_MISSIONS_BY_FACTION[faction] || DEFAULT_MISSIONS_BY_FACTION.Fedeli)[i];
+        out.push({
+          slot: i + 1,
+          title: base.title || ('Missione ' + (i + 1)),
+          desc: base.desc || '',
+          done: Boolean(base.done)
+        });
+      }
+      return out;
+    }
+
+    function applyRoomSnapshot(data) {
+      if (!data || typeof data !== 'object') return;
+      if (Array.isArray(data.players)) {
+        state.players = data.players;
+        var me = data.players.find(function (p) {
+          return String(p.name || '').trim().toLowerCase() === state.playerName.toLowerCase();
+        });
+        var newRole = me && me.assignedRoleKey && ROLE_DETAILS[me.assignedRoleKey] ? me.assignedRoleKey : null;
+        if (newRole && !state.assignedRoleKey) {
+          state.privateCardOpen = true;
+          state.banner = { text: 'Il Master ti ha assegnato un ruolo: Scheda Privata sbloccata!', type: 'success' };
+        } else if (!newRole) {
+          state.privateCardOpen = false;
+        }
+        state.assignedRoleKey = newRole;
+      }
+
+      var roleObj = state.assignedRoleKey ? ROLE_DETAILS[state.assignedRoleKey] : null;
+      var faction = roleObj ? roleObj.faction : 'Fedeli';
+      var cloudMissions = data.missionAssignments && typeof data.missionAssignments === 'object'
+        ? data.missionAssignments[state.playerName.toLowerCase()]
+        : null;
+
+      state.missions = ensureFiveMissions(state.missions, faction, cloudMissions);
+      var completedCount = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+      state.missionPoints = completedCount;
+
+      if (Array.isArray(data.masterChat)) {
+        state.masterChat = data.masterChat;
+      }
+
+      if (!state.hunterTargetName) {
+        var other = state.players.find(function (p) {
+          return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase();
+        });
+        if (other) state.hunterTargetName = other.name;
+      }
+
+      saveLocal();
+    }
+
+    function saveLocal() {
       try {
-        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        return findRoleInPlayersList(parsed.players, playerName);
-      } catch (err) {
-        console.error('Errore lettura ruolo locale:', err);
-      }
-      return null;
+        var raw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+        var cur = raw ? JSON.parse(raw) : { roomCode: state.roomCode };
+        cur.players = state.players;
+        cur.missionAssignments = cur.missionAssignments && typeof cur.missionAssignments === 'object'
+          ? cur.missionAssignments
+          : {};
+        cur.missionAssignments[state.playerName.toLowerCase()] = state.missions;
+        cur.masterChat = state.masterChat;
+        cur.updatedAt = Date.now();
+        localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(cur));
+      } catch (_e) {}
     }
 
-    function createInitialPlayerState() {
-      const ctx = readPlayerAccessContext();
-      return {
-        roomCode: ctx.roomCode,
-        playerName: ctx.playerName,
-        selfieDataUrl: null,
-        cameraActive: false,
-        boardUnlocked: false,
-        privateCardOpen: false,
-        assignedRoleKey: readAssignedRoleFromLocalRoom(ctx.roomCode, ctx.playerName),
-        syncStatus: 'Connessione cloud...',
-        banner: null
-      };
-    }
-
-    function loadPlayerState() {
-      try {
-        const ctx = readPlayerAccessContext();
-        const base = createInitialPlayerState();
-        const raw = localStorage.getItem(PLAYER_STORAGE_KEY);
-        if (!raw) return base;
-        const parsed = JSON.parse(raw);
-        const samePlayer =
-          String(parsed.roomCode || '').toUpperCase() === ctx.roomCode &&
-          String(parsed.playerName || '').trim().toLowerCase() === ctx.playerName.toLowerCase();
-        const syncedRole = readAssignedRoleFromLocalRoom(ctx.roomCode, ctx.playerName);
-        const roleKey = syncedRole || (samePlayer && parsed.assignedRoleKey && ROLE_DETAILS[parsed.assignedRoleKey] ? parsed.assignedRoleKey : null);
-
-        return {
-          ...base,
-          roomCode: ctx.roomCode,
-          playerName: ctx.playerName,
-          selfieDataUrl: samePlayer ? (parsed.selfieDataUrl || null) : null,
-          cameraActive: false,
-          boardUnlocked: samePlayer ? Boolean(parsed.boardUnlocked && parsed.selfieDataUrl) : false,
-          privateCardOpen: roleKey ? Boolean(samePlayer && parsed.privateCardOpen) : false,
-          assignedRoleKey: roleKey,
-          banner: samePlayer ? (parsed.banner || null) : null
-        };
-      } catch (err) {
-        console.error('Errore caricamento sessione giocatore:', err);
-        return createInitialPlayerState();
-      }
-    }
-
-    let playerState = loadPlayerState();
-
-    function savePlayerState() {
-      try {
-        localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify({
-          roomCode: playerState.roomCode,
-          playerName: playerState.playerName,
-          selfieDataUrl: playerState.selfieDataUrl,
-          boardUnlocked: playerState.boardUnlocked,
-          privateCardOpen: playerState.privateCardOpen,
-          assignedRoleKey: playerState.assignedRoleKey,
-          banner: playerState.banner
-        }));
-      } catch (err) {
-        console.error('Errore salvataggio sessione giocatore:', err);
-      }
-    }
-
-    function getSafeSelfieForCloud(dataUrl) {
-      if (!dataUrl || typeof dataUrl !== 'string') return null;
-      if (dataUrl.length > 650000) return null;
-      return dataUrl;
-    }
-
-    function isTraitorRole(roleKey) {
-      return Boolean(roleKey && ROLE_DETAILS[roleKey] && ROLE_DETAILS[roleKey].factionKey === 'traditori');
-    }
-
-    function isSecretTraitorRole(roleKey) {
-      return roleKey === 'traditore_segreto';
-    }
-
-    async function syncPlayerToFirestore() {
-      const ref = getRoomDocRef(playerState.roomCode);
+    async function pushRoomUpdate(extra) {
+      saveLocal();
+      var ref = getRoomRef();
       if (!ref) return;
       try {
-        const snap = await getDoc(ref);
-        const existingData = snap.exists() ? snap.data() : {};
-        const players = Array.isArray(existingData.players) ? [...existingData.players] : [];
-        const cleanName = playerState.playerName.trim();
-        const idx = players.findIndex(p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase());
+        var snap = await getDoc(ref);
+        var cur = snap.exists() ? (snap.data() || {}) : {};
+        var nextAssignments = Object.assign({}, cur.missionAssignments || {});
+        nextAssignments[state.playerName.toLowerCase()] = state.missions;
 
-        const existingPlayer = idx >= 0 ? players[idx] : {};
-        const updatedPlayer = {
-          id: existingPlayer.id || ('p_' + cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_')),
-          name: cleanName,
-          selfieDataUrl: getSafeSelfieForCloud(playerState.selfieDataUrl) || existingPlayer.selfieDataUrl || null,
-          boardUnlocked: Boolean(playerState.boardUnlocked || existingPlayer.boardUnlocked),
-          assignedRoleKey: existingPlayer.assignedRoleKey || playerState.assignedRoleKey || null,
+        await setDoc(ref, Object.assign({
+          roomCode: state.roomCode,
+          players: state.players,
+          missionAssignments: nextAssignments,
+          masterChat: state.masterChat,
           updatedAt: Date.now()
-        };
-
-        if (idx >= 0) {
-          players[idx] = updatedPlayer;
-        } else {
-          players.push(updatedPlayer);
-        }
-
-        await setDoc(ref, {
-          roomCode: playerState.roomCode,
-          players,
-          updatedAt: Date.now()
-        }, { merge: true });
-
-        playerState.syncStatus = 'Cloud Firestore attivo';
+        }, extra || {}), { merge: true });
+        state.syncStatus = 'Cloud Firestore attivo';
       } catch (err) {
-        console.error('Errore sincronizzazione giocatore su Firestore:', err);
-        playerState.syncStatus = 'Locale (controlla regole Firestore)';
+        console.error('Errore sync giocatore su Firestore:', err);
+        state.syncStatus = 'Locale (controlla regole Firestore)';
       }
     }
 
-    function subscribeToRoomUpdates() {
-      if (typeof unsubscribeRoom === 'function') {
-        unsubscribeRoom();
-        unsubscribeRoom = null;
-      }
-      const ref = getRoomDocRef(playerState.roomCode);
-      if (!ref) {
-        playerState.syncStatus = 'Solo locale';
+    window.togglePrivateCard = function () {
+      if (!state.assignedRoleKey) {
+        state.banner = { text: 'Scheda privata bloccata: attendi che il Master ti assegni un ruolo.', type: 'info' };
+        render();
         return;
       }
+      state.privateCardOpen = !state.privateCardOpen;
+      render();
+    };
 
-      unsubscribeRoom = onSnapshot(ref, (snap) => {
-        playerState.syncStatus = 'Cloud Firestore attivo';
-        if (!snap.exists()) {
-          renderPlayerPage();
-          return;
-        }
-        const data = snap.data() || {};
-        const players = Array.isArray(data.players) ? data.players : [];
-        latestRoomPlayers = players;
-        latestTraitorMessages = Array.isArray(data.traitorChat) ? data.traitorChat : [];
-
-        const allMasterChat = Array.isArray(data.masterChat) ? data.masterChat : [];
-        const cleanName = playerState.playerName.trim().toLowerCase();
-        latestMasterMessages = allMasterChat.filter(msg => {
-          const target = String(msg.playerName || '').trim().toLowerCase();
-          return !target || target === cleanName;
-        });
-
-        try {
-          localStorage.setItem(ROOM_SYNC_PREFIX + playerState.roomCode, JSON.stringify({
-            roomCode: playerState.roomCode,
-            players,
-            traitorChat: latestTraitorMessages,
-            masterChat: allMasterChat,
-            updatedAt: data.updatedAt || Date.now()
-          }));
-        } catch (err) {
-          console.error('Errore cache locale stanza:', err);
-        }
-
-        const cloudRole = findRoleInPlayersList(players, playerState.playerName);
-        const previousRole = playerState.assignedRoleKey;
-        playerState.assignedRoleKey = cloudRole;
-
-        if (!cloudRole) {
-          playerState.privateCardOpen = false;
-        } else if (!previousRole && cloudRole) {
-          playerState.banner = {
-            text: 'Il Master ti ha assegnato un ruolo in tempo reale! Ora puoi aprire la tua Scheda Privata.',
-            type: 'success'
-          };
-        }
-
-        savePlayerState();
-        renderPlayerPage();
-      }, (err) => {
-        console.error('Errore listener stanza Firestore:', err);
-        playerState.syncStatus = 'Locale (permessi Firestore)';
-        renderPlayerPage();
-      });
-    }
-
-    async function sendChatMessage() {
-      const roleKey = playerState.assignedRoleKey;
-      if (!roleKey || !ROLE_DETAILS[roleKey]) {
-        setPlayerBanner('Attendi che il Master ti assegni un ruolo per usare la chat.', 'error');
+    window.toggleMissionDone = async function (slotIndex) {
+      if (!state.assignedRoleKey) {
+        state.banner = { text: 'Attendi che il Master ti assegni un ruolo prima di completare missioni.', type: 'error' };
+        render();
         return;
       }
+      var target = state.missions[slotIndex];
+      if (!target) return;
+      target.done = !target.done;
+      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
 
-      const inputEl = document.getElementById('player-chat-input');
-      const text = String((inputEl ? inputEl.value : chatDraft) || '').trim();
-      if (!text) return;
-
-      const isTraitor = isTraitorRole(roleKey);
-      const isSecretTraitor = isSecretTraitorRole(roleKey);
-      const roleObj = ROLE_DETAILS[roleKey];
-      const useTraitorChannel = isTraitor && activeTraitorTab === 'traitors';
-      const hideNameInChannel = Boolean(useTraitorChannel && isSecretTraitor);
-
-      const newMessage = {
-        id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-        senderName: hideNameInChannel ? roleObj.name : playerState.playerName,
-        senderRoleName: roleObj.name,
-        senderFaction: roleObj.faction,
-        anonymousIdentity: hideNameInChannel,
-        playerName: playerState.playerName,
-        text: text.slice(0, 400),
+      var statusLabel = target.done ? 'COMPLETATA' : 'NON COMPLETATA';
+      var notif = {
+        id: 'notif_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: '[MISSIONE ' + statusLabel + '] ' + state.playerName + ' -> "' + target.title + '" (Stanza ' + state.roomCode + ')',
         createdAt: Date.now()
       };
+      state.masterChat = state.masterChat.concat([notif]).slice(-150);
 
+      state.banner = {
+        text: 'Missione "' + target.title + '" segnata come ' + (target.done ? 'FATTA' : 'NON FATTA') + ' e comunicata al Master.',
+        type: target.done ? 'success' : 'info'
+      };
+
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.setHunterTarget = function (name) {
+      state.hunterTargetName = name;
+    };
+
+    window.setHunterRole = function (roleKey) {
+      state.hunterTargetRole = roleKey;
+    };
+
+    window.hunterAskQuestion = async function () {
+      if (state.missionPoints <= 0) {
+        state.banner = { text: 'Non hai punti missione disponibili per fare una domanda automatica (completa una missione con "Fatto").', type: 'error' };
+        render();
+        return;
+      }
+      var targetPlayer = state.players.find(function (p) {
+        return String(p.name || '').trim().toLowerCase() === String(state.hunterTargetName || '').trim().toLowerCase();
+      });
+      if (!targetPlayer) {
+        state.banner = { text: 'Seleziona un giocatore valido a cui rivolgerti.', type: 'error' };
+        render();
+        return;
+      }
+
+      var actualRole = targetPlayer.assignedRoleKey || '';
+      var isMatch = actualRole === state.hunterTargetRole;
+      var roleLabel = (ROLE_DETAILS[state.hunterTargetRole] && ROLE_DETAILS[state.hunterTargetRole].name) || state.hunterTargetRole;
+
+      // Consuma 1 missione completata come punto missione
+      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
+      if (doneIdx !== -1) {
+        state.missions[doneIdx].done = false;
+      }
+      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+
+      state.hunterLastAnswer = {
+        yes: isMatch,
+        text: (isMatch ? 'SÌ' : 'NO') + ' — "' + targetPlayer.name + '" è "' + roleLabel + '"? Risposta automatica: ' + (isMatch ? 'SÌ' : 'NO') + '.'
+      };
+
+      var notif = {
+        id: 'hunt_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: '[CACCIATORE · DOMANDA] ' + state.playerName + ' chiede se ' + targetPlayer.name + ' è ' + roleLabel + ' -> Esito automatico: ' + (isMatch ? 'SÌ' : 'NO'),
+        createdAt: Date.now()
+      };
+      state.masterChat = state.masterChat.concat([notif]).slice(-150);
+
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.setTripleField = function (kind, idx, val) {
+      if (kind === 'name') state.tripleNames[idx] = val;
+      if (kind === 'role') state.tripleRoles[idx] = val;
+    };
+
+    window.hunterTripleCall = async function () {
+      var results = [0, 1, 2].map(function (i) {
+        var n = String(state.tripleNames[i] || '').trim().toLowerCase();
+        var r = state.tripleRoles[i];
+        var found = state.players.find(function (p) { return String(p.name || '').trim().toLowerCase() === n; });
+        return {
+          name: state.tripleNames[i] || ('Giocatore ' + (i + 1)),
+          role: r,
+          ok: Boolean(found && found.assignedRoleKey === r)
+        };
+      });
+      var allRight = results.every(function (x) { return x.ok; });
+      state.actionResultText = allRight
+        ? 'CHIAMATA DA 3 RUOLI: TUTTI E 3 ESATTI! Vittoria immediata del Cacciatore (comunicato al Master).'
+        : 'CHIAMATA DA 3 RUOLI: ERRORE su almeno un ruolo (' + results.map(function (x) { return x.name + ': ' + (x.ok ? 'SÌ' : 'NO'); }).join(' | ') + '). Cacciatore eliminato (comunicato al Master).';
+
+      var notif = {
+        id: 'trip_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: '[CACCIATORE · 3 RUOLI] ' + state.actionResultText,
+        createdAt: Date.now()
+      };
+      state.masterChat = state.masterChat.concat([notif]).slice(-150);
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.triggerQuickAbility = async function (label) {
+      state.actionResultText = label + ' — Azione registrata e comunicata al Master.';
+      var notif = {
+        id: 'ab_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: '[ABILITÀ] ' + state.playerName + ': ' + label,
+        createdAt: Date.now()
+      };
+      state.masterChat = state.masterChat.concat([notif]).slice(-150);
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.updateChatDraft = function (v) {
+      chatDraft = String(v || '');
+    };
+
+    window.sendPlayerChat = async function () {
+      var inp = document.getElementById('player-chat-input');
+      var txt = String((inp ? inp.value : chatDraft) || '').trim();
+      if (!txt) return;
+      state.masterChat = state.masterChat.concat([{
+        id: 'pc_' + Date.now(),
+        fromMaster: false,
+        senderName: state.playerName,
+        playerName: state.playerName,
+        text: txt,
+        createdAt: Date.now()
+      }]).slice(-150);
       chatDraft = '';
-      if (inputEl) inputEl.value = '';
+      if (inp) inp.value = '';
+      await pushRoomUpdate();
+      render();
+    };
 
-      const ref = getRoomDocRef(playerState.roomCode);
-      if (ref) {
-        try {
-          const snap = await getDoc(ref);
-          const data = snap.exists() ? (snap.data() || {}) : {};
-          if (useTraitorChannel) {
-            const existing = Array.isArray(data.traitorChat) ? data.traitorChat : [];
-            const nextList = [...existing, newMessage].slice(-100);
-            latestTraitorMessages = nextList;
-            await setDoc(ref, {
-              roomCode: playerState.roomCode,
-              traitorChat: nextList,
-              updatedAt: Date.now()
-            }, { merge: true });
-          } else {
-            const existing = Array.isArray(data.masterChat) ? data.masterChat : [];
-            const nextList = [...existing, newMessage].slice(-150);
-            const cleanName = playerState.playerName.trim().toLowerCase();
-            latestMasterMessages = nextList.filter(msg => {
-              const target = String(msg.playerName || '').trim().toLowerCase();
-              return !target || target === cleanName;
-            });
-            await setDoc(ref, {
-              roomCode: playerState.roomCode,
-              masterChat: nextList,
-              updatedAt: Date.now()
-            }, { merge: true });
-          }
-          renderPlayerPage();
-          return;
-        } catch (err) {
-          console.error('Errore invio messaggio chat su Firestore:', err);
-        }
-      }
+    window.goToRoles = function () {
+      window.location.href = 'ruoli.html';
+    };
 
-      if (useTraitorChannel) {
-        latestTraitorMessages = [...latestTraitorMessages, newMessage].slice(-100);
-      } else {
-        latestMasterMessages = [...latestMasterMessages, newMessage].slice(-150);
-      }
-      renderPlayerPage();
-    }
+    window.goToMissionsCatalog = function () {
+      window.location.href = 'missioni.html';
+    };
 
-    function setPlayerBanner(text, type = 'info') {
-      playerState.banner = { text, type };
-      savePlayerState();
-      renderPlayerPage();
-    }
-
-    function stopCameraStream() {
-      try {
-        if (activeCameraStream && typeof activeCameraStream.getTracks === 'function') {
-          activeCameraStream.getTracks().forEach(track => track.stop());
-        }
-      } catch (err) {
-        console.error('Errore chiusura fotocamera:', err);
-      }
-      activeCameraStream = null;
-      playerState.cameraActive = false;
-    }
-
-    async function startPlayerCamera() {
-      if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-        setPlayerBanner('Fotocamera diretta non disponibile qui: usa "Carica Foto" dalla galleria.', 'error');
-        return;
-      }
-      try {
-        stopCameraStream();
-        activeCameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
-          audio: false
-        });
-        playerState.cameraActive = true;
-        playerState.banner = null;
-        savePlayerState();
-        renderPlayerPage();
-
-        const videoEl = document.getElementById('player-camera-video');
-        if (videoEl) {
-          videoEl.srcObject = activeCameraStream;
-        }
-      } catch (err) {
-        console.error('Errore accesso fotocamera:', err);
-        playerState.cameraActive = false;
-        setPlayerBanner('Permesso fotocamera negato o non disponibile: puoi usare "Carica Foto" dalla galleria.', 'error');
-      }
-    }
-
-    function captureSelfiePhoto() {
-      const videoEl = document.getElementById('player-camera-video');
-      if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
-        setPlayerBanner('Inquadratura non ancora pronta: riprova tra un istante o carica una foto.', 'error');
-        return;
-      }
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 480;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        const size = Math.min(videoEl.videoWidth, videoEl.videoHeight);
-        const sx = (videoEl.videoWidth - size) / 2;
-        const sy = (videoEl.videoHeight - size) / 2;
-        ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, 480, 480);
-        playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.75);
-        stopCameraStream();
-        playerState.banner = { text: 'Selfie acquisito! Ora puoi proseguire alla tua plancia.', type: 'success' };
-        savePlayerState();
-        syncPlayerToFirestore();
-        renderPlayerPage();
-      } catch (err) {
-        console.error('Errore acquisizione selfie:', err);
-        setPlayerBanner('Impossibile scattare il selfie in questo momento.', 'error');
-      }
-    }
-
-    function handleGalleryFileSelect(file) {
-      if (!file) return;
-      if (!file.type || !file.type.startsWith('image/')) {
-        setPlayerBanner('Seleziona un file immagine valido.', 'error');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function (ev) {
-        const rawUrl = String(ev.target && ev.target.result ? ev.target.result : '');
-        const img = new Image();
-        img.onload = function () {
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 480;
-            canvas.height = 480;
-            const ctx = canvas.getContext('2d');
-            const size = Math.min(img.width, img.height);
-            const sx = (img.width - size) / 2;
-            const sy = (img.height - size) / 2;
-            ctx.drawImage(img, sx, sy, size, size, 0, 0, 480, 480);
-            playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.75);
-          } catch (_) {
-            playerState.selfieDataUrl = rawUrl;
-          }
-          stopCameraStream();
-          playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi proseguire alla tua plancia.', type: 'success' };
-          savePlayerState();
-          syncPlayerToFirestore();
-          renderPlayerPage();
-        };
-        img.onerror = function () {
-          playerState.selfieDataUrl = rawUrl;
-          stopCameraStream();
-          playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi proseguire alla tua plancia.', type: 'success' };
-          savePlayerState();
-          syncPlayerToFirestore();
-          renderPlayerPage();
-        };
-        img.src = rawUrl;
-      };
-      reader.onerror = function () {
-        setPlayerBanner('Errore durante il caricamento della foto.', 'error');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function goToPlayerBoard() {
-      if (!playerState.selfieDataUrl) {
-        setPlayerBanner('Scatta o carica prima il tuo selfie per accedere alla plancia.', 'error');
-        return;
-      }
-      stopCameraStream();
-      playerState.boardUnlocked = true;
-      playerState.banner = null;
-      savePlayerState();
-      syncPlayerToFirestore();
-      renderPlayerPage();
-    }
-
-    function reopenSelfieStep() {
-      playerState.boardUnlocked = false;
-      playerState.privateCardOpen = false;
-      playerState.banner = null;
-      savePlayerState();
-      renderPlayerPage();
-    }
-
-    async function refreshAssignedRoleFromMaster() {
-      const ref = getRoomDocRef(playerState.roomCode);
-      if (ref) {
-        try {
-          const snap = await getDoc(ref);
-          if (snap.exists()) {
-            const players = Array.isArray(snap.data().players) ? snap.data().players : [];
-            latestRoomPlayers = players;
-            const cloudRole = findRoleInPlayersList(players, playerState.playerName);
-            playerState.assignedRoleKey = cloudRole;
-            savePlayerState();
-          }
-        } catch (err) {
-          console.error('Errore aggiornamento ruolo da Firestore:', err);
-        }
-      }
-
-      const roleKey = playerState.assignedRoleKey || readAssignedRoleFromLocalRoom(playerState.roomCode, playerState.playerName);
-      playerState.assignedRoleKey = roleKey;
-      if (roleKey) {
-        setPlayerBanner('Il Master ti ha assegnato un ruolo: ora puoi aprire la tua scheda privata.', 'success');
-      } else {
-        playerState.privateCardOpen = false;
-        setPlayerBanner('Nessun ruolo ancora assegnato dal Master: la scheda privata resta bloccata.', 'info');
-      }
-    }
-
-    function togglePrivateCard() {
-      const latestRole =
-        findRoleInPlayersList(latestRoomPlayers, playerState.playerName) ||
-        readAssignedRoleFromLocalRoom(playerState.roomCode, playerState.playerName) ||
-        playerState.assignedRoleKey;
-      playerState.assignedRoleKey = latestRole;
-
-      if (!latestRole) {
-        playerState.privateCardOpen = false;
-        setPlayerBanner('Scheda privata bloccata: attendi che il Master ti assegni un ruolo.', 'error');
-        return;
-      }
-
-      playerState.privateCardOpen = !playerState.privateCardOpen;
-      playerState.banner = null;
-      savePlayerState();
-      renderPlayerPage();
-    }
+    window.goToAccess = function () {
+      window.location.href = 'index.html';
+    };
 
     function escapeHtml(value) {
-      return String(value ?? '')
+      return String(value == null ? '' : value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -649,381 +776,215 @@
         .replace(/'/g, '&#39;');
     }
 
-    function formatTimeShort(ts) {
-      try {
-        if (!ts) return '';
-        return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-      } catch (_) {
-        return '';
-      }
-    }
+    function renderRoleAbilitySection(roleKey) {
+      if (!roleKey || !ROLE_DETAILS[roleKey]) return '';
+      var role = ROLE_DETAILS[roleKey];
 
-    function renderHunterActionPanel(roleKey) {
-      if (roleKey !== 'cacciatore') return '';
-      return `
-        <section class="rounded-2xl bg-bgdark border border-gold/30 p-5 space-y-3">
-          <div class="space-y-0.5">
-            <span class="text-[11px] font-bold uppercase tracking-widest text-gold">Azioni del Cacciatore</span>
-            <h2 class="font-serif text-lg font-bold text-white">Indagine a Punti e Tentativo Finale</h2>
-            <p class="text-xs text-gray-400">
-              Usa i punti missione per chiedere "giocatore X è ruolo Y?", oppure usa in qualsiasi momento (senza punti) il pulsante per indicare i 3 giocatori.
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-2.5 pt-1">
-            <button
-              type="button"
-              onclick="setPlayerBanner('Domanda a punti missione: invia al Master la verifica &quot;Giocatore X è ruolo Y?&quot;.', 'info')"
-              class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-100 transition cursor-pointer"
-            >
-              Chiedi "Giocatore X è Ruolo Y?" (Punti Missione)
-            </button>
-            <button
-              type="button"
-              onclick="setPlayerBanner('Tentativo Cacciatore sempre disponibile (0 punti): dichiara 3 giocatori e i relativi ruoli. Tutti esatti = vittoria immediata; anche un solo errore = eliminazione.', 'success')"
-              class="px-3.5 py-2 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-            >
-              Indovina 3 Ruoli (Sempre Disponibile · 0 Punti)
-            </button>
-          </div>
-        </section>
-      `;
-    }
+      if (roleKey === 'cacciatore') {
+        var playerOpts = state.players.map(function (p) {
+          var sel = String(state.hunterTargetName).toLowerCase() === String(p.name).toLowerCase() ? ' selected' : '';
+          return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
+        }).join('');
 
-    function renderChatSection(roleObj) {
-      if (!roleObj) {
-        return `
-          <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-2">
-            <h2 class="font-serif text-lg font-bold text-white">Canale di Comunicazione</h2>
-            <p class="text-xs text-gray-400">
-              Disponibile non appena il Master ti assegna un ruolo: i Traditori hanno sia la chat interna dei Traditori sia la chat diretta con il Master, mentre Fedeli e Neutro hanno la chat diretta con il Master.
-            </p>
-          </section>
-        `;
-      }
+        var roleOpts = Object.keys(ROLE_DETAILS).map(function (rk) {
+          var sel = state.hunterTargetRole === rk ? ' selected' : '';
+          return '<option value="' + rk + '"' + sel + '>' + escapeHtml(ROLE_DETAILS[rk].name) + '</option>';
+        }).join('');
 
-      const isTraitor = isTraitorRole(playerState.assignedRoleKey);
-      const isSecretTraitor = isSecretTraitorRole(playerState.assignedRoleKey);
-      const useTraitorChannel = isTraitor && activeTraitorTab === 'traitors';
-      const messages = useTraitorChannel ? latestTraitorMessages : latestMasterMessages;
-
-      const chatTitle = useTraitorChannel ? 'Chat Interna dei Traditori' : 'Chat Diretta con il Master';
-      const chatSubtitle = useTraitorChannel
-        ? (isSecretTraitor
-            ? 'Scrivi ai Traditori: per te compare solo il ruolo "Traditore Segreto", senza mostrare il tuo nome.'
-            : 'Canale riservato ai Traditori della stanza.')
-        : 'Canale privato tra te e il Master.';
-
-      const traitorTabsHtml = isTraitor
-        ? `<div class="flex items-center gap-2 pt-1">
-             <button
-               type="button"
-               onclick="activeTraitorTab = 'traitors'; renderPlayerPage();"
-               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                 activeTraitorTab === 'traitors'
-                   ? 'bg-crimson text-white'
-                   : 'bg-surface border border-white/10 text-gray-300 hover:bg-white/5'
-               }"
-             >
-               Chat Traditori
-             </button>
-             <button
-               type="button"
-               onclick="activeTraitorTab = 'master'; renderPlayerPage();"
-               class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                 activeTraitorTab === 'master'
-                   ? 'bg-gold text-bgdark'
-                   : 'bg-surface border border-white/10 text-gray-300 hover:bg-white/5'
-               }"
-             >
-               Chat con il Master
-             </button>
-           </div>`
-        : '';
-
-      const messagesHtml = messages.length
-        ? messages.map(msg => {
-            const isSelf = String(msg.playerName || '').trim().toLowerCase() === playerState.playerName.trim().toLowerCase();
-            const label = msg.fromMaster
-              ? 'Master'
-              : (msg.anonymousIdentity ? 'Traditore Segreto' : (msg.senderName || 'Giocatore'));
-            const roleTag = msg.fromMaster
-              ? 'Master'
-              : (msg.anonymousIdentity ? 'Anonimo' : (msg.senderRoleName || ''));
-            return `
-              <div class="rounded-xl border px-3.5 py-2.5 space-y-1 ${
-                isSelf
-                  ? 'bg-surface2 border-gold/30 ml-4'
-                  : 'bg-surface border-white/10 mr-4'
-              }">
-                <div class="flex items-center justify-between gap-2 text-[11px]">
-                  <span class="font-bold text-gray-100">${escapeHtml(label)}</span>
-                  <span class="text-gray-400">${escapeHtml(roleTag)}${msg.createdAt ? ' · ' + escapeHtml(formatTimeShort(msg.createdAt)) : ''}</span>
-                </div>
-                <p class="text-xs text-gray-200 leading-relaxed break-words">${escapeHtml(msg.text)}</p>
-              </div>
-            `;
-          }).join('')
-        : `<p class="text-xs text-gray-500 text-center py-4">Nessun messaggio ancora in questo canale.</p>`;
-
-      return `
-        <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
-          <div class="space-y-1">
-            <h2 class="font-serif text-xl font-bold text-white">${escapeHtml(chatTitle)}</h2>
-            <p class="text-xs text-gray-400">${escapeHtml(chatSubtitle)}</p>
-            ${traitorTabsHtml}
-          </div>
-
-          <div class="max-h-60 overflow-y-auto space-y-2.5 pr-1">
-            ${messagesHtml}
-          </div>
-
-          <div class="flex items-center gap-2 pt-1">
-            <input
-              id="player-chat-input"
-              type="text"
-              value="${escapeHtml(chatDraft)}"
-              oninput="chatDraft = this.value;"
-              onkeydown="if(event.key === 'Enter'){ event.preventDefault(); sendChatMessage(); }"
-              placeholder="${useTraitorChannel ? 'Scrivi ai Traditori...' : 'Scrivi al Master...'}"
-              class="flex-1 rounded-xl bg-surface border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold"
-            />
-            <button
-              type="button"
-              onclick="sendChatMessage()"
-              class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-            >
-              Invia
-            </button>
-          </div>
-        </section>
-      `;
-    }
-
-    function renderPlayerPage() {
-      const container = document.getElementById('player-app');
-      if (!container) return;
-
-      try {
-        const banner = playerState.banner;
-        const bannerHtml = banner
-          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
-              banner.type === 'success'
-                ? 'bg-emerald/15 border-emerald/40 text-emerald'
-                : banner.type === 'error'
-                ? 'bg-crimson/15 border-crimson/40 text-crimson'
-                : 'bg-indigo/15 border-indigo/40 text-indigo'
-            }">${escapeHtml(banner.text)}</div>`
+        var ansHtml = state.hunterLastAnswer
+          ? '<div class="answer-box ' + (state.hunterLastAnswer.yes ? 'answer-yes' : 'answer-no') + '">' + escapeHtml(state.hunterLastAnswer.text) + '</div>'
           : '';
 
-        if (!playerState.boardUnlocked) {
-          container.innerHTML = `
-            <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
-              <header class="space-y-1 border-b border-white/10 pb-4">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="text-xs font-bold uppercase tracking-widest text-indigo">Prima Sessione · Giocatore</span>
-                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-surface2 border border-white/10 text-gray-300">${escapeHtml(playerState.syncStatus)}</span>
-                </div>
-                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white">Il Tuo Selfie al Tavolo</h1>
-                <p class="text-xs text-gray-400">
-                  Giocatore: <strong class="text-gray-200">${escapeHtml(playerState.playerName)}</strong> ·
-                  Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong>
-                </p>
-              </header>
+        var tripleRows = [0, 1, 2].map(function (idx) {
+          var rOpts = Object.keys(ROLE_DETAILS).map(function (rk) {
+            return '<option value="' + rk + '"' + (state.tripleRoles[idx] === rk ? ' selected' : '') + '>' + escapeHtml(ROLE_DETAILS[rk].name) + '</option>';
+          }).join('');
+          return (
+            '<div class="ability-grid">' +
+              '<input type="text" value="' + escapeHtml(state.tripleNames[idx]) + '" oninput="setTripleField(\'name\', ' + idx + ', this.value)" placeholder="Nome giocatore ' + (idx + 1) + '..." />' +
+              '<select onchange="setTripleField(\'role\', ' + idx + ', this.value)">' + rOpts + '</select>' +
+            '</div>'
+          );
+        }).join('');
 
-              ${bannerHtml}
-
-              <div class="rounded-2xl bg-bgdark border border-white/10 p-5 flex flex-col items-center justify-center min-h-[240px] space-y-4">
-                ${
-                  playerState.cameraActive
-                    ? `<video id="player-camera-video" autoplay playsinline muted class="w-full max-w-xs aspect-square object-cover rounded-2xl border border-indigo/40"></video>`
-                    : playerState.selfieDataUrl
-                    ? `<img src="${playerState.selfieDataUrl}" alt="Selfie giocatore" onerror="this.src='https://placehold.co/320x320/151924/e5b85c?text=Selfie'" class="w-48 h-48 object-cover rounded-2xl border-2 border-emerald/50 shadow-lg" />`
-                    : `<div class="w-48 h-48 rounded-2xl bg-surface border border-dashed border-white/20 flex flex-col items-center justify-center text-center p-4">
-                         <span class="text-xs font-semibold text-gray-300">Nessun selfie ancora</span>
-                         <span class="text-[11px] text-gray-500 mt-1">Scatta una foto o caricala dalla galleria</span>
-                       </div>`
-                }
-              </div>
-
-              <div class="flex flex-wrap items-center justify-center gap-3">
-                ${
-                  playerState.cameraActive
-                    ? `<button
-                         type="button"
-                         onclick="captureSelfiePhoto()"
-                         class="px-4 py-2.5 rounded-xl bg-emerald text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-                       >
-                         Scatta Selfie
-                       </button>
-                       <button
-                         type="button"
-                         onclick="stopCameraStream(); renderPlayerPage();"
-                         class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 text-xs font-semibold text-gray-200 transition cursor-pointer"
-                       >
-                         Chiudi Fotocamera
-                       </button>`
-                    : `<button
-                         type="button"
-                         onclick="startPlayerCamera()"
-                         class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
-                       >
-                         Apri Fotocamera
-                       </button>`
-                }
-
-                <label class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
-                  Carica Foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onchange="if(this.files && this.files[0]) handleGalleryFileSelect(this.files[0]); this.value='';"
-                    class="hidden"
-                  />
-                </label>
-              </div>
-
-              <button
-                type="button"
-                onclick="goToPlayerBoard()"
-                class="w-full py-3.5 rounded-xl font-bold text-sm transition cursor-pointer ${
-                  playerState.selfieDataUrl
-                    ? 'bg-gold text-bgdark hover:brightness-110'
-                    : 'bg-surface2 text-gray-500 border border-white/10'
-                }"
-              >
-                Conferma Selfie e Vai alla Plancia
-              </button>
-            </div>
-          `;
-          return;
-        }
-
-        const hasRole = Boolean(playerState.assignedRoleKey && ROLE_DETAILS[playerState.assignedRoleKey]);
-        const roleObj = hasRole ? ROLE_DETAILS[playerState.assignedRoleKey] : null;
-
-        container.innerHTML = `
-          <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
-            <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-              <div class="flex items-center gap-3.5">
-                <img
-                  src="${playerState.selfieDataUrl}"
-                  alt="Selfie di ${escapeHtml(playerState.playerName)}"
-                  onerror="this.src='https://placehold.co/96x96/151924/e5b85c?text=Foto'"
-                  class="w-16 h-16 rounded-2xl object-cover border border-white/15"
-                />
-                <div>
-                  <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Giocatore</span>
-                  <h1 class="font-serif text-2xl font-bold text-white">${escapeHtml(playerState.playerName)}</h1>
-                  <p class="text-xs text-gray-400">
-                    Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
-                    <span>${escapeHtml(playerState.syncStatus)}</span>
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onclick="reopenSelfieStep()"
-                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-              >
-                Cambia Selfie
-              </button>
-            </header>
-
-            ${bannerHtml}
-
-            <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 class="font-serif text-xl font-bold text-white">Scheda Privata</h2>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    ${hasRole
-                      ? 'Il Master ti ha assegnato un ruolo: puoi aprire o chiudere la tua scheda segreta.'
-                      : 'Bloccata finché il Master non ti assegna un ruolo.'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onclick="refreshAssignedRoleFromMaster()"
-                  class="px-3 py-1.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-                >
-                  Aggiorna Stato Ruolo
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onclick="togglePrivateCard()"
-                class="w-full py-3 px-4 rounded-xl text-sm font-bold transition cursor-pointer ${
-                  hasRole
-                    ? 'bg-gold text-bgdark hover:brightness-110'
-                    : 'bg-surface2 text-gray-400 border border-white/10'
-                }"
-              >
-                ${
-                  !hasRole
-                    ? 'Scheda Privata Bloccata (In attesa del ruolo dal Master)'
-                    : playerState.privateCardOpen
-                    ? 'Nascondi Scheda Privata'
-                    : 'Apri Scheda Privata'
-                }
-              </button>
-
-              ${
-                hasRole && playerState.privateCardOpen
-                  ? `<div class="rounded-xl bg-surface border border-white/15 p-5 space-y-3">
-                       <div class="flex items-center justify-between gap-2">
-                         <span class="font-serif text-xl font-bold text-white">${escapeHtml(roleObj.name)}</span>
-                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleObj.badge}">
-                           ${escapeHtml(roleObj.faction)}
-                         </span>
-                       </div>
-                       <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(roleObj.power)}</p>
-                       <div class="rounded-lg bg-bgdark/80 border border-white/10 p-3 text-xs text-gray-400 leading-relaxed">
-                         <strong class="text-gray-200">Regole Missioni:</strong> ${escapeHtml(roleObj.missionStyle)}
-                       </div>
-                     </div>`
-                  : ''
-              }
-            </section>
-
-            ${renderHunterActionPanel(playerState.assignedRoleKey)}
-
-            ${renderChatSection(roleObj)}
-          </div>
-        `;
-      } catch (err) {
-        console.error('Errore rendering pagina giocatore:', err);
-        container.innerHTML = `
-          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
-            Errore durante il caricamento della pagina giocatore.
-          </div>
-        `;
+        return (
+          '<div class="ability-box">' +
+            '<div class="header-row">' +
+              '<strong>Abilità Automatica Cacciatore</strong>' +
+              '<span class="badge badge-Neutro">Punti missione disponibili: ' + state.missionPoints + '</span>' +
+            '</div>' +
+            '<p class="subtext">Se hai punti missione (missioni segnate come Fatto), premi <strong>Domanda</strong>: scegli giocatore e ruolo e ottieni subito <strong>SÌ</strong> o <strong>NO</strong>.</p>' +
+            '<div class="ability-grid">' +
+              '<select onchange="setHunterTarget(this.value)">' + playerOpts + '</select>' +
+              '<select onchange="setHunterRole(this.value)">' + roleOpts + '</select>' +
+              '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="hunterAskQuestion()">Domanda (Sì / No)</button>' +
+            '</div>' +
+            ansHtml +
+            '<div style="border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:8px;">' +
+              '<strong style="font-size:13px;">Chiamata Diretta su 3 Giocatori (0 punti)</strong>' +
+              tripleRows +
+              '<div><button type="button" class="btn-indigo" onclick="hunterTripleCall()">Verifica 3 Giocatori</button></div>' +
+            '</div>' +
+          '</div>'
+        );
       }
+
+      var extraBtn = '';
+      if (roleKey === 'guardia') {
+        extraBtn = '<button type="button" class="btn-emerald" onclick="triggerQuickAbility(\'Assegna Scudo Protettivo\')">Assegna Scudo Protettivo</button>';
+      } else if (roleKey === 'assassino') {
+        extraBtn = '<button type="button" class="btn-gold" onclick="triggerQuickAbility(\'Usa Colpo Assassino\')">Usa Colpo Assassino</button>';
+      } else if (roleKey === 'sabotatore') {
+        extraBtn = '<button type="button" class="btn-gold" onclick="triggerQuickAbility(\'Blocca Attivazione Turno\')">Blocca Attivazione Turno</button>';
+      } else if (roleKey === 'investigatore') {
+        extraBtn = '<button type="button" class="btn-indigo" onclick="triggerQuickAbility(\'Indaga Missione Traditore\')">Indaga Missione Traditore</button>';
+      } else if (roleKey === 'martire') {
+        extraBtn = '<button type="button" class="btn-indigo" onclick="triggerQuickAbility(\'Attiva Voce dell’Aldilà (Scudo)\')">Voce dell’Aldilà (Scudo)</button>';
+      } else if (roleKey === 'mediatore') {
+        extraBtn = '<span class="badge badge-Fedeli">Voto Extra +1 Attivo alla Tavola Rotonda</span>';
+      }
+
+      return (
+        '<div class="ability-box">' +
+          '<strong>Potere del Ruolo (' + escapeHtml(role.name) + ')</strong>' +
+          '<p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' +
+          (extraBtn ? '<div class="btn-row">' + extraBtn + '</div>' : '') +
+        '</div>'
+      );
     }
 
-    window.startPlayerCamera = startPlayerCamera;
-    window.stopCameraStream = stopCameraStream;
-    window.captureSelfiePhoto = captureSelfiePhoto;
-    window.handleGalleryFileSelect = handleGalleryFileSelect;
-    window.goToPlayerBoard = goToPlayerBoard;
-    window.reopenSelfieStep = reopenSelfieStep;
-    window.refreshAssignedRoleFromMaster = refreshAssignedRoleFromMaster;
-    window.togglePrivateCard = togglePrivateCard;
-    window.sendChatMessage = sendChatMessage;
-    window.renderPlayerPage = renderPlayerPage;
-    Object.defineProperty(window, 'chatDraft', {
-      get: () => chatDraft,
-      set: (v) => { chatDraft = v; }
-    });
-    Object.defineProperty(window, 'activeTraitorTab', {
-      get: () => activeTraitorTab,
-      set: (v) => { activeTraitorTab = v; }
-    });
+    function render() {
+      var root = document.getElementById('player-board-app');
+      if (!root) return;
 
-    firestoreDb = initFirestore();
-    renderPlayerPage();
-    syncPlayerToFirestore();
-    subscribeToRoomUpdates();
+      var roleObj = state.assignedRoleKey && ROLE_DETAILS[state.assignedRoleKey] ? ROLE_DETAILS[state.assignedRoleKey] : null;
+      var faction = roleObj ? roleObj.faction : 'Fedeli';
+      var missions = ensureFiveMissions(state.missions, faction, null);
+      state.missions = missions;
+
+      var bannerHtml = state.banner
+        ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
+        : '';
+
+      var actionBannerHtml = state.actionResultText
+        ? '<div class="banner banner-info">' + escapeHtml(state.actionResultText) + '</div>'
+        : '';
+
+      var privateCardHtml = roleObj
+        ? (state.privateCardOpen
+            ? '<div style="margin-top:12px;background:var(--bg);border:1px solid rgba(62,201,140,0.4);border-radius:12px;padding:14px;">' +
+                '<div class="header-row">' +
+                  '<div>' +
+                    '<span class="eyebrow">Ruolo Assegnato</span>' +
+                    '<h2 style="font-size:21px;">' + escapeHtml(roleObj.name) + '</h2>' +
+                  '</div>' +
+                  '<span class="badge badge-' + roleObj.faction + '">' + escapeHtml(roleObj.faction) + '</span>' +
+                '</div>' +
+                '<p class="subtext" style="color:#e5e7eb;margin-top:8px;">' + escapeHtml(roleObj.powerDesc) + '</p>' +
+              '</div>'
+            : '<p class="subtext">Ruolo assegnato dal Master. Clicca <strong>Mostra / Nascondi Scheda</strong> per consultarlo in segreto.</p>')
+        : '<p class="subtext">Bloccata finché il Master non ti assegna un ruolo sulla stanza <strong>' + escapeHtml(state.roomCode) + '</strong>.</p>';
+
+      var missionsHtml = missions.map(function (m, idx) {
+        return (
+          '<div class="mission-row ' + (m.done ? 'done' : '') + '">' +
+            '<div>' +
+              '<div class="mission-title">' + m.slot + '. ' + escapeHtml(m.title) + ' ' + (m.done ? '<span class="badge badge-Fedeli">Fatta</span>' : '') + '</div>' +
+              '<div class="mission-desc">' + escapeHtml(m.desc) + '</div>' +
+            '</div>' +
+            '<button type="button" class="' + (m.done ? 'btn-emerald' : 'btn-gold') + '" onclick="toggleMissionDone(' + idx + ')">' +
+              (m.done ? 'Fatto ✓' : 'Fatto') +
+            '</button>' +
+          '</div>'
+        );
+      }).join('');
+
+      var myMsgs = state.masterChat.filter(function (msg) {
+        return !msg.playerName || String(msg.playerName).toLowerCase() === state.playerName.toLowerCase() || msg.fromMaster;
+      });
+
+      var msgsHtml = myMsgs.length
+        ? myMsgs.map(function (msg) {
+            return (
+              '<div class="msg-card">' +
+                '<div class="msg-head"><strong>' + escapeHtml(msg.senderName || (msg.fromMaster ? 'Master' : state.playerName)) + '</strong><span></span></div>' +
+                '<p class="msg-body">' + escapeHtml(msg.text) + '</p>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun messaggio ancora in chat.</p>';
+
+      root.innerHTML =
+        '<header class="card header-row">' +
+          '<div class="profile-head">' +
+            '<div class="avatar">' + escapeHtml(state.playerName.slice(0, 1).toUpperCase() || 'G') + '</div>' +
+            '<div>' +
+              '<span class="eyebrow">Plancia Giocatore · ' + escapeHtml(state.syncStatus) + '</span>' +
+              '<h1>' + escapeHtml(state.playerName) + '</h1>' +
+              '<p class="subtext">Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">SYNC-' + escapeHtml(state.roomCode) + '</strong></p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="btn-row">' +
+            '<button type="button" class="btn-gold" onclick="goToRoles()">Tutti i Ruoli</button>' +
+            '<button type="button" class="btn-ghost" onclick="goToMissionsCatalog()">Catalogo Missioni</button>' +
+            '<button type="button" class="btn-ghost" onclick="goToAccess()">Cambia Stanza</button>' +
+          '</div>' +
+        '</header>' +
+        bannerHtml +
+        actionBannerHtml +
+        '<section class="card card-gold">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow">Identità Segreta</span>' +
+              '<h2>Scheda Privata e Abilità</h2>' +
+            '</div>' +
+            '<button type="button" class="btn-indigo" onclick="togglePrivateCard()">' +
+              (roleObj ? (state.privateCardOpen ? 'Nascondi Scheda' : 'Mostra Scheda') : 'In attesa del ruolo') +
+            '</button>' +
+          '</div>' +
+          privateCardHtml +
+          renderRoleAbilitySection(state.assignedRoleKey) +
+        '</section>' +
+        '<section class="card">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow">Obiettivi della Partita</span>' +
+              '<h2>Le Tue 5 Missioni</h2>' +
+            '</div>' +
+            '<span class="badge badge-' + faction + '">Completate: ' + missions.filter(function (x) { return x.done; }).length + ' / 5</span>' +
+          '</div>' +
+          '<p class="subtext">Premi <strong>Fatto</strong> accanto a una missione per notificare subito al Master se hai completato quella missione.</p>' +
+          '<div class="mission-list">' + missionsHtml + '</div>' +
+        '</section>' +
+        '<section class="card">' +
+          '<span class="eyebrow">Tavolo e Master</span>' +
+          '<h2>Notifiche e Chat con il Master</h2>' +
+          '<div class="chat-box">' + msgsHtml + '</div>' +
+          '<div class="chat-form">' +
+            '<input id="player-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="updateChatDraft(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();sendPlayerChat();}" placeholder="Scrivi al Master..." />' +
+            '<button type="button" class="btn-gold" onclick="sendPlayerChat()">Invia</button>' +
+          '</div>' +
+        '</section>';
+    }
+
+    render();
+
+    var ref = getRoomRef();
+    if (ref) {
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) {
+          applyRoomSnapshot(snap.data() || {});
+          render();
+        }
+      }).catch(function () {});
+
+      onSnapshot(ref, function (snap) {
+        state.syncStatus = 'Cloud Firestore attivo';
+        if (!snap.exists()) return;
+        applyRoomSnapshot(snap.data() || {});
+        render();
+      });
+    }
   </script>
 </body>
 </html>
