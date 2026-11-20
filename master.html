@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Master</title>
+  <title>Ombre al Tavolo — Master: Cerimonia e Ruoli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
-    // Configurazione tema scuro e colori della pagina Master
+    // Configurazione tema scuro e font del gioco
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -42,120 +42,90 @@
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased">
   <div id="master-roles-app" class="max-w-6xl mx-auto px-4 py-8 space-y-6"></div>
 
-  <script type="module">
-    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-    // Chiavi condivise per mantenere coerenti accesso, sincronizzazione stanza e pagina Master
-    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
-    const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
-    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
-    const DEFAULT_APP_ID = 'ombre-al-tavolo-default';
-
-    // Catalogo dei ruoli assegnabili dal Master
+  <script>
+    // Catalogo ruoli disponibili per la configurazione e l'estrazione
     const ROLE_CATALOG = {
       investigatore: {
         name: 'Investigatore',
         faction: 'Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Indaga sul ruolo segreto di un giocatore vivo.'
+        summary: 'Indaga sul ruolo segreto di un giocatore vivo.'
       },
       guardia: {
         name: 'Guardia',
         faction: 'Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Protegge un giocatore dagli attacchi nel turno.'
+        summary: 'Protegge un giocatore dagli attacchi nel turno.'
       },
       cacciatore: {
         name: 'Cacciatore',
         faction: 'Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Colpisce un sospetto assumendosi il rischio.'
+        summary: 'Può colpire un bersaglio sospetto rischiando il contraccolpo.'
       },
       martire: {
         name: 'Martire',
         faction: 'Cittadini',
         badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        desc: 'Lascia una testimonianza al tavolo se eliminato.'
+        summary: 'Lascia una testimonianza pubblica sul ruolo di un giocatore.'
       },
       assassino: {
         name: 'Assassino',
         faction: 'Traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        desc: 'Elimina silenziosamente un bersaglio.'
+        summary: 'Elimina silenziosamente un bersaglio.'
       },
       sabotatore: {
         name: 'Sabotatore',
         faction: 'Traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        desc: 'Ostacola o altera le azioni avversarie.'
+        summary: 'Ostacola o blocca l’azione di un avversario.'
       }
     };
 
-    // Modelli di discorso per accompagnare l'assegnazione dei ruoli al tavolo
+    // Discorsi preimpostati per l'assegnazione dei ruoli al tavolo
     const SPEECH_TEMPLATES = {
       suspense: [
-        'Silenzio al tavolo di {{STANZA}}. Le luci metaforiche si abbassano e ognuno si prepara a ricevere il proprio destino.',
-        'I ruoli stanno per essere estratti a sorte: nessuno rivela ciò che legge e ogni sguardo può nascondere un segreto.',
-        'Quando i ruoli saranno assegnati, aprite la vostra scheda solo quando nessuno vi guarda. La notte sta per iniziare.'
+        'Le luci si abbassano intorno al tavolo della stanza {{STANZA}}. Ognuno ha davanti a sé un destino ancora non svelato.',
+        'Nel silenzio della notte, le ombre iniziano a muoversi: alcuni giureranno fedeltà alla luce, altri nasconderanno un secondo fine.',
+        'Ora riceverete il vostro ruolo segreto. Guardate la vostra scheda soltanto quando siete certi che nessuno sbircia, poi alzate lo sguardo sul tavolo.'
       ],
       solenne: [
-        'Giocatori di {{STANZA}}, il Master ha preparato il mazzo della sessione e sta per affidare a ciascuno un compito preciso.',
-        'Onorate il vostro ruolo, che appartenga ai Cittadini o ai Traditori, e mantenete il riserbo assoluto sul vostro incarico.',
-        'L’estrazione è compiuta: da questo istante ogni parola al tavolo pesa come una scelta.'
+        'Benvenuti nella cerimonia d’apertura del tavolo {{STANZA}}. Da questo istante il patto del gioco è sigillato.',
+        'Ogni ruolo porta con sé un dovere, un limite e una scelta che peserà sull’intera serata.',
+        'Prendete coscienza della vostra identità segreta con calma e preparatevi a sostenere la vostra parte.'
       ],
       rapido: [
-        'Ci siamo: ruoli estratti per la stanza {{STANZA}}.',
-        'Controllate in silenzio il ruolo che vi è toccato senza darlo a vedere.',
-        'Tutto pronto al tavolo: si parte!'
+        'Tavolo {{STANZA}}, ci siamo: i ruoli stanno per essere distribuiti.',
+        'Controlla in segreto la tua scheda non appena viene assegnata, non mostrare nulla e resta pronto a giocare.'
       ]
     };
 
-    let db = null;
-    let auth = null;
-    let appId = DEFAULT_APP_ID;
-    let cloudReady = false;
-    let roomUnsubscribe = null;
+    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
+    const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
+    const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
 
-    // Legge codice stanza e nome Master salvati nella schermata di accesso
+    // Legge il contesto salvato dalla pagina di accesso in sicurezza
     function readAccessContext() {
       try {
         const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
-        if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master' };
+        if (!raw) {
+          return { roomCode: 'TAVOLO1', masterName: 'Master' };
+        }
         const parsed = JSON.parse(raw);
-        const roomCode = String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-        const masterName = String(parsed.playerName || '').trim() || 'Master';
-        return { roomCode, masterName };
+        return {
+          roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          masterName: String(parsed.playerName || 'Master').trim() || 'Master'
+        };
       } catch (err) {
         console.error('Errore lettura contesto accesso:', err);
         return { roomCode: 'TAVOLO1', masterName: 'Master' };
       }
     }
 
-    // Legge i giocatori entrati nella stanza sincronizzata
-    function readRoomPlayers(roomCode) {
-      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-      try {
-        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed.players) ? parsed.players : [];
-      } catch (err) {
-        console.error('Errore lettura giocatori stanza:', err);
-        return [];
-      }
-    }
-
     // Crea lo stato iniziale della pagina Master
     function createInitialMasterRoleState() {
       const ctx = readAccessContext();
-      const syncedPlayers = readRoomPlayers(ctx.roomCode).map(p => ({
-        id: p.id || ('m_p_' + Math.random().toString(36).slice(2, 7)),
-        name: String(p.name || '').trim(),
-        assignedRoleKey: p.assignedRoleKey && ROLE_CATALOG[p.assignedRoleKey] ? p.assignedRoleKey : null
-      })).filter(p => p.name);
-
       return {
         roomCode: ctx.roomCode,
         masterName: ctx.masterName,
@@ -167,388 +137,170 @@
           assassino: 1,
           sabotatore: 1
         },
-        players: syncedPlayers,
+        players: [
+          { id: 'm_p1', name: 'Elena', assignedRoleKey: null },
+          { id: 'm_p2', name: 'Marco', assignedRoleKey: null },
+          { id: 'm_p3', name: 'Sofia', assignedRoleKey: null },
+          { id: 'm_p4', name: 'Luca', assignedRoleKey: null }
+        ],
         speechTone: 'suspense',
-        customSpeech: '',
+        customSpeechText: '',
         activeParagraphIndex: 0,
         assignmentCompleted: false,
         boardOpened: false,
-        syncLabel: 'Locale',
         banner: null
       };
     }
 
-    // Unisce i giocatori già presenti nella stanza sincronizzata con quelli della pagina Master
-    function mergeSyncedPlayersIntoMaster(existingPlayers, syncedPlayers) {
-      const result = Array.isArray(existingPlayers) ? existingPlayers.map(p => ({ ...p })) : [];
-      const syncedList = Array.isArray(syncedPlayers) ? syncedPlayers : [];
-
-      syncedList.forEach(sp => {
-        const cleanName = String(sp.name || '').trim();
-        if (!cleanName) return;
-        const normalized = cleanName.toLowerCase();
-        const foundIndex = result.findIndex(
-          ep => String(ep.name || '').trim().toLowerCase() === normalized
-        );
-        if (foundIndex >= 0) {
-          result[foundIndex] = {
-            ...result[foundIndex],
-            name: cleanName,
-            assignedRoleKey: sp.assignedRoleKey || result[foundIndex].assignedRoleKey || null
-          };
-        } else {
-          result.push({
-            id: sp.id || ('sync_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-            name: cleanName,
-            assignedRoleKey: sp.assignedRoleKey && ROLE_CATALOG[sp.assignedRoleKey] ? sp.assignedRoleKey : null
-          });
-        }
-      });
-
-      return result;
-    }
-
-    // Carica lo stato salvato in sicurezza tramite try/catch
+    // Carica lo stato salvato della pagina Master in sicurezza
     function loadMasterRoleState() {
       try {
         const ctx = readAccessContext();
         const base = createInitialMasterRoleState();
-        const syncedPlayers = readRoomPlayers(ctx.roomCode);
         const raw = localStorage.getItem(MASTER_ROLES_STORAGE_KEY);
-
         if (!raw) {
-          return {
-            ...base,
-            roomCode: ctx.roomCode,
-            masterName: ctx.masterName,
-            players: mergeSyncedPlayersIntoMaster([], syncedPlayers)
-          };
+          return { ...base, roomCode: ctx.roomCode, masterName: ctx.masterName };
         }
-
         const parsed = JSON.parse(raw);
-        const sameRoom = String(parsed.roomCode || '').trim().toUpperCase() === ctx.roomCode;
         const mergedCounts = { ...base.roleCounts };
         if (parsed.roleCounts && typeof parsed.roleCounts === 'object') {
           Object.keys(mergedCounts).forEach(key => {
             mergedCounts[key] = Math.max(0, Math.min(12, Number(parsed.roleCounts[key] ?? mergedCounts[key])));
           });
         }
-
-        const basePlayers = sameRoom && Array.isArray(parsed.players) ? parsed.players : [];
-        const mergedPlayers = mergeSyncedPlayersIntoMaster(basePlayers, syncedPlayers);
-
         return {
           ...base,
-          ...(sameRoom ? parsed : {}),
+          ...parsed,
           roomCode: ctx.roomCode,
           masterName: ctx.masterName,
           roleCounts: mergedCounts,
-          players: mergedPlayers,
-          boardOpened: Boolean(sameRoom && parsed.boardOpened)
+          players: Array.isArray(parsed.players) ? parsed.players : base.players,
+          boardOpened: Boolean(parsed.boardOpened)
         };
       } catch (err) {
-        console.error('Errore caricamento stato assegnazione ruoli Master:', err);
+        console.error('Errore caricamento stato Master:', err);
         return createInitialMasterRoleState();
       }
     }
 
     let masterState = loadMasterRoleState();
 
-    // Salva lo stato della pagina Master e sincronizza giocatori e ruoli nella stanza
-    async function saveMasterRoleState(syncRoom = true) {
+    // Sincronizza giocatori e ruoli assegnati nella stanza condivisa
+    function syncMasterRoomRecord() {
+      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
       try {
-        localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify({
-          roomCode: masterState.roomCode,
-          masterName: masterState.masterName,
-          roleCounts: masterState.roleCounts,
-          players: masterState.players,
-          speechTone: masterState.speechTone,
-          customSpeech: masterState.customSpeech,
-          activeParagraphIndex: masterState.activeParagraphIndex,
-          assignmentCompleted: masterState.assignmentCompleted,
-          boardOpened: masterState.boardOpened,
-          banner: masterState.banner
+        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify({
+          roomCode: cleanRoom,
+          players: masterState.players.map(p => ({
+            id: p.id,
+            name: p.name,
+            assignedRoleKey: p.assignedRoleKey || null
+          })),
+          roleCounts: { ...masterState.roleCounts },
+          updatedAt: Date.now()
         }));
       } catch (err) {
-        console.error('Errore salvataggio stato assegnazione ruoli Master:', err);
+        console.error('Errore sincronizzazione stanza da Master:', err);
       }
+    }
 
-      if (!syncRoom) return;
-
-      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-      const payload = {
-        roomCode: cleanRoom,
-        players: masterState.players.map(p => ({
-          id: p.id,
-          name: p.name,
-          assignedRoleKey: p.assignedRoleKey || null
-        })),
-        roleCounts: masterState.roleCounts,
-        updatedAt: Date.now()
-      };
-
+    // Salva lo stato della pagina Master
+    function saveMasterRoleState() {
       try {
-        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(payload));
+        localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify(masterState));
       } catch (err) {
-        console.error('Errore salvataggio locale stanza Master:', err);
+        console.error('Errore salvataggio stato Master:', err);
       }
-
-      if (cloudReady && db) {
-        try {
-          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
-          await setDoc(ref, payload, { merge: true });
-        } catch (err) {
-          console.error('Errore scrittura Firestore stanza Master:', err);
-        }
-      }
-    }
-
-    // Applica una lista aggiornata di giocatori sincronizzati senza perdere ruoli già estratti
-    function applyIncomingSyncedPlayers(incomingPlayers) {
-      const cleanIncoming = Array.isArray(incomingPlayers) ? incomingPlayers : [];
-      masterState.players = mergeSyncedPlayersIntoMaster(masterState.players, cleanIncoming);
-      saveMasterRoleState(false);
-      renderMasterRolePage();
-    }
-
-    // Avvia l'ascolto in tempo reale dei giocatori che entrano nella stanza
-    function startMasterRoomListener() {
-      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-      if (typeof roomUnsubscribe === 'function') {
-        roomUnsubscribe();
-        roomUnsubscribe = null;
-      }
-
-      window.addEventListener('storage', evt => {
-        if (evt.key === ROOM_SYNC_PREFIX + cleanRoom && evt.newValue) {
-          try {
-            const parsed = JSON.parse(evt.newValue);
-            applyIncomingSyncedPlayers(parsed.players);
-          } catch (err) {
-            console.error('Errore lettura evento storage stanza:', err);
-          }
-        }
-      });
-
-      if (cloudReady && db) {
-        try {
-          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', cleanRoom);
-          roomUnsubscribe = onSnapshot(ref, snap => {
-            if (!snap.exists()) return;
-            const data = snap.data();
-            const normalized = {
-              roomCode: cleanRoom,
-              players: Array.isArray(data.players) ? data.players : [],
-              roleCounts: data.roleCounts || masterState.roleCounts,
-              updatedAt: Number(data.updatedAt || Date.now())
-            };
-            try {
-              localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(normalized));
-            } catch (err) {
-              console.error('Errore cache stanza Master:', err);
-            }
-            applyIncomingSyncedPlayers(normalized.players);
-          }, err => {
-            console.error('Errore listener Firestore Master:', err);
-          });
-        } catch (err) {
-          console.error('Errore avvio listener Firestore Master:', err);
-        }
-      }
-    }
-
-    // Inizializza la sincronizzazione cloud per la pagina Master
-    async function initMasterCloud() {
-      try {
-        const cfgRaw = typeof window.__firebase_config !== 'undefined' ? window.__firebase_config : null;
-        if (!cfgRaw) {
-          masterState.syncLabel = 'Locale';
-          await saveMasterRoleState(true);
-          startMasterRoomListener();
-          renderMasterRolePage();
-          return;
-        }
-
-        const firebaseConfig = typeof cfgRaw === 'string' ? JSON.parse(cfgRaw) : cfgRaw;
-        if (!firebaseConfig || !firebaseConfig.apiKey) {
-          masterState.syncLabel = 'Locale';
-          await saveMasterRoleState(true);
-          startMasterRoomListener();
-          renderMasterRolePage();
-          return;
-        }
-
-        if (typeof window.__app_id === 'string' && window.__app_id.trim()) {
-          appId = window.__app_id.trim();
-        }
-
-        const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-        auth = getAuth(firebaseApp);
-        db = getFirestore(firebaseApp);
-
-        if (typeof window.__initial_auth_token === 'string' && window.__initial_auth_token.trim()) {
-          await signInWithCustomToken(auth, window.__initial_auth_token.trim());
-        } else {
-          await signInAnonymously(auth);
-        }
-
-        cloudReady = true;
-        masterState.syncLabel = 'Cloud Attivo';
-        await saveMasterRoleState(true);
-        startMasterRoomListener();
-        renderMasterRolePage();
-      } catch (err) {
-        console.error('Errore inizializzazione cloud Master:', err);
-        masterState.syncLabel = 'Locale';
-        await saveMasterRoleState(true);
-        startMasterRoomListener();
-        renderMasterRolePage();
-      }
+      syncMasterRoomRecord();
     }
 
     // Imposta un messaggio di feedback per il Master
     function setMasterBanner(text, type = 'info') {
       masterState.banner = { text, type };
-      saveMasterRoleState(true);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Passa dalla cerimonia/gestione ruoli alla plancia del Master
-    function enterMasterBoard() {
-      if (!masterState.assignmentCompleted) {
-        setMasterBanner('Assegna prima i ruoli ai giocatori al tavolo per aprire la plancia del Master.', 'error');
-        return;
-      }
-      masterState.boardOpened = true;
-      masterState.banner = {
-        text: 'Plancia del Master aperta. Puoi tornare in qualsiasi momento a Cerimonia e Ruoli dal pulsante in alto.',
-        type: 'success'
-      };
-      saveMasterRoleState(true);
-      renderMasterRolePage();
-    }
-
-    // Riporta alla sezione Cerimonia e Gestione Ruoli
-    function openCeremonyAndRolesSection() {
-      masterState.boardOpened = false;
-      masterState.banner = null;
-      saveMasterRoleState(true);
-      renderMasterRolePage();
-    }
-
-    // Naviga verso index.html quando non in anteprima isolata
-    function goToPage(fileName) {
-      const target = fileName === 'giocatore.html' ? 'giocatore.html' : 'index.html';
-      const isIsolatedPreview =
-        window.location.protocol === 'blob:' ||
-        window.location.href === 'about:srcdoc' ||
-        window.location.href.startsWith('data:');
-
-      if (!isIsolatedPreview) {
-        try {
-          window.location.href = target;
-          return;
-        } catch (err) {
-          console.error('Errore navigazione verso', target, err);
-        }
-      }
-
-      setMasterBanner(
-        `Stato salvato. Nell'anteprima isolata il collegamento a ${target} non apre un altro file locale: usa i file nella stessa cartella oppure apri ${target} dall'elenco schede.`,
-        'info'
-      );
-    }
-
-    // Restituisce i paragrafi del discorso in base al tono o al testo personalizzato
+    // Restituisce i paragrafi del discorso di assegnazione ruoli
     function getSpeechParagraphs() {
-      const custom = String(masterState.customSpeech || '').trim();
-      if (custom) {
-        return custom
-          .split(/\n\s*\n|\n/)
-          .map(line => line.trim())
-          .filter(Boolean)
-          .map(line => line.replace(/\{\{STANZA\}\}/gi, masterState.roomCode));
+      const cleanRoom = String(masterState.roomCode || 'TAVOLO1').toUpperCase();
+      const customRaw = String(masterState.customSpeechText || '').trim();
+      if (customRaw) {
+        return customRaw
+          .split(/\n\s*\n/)
+          .map(part => part.replace(/\{\{STANZA\}\}/gi, cleanRoom).trim())
+          .filter(Boolean);
       }
       const list = SPEECH_TEMPLATES[masterState.speechTone] || SPEECH_TEMPLATES.suspense;
-      return list.map(line => line.replace(/\{\{STANZA\}\}/gi, masterState.roomCode));
+      return list.map(line => line.replace(/\{\{STANZA\}\}/gi, cleanRoom));
     }
 
-    // Cambia il tono preimpostato del discorso
+    // Cambia tono del discorso preimpostato
     function setSpeechTone(tone) {
       if (!SPEECH_TEMPLATES[tone]) return;
       masterState.speechTone = tone;
-      masterState.customSpeech = '';
+      masterState.customSpeechText = '';
       masterState.activeParagraphIndex = 0;
-      masterState.banner = null;
-      saveMasterRoleState(false);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
     // Aggiorna il testo personalizzato del discorso
-    function handleCustomSpeechChange(value) {
-      masterState.customSpeech = String(value || '');
+    function updateCustomSpeechText(value) {
+      masterState.customSpeechText = String(value || '');
       masterState.activeParagraphIndex = 0;
-      masterState.banner = null;
-      saveMasterRoleState(false);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Sposta il puntatore sul paragrafo precedente o successivo del discorso
-    function stepSpeechParagraph(delta) {
+    // Seleziona un paragrafo specifico del discorso
+    function selectSpeechParagraph(index) {
       const paragraphs = getSpeechParagraphs();
       if (paragraphs.length === 0) return;
-      const next = (masterState.activeParagraphIndex + delta + paragraphs.length) % paragraphs.length;
-      masterState.activeParagraphIndex = next;
-      masterState.banner = null;
-      saveMasterRoleState(false);
+      masterState.activeParagraphIndex = Math.max(0, Math.min(paragraphs.length - 1, Number(index || 0)));
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Copia l'intero discorso negli appunti usando execCommand per compatibilità iframe
+    // Copia il discorso completo negli appunti con fallback sicuro
     function copyFullSpeech() {
       const fullText = getSpeechParagraphs().join('\n\n');
+      if (!fullText) {
+        setMasterBanner('Nessun testo del discorso da copiare.', 'error');
+        return;
+      }
       try {
-        const area = document.createElement('textarea');
-        area.value = fullText;
-        document.body.appendChild(area);
-        area.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(area);
-        if (copied) {
-          setMasterBanner('Discorso di assegnazione copiato negli appunti.', 'success');
-        } else {
-          setMasterBanner('Testo del discorso pronto per la lettura al tavolo.', 'info');
-        }
+        const ta = document.createElement('textarea');
+        ta.value = fullText;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setMasterBanner('Discorso di assegnazione ruoli copiato negli appunti.', 'success');
       } catch (err) {
         console.error('Errore copia discorso:', err);
-        setMasterBanner('Impossibile copiare automaticamente il discorso.', 'error');
+        setMasterBanner('Impossibile copiare automaticamente il testo in questo browser.', 'error');
       }
     }
 
-    // Modifica il numero di copie di un ruolo nel mazzo
-    function changeRoleCount(roleKey, delta) {
+    // Modifica il numero di copie di un ruolo
+    function adjustMasterRoleCount(roleKey, delta) {
       if (!ROLE_CATALOG[roleKey]) return;
-      const current = Number(masterState.roleCounts[roleKey] || 0);
-      masterState.roleCounts[roleKey] = Math.max(0, Math.min(12, current + delta));
-      masterState.assignmentCompleted = false;
-      masterState.boardOpened = false;
+      const cur = Number(masterState.roleCounts[roleKey] || 0);
+      masterState.roleCounts[roleKey] = Math.max(0, Math.min(12, cur + delta));
       masterState.banner = null;
-      saveMasterRoleState(true);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Aggiunge manualmente un giocatore al tavolo del Master
+    // Aggiunge un giocatore al tavolo del Master
     function addMasterPlayer(rawName) {
       const cleanName = String(rawName || '').trim();
       if (!cleanName) {
-        setMasterBanner('Inserisci il nome del giocatore da aggiungere al tavolo.', 'error');
-        return;
-      }
-      const exists = masterState.players.some(
-        p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
-      );
-      if (exists) {
-        setMasterBanner('Questo giocatore è già presente al tavolo.', 'info');
+        setMasterBanner('Inserisci un nome valido per aggiungere un giocatore.', 'error');
         return;
       }
       masterState.players.push({
@@ -557,33 +309,30 @@
         assignedRoleKey: null
       });
       masterState.assignmentCompleted = false;
-      masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState(true);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
     // Rimuove un giocatore dal tavolo del Master
     function removeMasterPlayer(playerId) {
       masterState.players = masterState.players.filter(p => p.id !== playerId);
-      masterState.assignmentCompleted = false;
-      masterState.boardOpened = false;
       masterState.banner = null;
-      saveMasterRoleState(true);
+      saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Estrae casualmente i ruoli configurati e li assegna ai giocatori al tavolo
+    // Estrae e assegna casualmente i ruoli configurati ai giocatori
     function assignRolesRandomly() {
       if (masterState.players.length === 0) {
-        setMasterBanner('Attendi che entri un giocatore nella stanza o aggiungilo al tavolo prima di assegnare i ruoli.', 'error');
+        setMasterBanner('Aggiungi almeno un giocatore al tavolo prima di assegnare i ruoli.', 'error');
         return;
       }
 
       const pool = [];
       Object.keys(ROLE_CATALOG).forEach(roleKey => {
-        const qty = Number(masterState.roleCounts[roleKey] || 0);
-        for (let i = 0; i < qty; i++) {
+        const count = Number(masterState.roleCounts[roleKey] || 0);
+        for (let i = 0; i < count; i++) {
           pool.push(roleKey);
         }
       });
@@ -598,9 +347,9 @@
 
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        const temp = pool[i];
+        const tmp = pool[i];
         pool[i] = pool[j];
-        pool[j] = temp;
+        pool[j] = tmp;
       }
 
       const extracted = pool.slice(0, masterState.players.length);
@@ -611,12 +360,12 @@
       masterState.assignmentCompleted = true;
 
       setMasterBanner(
-        `Assegnati casualmente ${extracted.length} ruoli e sincronizzati con la stanza: ora puoi leggere il discorso o aprire la Plancia Master.`,
+        `Assegnati casualmente ${extracted.length} ruoli: ora puoi leggere il discorso o aprire la Plancia Master.`,
         'success'
       );
     }
 
-    // Azzera i ruoli assegnati senza rimuovere i giocatori dal tavolo
+    // Azzera i ruoli assegnati mantenendo i giocatori al tavolo
     function resetRoleAssignments() {
       masterState.players = masterState.players.map(player => ({
         ...player,
@@ -625,6 +374,38 @@
       masterState.assignmentCompleted = false;
       masterState.boardOpened = false;
       setMasterBanner('Ruoli assegnati azzerati: i giocatori restano al tavolo.', 'info');
+    }
+
+    // Apre la plancia del Master dopo l'assegnazione dei ruoli
+    function enterMasterBoard() {
+      if (!masterState.assignmentCompleted) {
+        setMasterBanner('Assegna prima i ruoli ai giocatori al tavolo per aprire la Plancia Master.', 'error');
+        return;
+      }
+      masterState.boardOpened = true;
+      masterState.banner = {
+        text: 'Plancia Master aperta. Puoi tornare in qualsiasi momento a Cerimonia e Ruoli dal pulsante in alto.',
+        type: 'success'
+      };
+      saveMasterRoleState();
+      renderMasterRolePage();
+    }
+
+    // Riporta alla sezione Cerimonia e Gestione Ruoli
+    function openCeremonyAndRolesSection() {
+      masterState.boardOpened = false;
+      masterState.banner = null;
+      saveMasterRoleState();
+      renderMasterRolePage();
+    }
+
+    // Naviga verso una pagina collegata se disponibile
+    function goToPage(targetPage) {
+      try {
+        window.location.href = targetPage;
+      } catch (err) {
+        console.error('Errore navigazione verso ' + targetPage + ':', err);
+      }
     }
 
     // Escape HTML per rendere sicuro l'inserimento di testo
@@ -637,7 +418,7 @@
         .replace(/'/g, '&#39;');
     }
 
-    // Renderizza la pagina Master (cerimonia/gestione ruoli oppure plancia Master)
+    // Renderizza l'intera pagina Master
     function renderMasterRolePage() {
       const container = document.getElementById('master-roles-app');
       if (!container) return;
@@ -669,8 +450,7 @@
                 <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tavolo di ${escapeHtml(masterState.roomCode)}</h1>
                 <p class="text-xs text-gray-400 mt-1">
                   Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
-                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
-                  <span class="text-gray-300">${escapeHtml(masterState.syncLabel)}</span>
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
@@ -731,8 +511,7 @@
               <p class="text-xs text-gray-400 mt-1">
                 Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
                 Stanza: <strong class="text-gray-200">${escapeHtml(masterState.roomCode)}</strong> ·
-                ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
-                <span class="text-gray-300">${escapeHtml(masterState.syncLabel)}</span>
+                ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
@@ -772,17 +551,17 @@
           <section class="rounded-2xl bg-surface border border-gold/30 p-5 sm:p-6 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-gold">Discorso del Master</span>
-                <h2 class="font-serif text-xl font-bold text-white mt-0.5">Lettura per l’Assegnazione dei Ruoli</h2>
+                <span class="text-[11px] font-bold uppercase tracking-widest text-gold">Prompter del Master</span>
+                <h2 class="font-serif text-xl sm:text-2xl font-bold text-white mt-0.5">Discorso di Assegnazione Ruoli</h2>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onclick="setSpeechTone('suspense')"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                    !masterState.customSpeech && masterState.speechTone === 'suspense'
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    !masterState.customSpeechText && masterState.speechTone === 'suspense'
                       ? 'bg-gold text-bgdark border-gold'
-                      : 'bg-bgdark text-gray-300 border-white/15 hover:border-white/30'
+                      : 'bg-bgdark text-gray-300 border-white/15 hover:bg-white/5'
                   }"
                 >
                   Suspense
@@ -790,10 +569,10 @@
                 <button
                   type="button"
                   onclick="setSpeechTone('solenne')"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                    !masterState.customSpeech && masterState.speechTone === 'solenne'
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    !masterState.customSpeechText && masterState.speechTone === 'solenne'
                       ? 'bg-gold text-bgdark border-gold'
-                      : 'bg-bgdark text-gray-300 border-white/15 hover:border-white/30'
+                      : 'bg-bgdark text-gray-300 border-white/15 hover:bg-white/5'
                   }"
                 >
                   Solenne
@@ -801,10 +580,10 @@
                 <button
                   type="button"
                   onclick="setSpeechTone('rapido')"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                    !masterState.customSpeech && masterState.speechTone === 'rapido'
+                  class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    !masterState.customSpeechText && masterState.speechTone === 'rapido'
                       ? 'bg-gold text-bgdark border-gold'
-                      : 'bg-bgdark text-gray-300 border-white/15 hover:border-white/30'
+                      : 'bg-bgdark text-gray-300 border-white/15 hover:bg-white/5'
                   }"
                 >
                   Rapido
@@ -812,108 +591,123 @@
                 <button
                   type="button"
                   onclick="copyFullSpeech()"
-                  class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+                  class="px-3 py-1.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
                 >
                   Copia Discorso
                 </button>
               </div>
             </div>
 
-            <div class="rounded-xl bg-bgdark border border-white/10 p-4 sm:p-5 space-y-3">
+            <div class="space-y-2.5">
               ${paragraphs.length === 0
-                ? `<p class="text-sm text-gray-400">Scrivi un testo qui sotto per leggere il discorso al tavolo.</p>`
-                : paragraphs.map((line, index) => {
-                    const isCurrent = index === safeIdx;
+                ? `<div class="rounded-xl bg-bgdark border border-white/10 p-4 text-xs text-gray-400">
+                     Nessun paragrafo disponibile. Scrivi un testo qui sotto oppure seleziona un tono preimpostato.
+                   </div>`
+                : paragraphs.map((text, idx) => {
+                    const isActive = idx === safeIdx;
                     return `
-                      <div class="rounded-xl p-3.5 border transition ${
-                        isCurrent
-                          ? 'bg-gold/10 border-gold/50 text-white'
-                          : 'bg-surface/60 border-white/5 text-gray-400'
-                      }">
-                        <div class="flex items-center justify-between gap-2 mb-1">
-                          <span class="text-[11px] font-bold uppercase tracking-wider ${
-                            isCurrent ? 'text-gold' : 'text-gray-500'
-                          }">
-                            Parte ${index + 1} di ${paragraphs.length}
+                      <div
+                        role="button"
+                        tabindex="0"
+                        onclick="selectSpeechParagraph(${idx})"
+                        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectSpeechParagraph(${idx});}"
+                        class="rounded-xl border p-4 transition cursor-pointer ${
+                          isActive
+                            ? 'bg-bgdark border-gold shadow-lg shadow-gold/5'
+                            : 'bg-bgdark/60 border-white/10 hover:border-white/25'
+                        }"
+                      >
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                          <span class="text-[11px] font-bold uppercase tracking-wider ${isActive ? 'text-gold' : 'text-gray-400'}">
+                            Parte ${idx + 1} di ${paragraphs.length}
                           </span>
-                          ${isCurrent ? `<span class="text-[11px] font-semibold text-gold">In lettura</span>` : ''}
+                          ${isActive
+                            ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30">In lettura</span>`
+                            : ''
+                          }
                         </div>
-                        <p class="text-sm sm:text-base leading-relaxed">${escapeHtml(line)}</p>
+                        <p class="text-sm sm:text-base leading-relaxed ${isActive ? 'text-white font-medium' : 'text-gray-300'}">
+                          ${escapeHtml(text)}
+                        </p>
                       </div>
                     `;
                   }).join('')
               }
+            </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-white/10">
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  onclick="stepSpeechParagraph(-1)"
-                  class="px-3.5 py-2 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-semibold text-gray-200 transition cursor-pointer"
+                  onclick="selectSpeechParagraph(${safeIdx - 1})"
+                  ${safeIdx <= 0 ? 'disabled' : ''}
+                  class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 disabled:opacity-40 text-xs font-semibold text-gray-200 transition cursor-pointer"
                 >
                   Parte Precedente
                 </button>
-                <span class="text-xs text-gray-400">
-                  Passo ${paragraphs.length > 0 ? safeIdx + 1 : 0} / ${paragraphs.length}
-                </span>
                 <button
                   type="button"
-                  onclick="stepSpeechParagraph(1)"
-                  class="px-3.5 py-2 rounded-lg bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
+                  onclick="selectSpeechParagraph(${safeIdx + 1})"
+                  ${safeIdx >= paragraphs.length - 1 ? 'disabled' : ''}
+                  class="px-3.5 py-2 rounded-xl bg-indigo text-white disabled:opacity-40 text-xs font-semibold hover:brightness-110 transition cursor-pointer"
                 >
                   Parte Successiva
                 </button>
               </div>
+              <span class="text-xs text-gray-400">
+                Suggerimento: usa <code class="text-gold">{{STANZA}}</code> nel testo libero per inserire il codice stanza.
+              </span>
             </div>
 
-            <div class="space-y-1.5">
-              <label for="custom-speech-input" class="block text-xs font-semibold text-gray-300">
-                Discorso personalizzato del Master (opzionale · usa {{STANZA}} per inserire il codice stanza)
+            <div class="pt-2 border-t border-white/10">
+              <label for="custom-speech-input" class="block text-xs font-semibold text-gray-300 mb-1.5">
+                Discorso personalizzato del Master (separa i paragrafi con una riga vuota)
               </label>
               <textarea
                 id="custom-speech-input"
                 rows="3"
-                onchange="handleCustomSpeechChange(this.value)"
-                placeholder="Scrivi qui il tuo discorso di assegnazione ruoli..."
+                placeholder="Scrivi qui il tuo discorso di assegnazione ruoli per la stanza {{STANZA}}..."
+                oninput="updateCustomSpeechText(this.value)"
                 class="w-full rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-gold"
-              >${escapeHtml(masterState.customSpeech)}</textarea>
+              >${escapeHtml(masterState.customSpeechText)}</textarea>
             </div>
           </section>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <section class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 space-y-4">
               <div class="flex items-center justify-between gap-2">
-                <h2 class="font-serif text-xl font-bold text-white">1. Ruoli da Assegnare</h2>
+                <h2 class="font-serif text-xl font-bold text-white">1. Configurazione Ruoli</h2>
                 <span class="text-xs px-3 py-1 rounded-full bg-bgdark border border-white/10 text-gray-300">
                   Totale ruoli: <strong class="text-gold">${totalRoles}</strong>
                 </span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${Object.entries(ROLE_CATALOG).map(([roleKey, roleDef]) => {
+                ${Object.entries(ROLE_CATALOG).map(([roleKey, role]) => {
                   const count = Number(masterState.roleCounts[roleKey] || 0);
                   return `
                     <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex flex-col justify-between gap-3">
                       <div>
                         <div class="flex items-center justify-between gap-2">
-                          <span class="font-semibold text-sm text-white">${escapeHtml(roleDef.name)}</span>
-                          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${roleDef.badgeClass}">
-                            ${escapeHtml(roleDef.faction)}
+                          <span class="font-semibold text-sm text-white">${escapeHtml(role.name)}</span>
+                          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${role.badgeClass}">
+                            ${escapeHtml(role.faction)}
                           </span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1.5">${escapeHtml(roleDef.desc)}</p>
+                        <p class="text-xs text-gray-400 mt-1.5">${escapeHtml(role.summary)}</p>
                       </div>
                       <div class="flex items-center justify-between pt-2 border-t border-white/10">
                         <span class="text-xs text-gray-400">Copie:</span>
                         <div class="flex items-center gap-2">
                           <button
                             type="button"
-                            onclick="changeRoleCount('${roleKey}', -1)"
+                            onclick="adjustMasterRoleCount('${roleKey}', -1)"
                             class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200 cursor-pointer"
                           >-</button>
                           <span class="w-6 text-center text-sm font-bold text-gold">${count}</span>
                           <button
                             type="button"
-                            onclick="changeRoleCount('${roleKey}', 1)"
+                            onclick="adjustMasterRoleCount('${roleKey}', 1)"
                             class="w-7 h-7 rounded-lg bg-surface2 hover:bg-white/10 text-xs font-bold text-gray-200 cursor-pointer"
                           >+</button>
                         </div>
@@ -924,21 +718,20 @@
               </div>
             </section>
 
-            <section class="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
+            <section class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 space-y-4">
               <div class="flex items-center justify-between gap-2">
-                <h2 class="font-serif text-xl font-bold text-white">2. Giocatori al Tavolo (${masterState.players.length})</h2>
-                <span class="text-[11px] font-semibold text-emerald">Aggiunta automatica stanza</span>
+                <h2 class="font-serif text-xl font-bold text-white">2. Giocatori e Ruoli Assegnati (${masterState.players.length})</h2>
               </div>
 
               <form
-                onsubmit="event.preventDefault(); const inp = document.getElementById('master-player-input'); addMasterPlayer(inp.value); inp.value = '';"
+                onsubmit="event.preventDefault(); const inp = document.getElementById('master-new-player'); addMasterPlayer(inp.value); inp.value = '';"
                 class="flex gap-2"
               >
                 <input
-                  id="master-player-input"
+                  id="master-new-player"
                   type="text"
                   maxlength="24"
-                  placeholder="Nome giocatore..."
+                  placeholder="Nome giocatore al tavolo..."
                   class="flex-1 rounded-xl bg-bgdark border border-white/15 px-3.5 py-2 text-sm text-white focus:outline-none focus:border-indigo"
                 />
                 <button
@@ -950,34 +743,29 @@
               </form>
 
               <div class="space-y-2.5">
-                ${masterState.players.length === 0
-                  ? `<div class="rounded-xl bg-bgdark border border-white/10 p-4 text-xs text-gray-400 text-center">
-                       In attesa che i giocatori entrino con il codice stanza ${escapeHtml(masterState.roomCode)} (oppure aggiungine uno qui sopra).
-                     </div>`
-                  : masterState.players.map(player => {
-                      const roleInfo = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
-                      return `
-                        <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
-                          <div>
-                            <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
-                            <div class="text-xs mt-1">
-                              ${roleInfo
-                                ? `<span class="font-semibold px-2 py-0.5 rounded-full border ${roleInfo.badgeClass}">${escapeHtml(roleInfo.name)} (${escapeHtml(roleInfo.faction)})</span>`
-                                : `<span class="text-gray-400">In attesa di assegnazione</span>`
-                              }
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onclick="removeMasterPlayer('${player.id}')"
-                            class="px-2.5 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
-                          >
-                            Rimuovi
-                          </button>
+                ${masterState.players.map(player => {
+                  const assignedRole = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
+                  return `
+                    <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
+                      <div>
+                        <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
+                        <div class="text-xs mt-1">
+                          ${assignedRole
+                            ? `<span class="font-semibold px-2 py-0.5 rounded-full border ${assignedRole.badgeClass}">${escapeHtml(assignedRole.name)} (${escapeHtml(assignedRole.faction)})</span>`
+                            : `<span class="text-gray-400">In attesa di assegnazione ruolo</span>`
+                          }
                         </div>
-                      `;
-                    }).join('')
-                }
+                      </div>
+                      <button
+                        type="button"
+                        onclick="removeMasterPlayer('${player.id}')"
+                        class="px-2.5 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
+                      >
+                        Rimuovi
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </section>
           </div>
@@ -996,7 +784,7 @@
         console.error('Errore rendering pagina Master:', err);
         container.innerHTML = `
           <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
-            Errore durante il caricamento della pagina Master. Ricarica la pagina.
+            Errore durante il caricamento della pagina Master. Ricarica l'anteprima.
           </div>
         `;
       }
@@ -1004,10 +792,10 @@
 
     // Esposizione esplicita delle funzioni globali richiamate dai pulsanti
     window.setSpeechTone = setSpeechTone;
-    window.handleCustomSpeechChange = handleCustomSpeechChange;
-    window.stepSpeechParagraph = stepSpeechParagraph;
+    window.updateCustomSpeechText = updateCustomSpeechText;
+    window.selectSpeechParagraph = selectSpeechParagraph;
     window.copyFullSpeech = copyFullSpeech;
-    window.changeRoleCount = changeRoleCount;
+    window.adjustMasterRoleCount = adjustMasterRoleCount;
     window.addMasterPlayer = addMasterPlayer;
     window.removeMasterPlayer = removeMasterPlayer;
     window.assignRolesRandomly = assignRolesRandomly;
@@ -1017,7 +805,6 @@
     window.goToPage = goToPage;
 
     renderMasterRolePage();
-    initMasterCloud();
   </script>
 </body>
 </html>
