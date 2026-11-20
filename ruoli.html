@@ -77,15 +77,8 @@
     }
 
     h2 {
-      margin: 0 0 8px;
-      font-size: 18px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    h3 {
       margin: 0;
-      font-size: 17px;
+      font-size: 19px;
       font-weight: 700;
       color: #ffffff;
     }
@@ -131,133 +124,55 @@
       font-size: 12px;
     }
 
-    .btn-indigo {
-      background: var(--indigo);
-      color: #ffffff;
-      border: none;
-      padding: 10px 16px;
-      font-size: 13px;
-    }
-
-    .btn-remove {
-      background: var(--surface-2);
-      color: #d1d5db;
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-
-    .btn-remove:hover {
-      background: rgba(224, 82, 96, 0.18);
-      color: var(--crimson);
-      border-color: rgba(224, 82, 96, 0.45);
-    }
-
-    .banner {
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid transparent;
-    }
-
-    .banner-success {
-      background: rgba(62, 201, 140, 0.14);
-      border-color: rgba(62, 201, 140, 0.4);
-      color: var(--emerald);
-    }
-
-    .banner-error {
-      background: rgba(224, 82, 96, 0.14);
-      border-color: rgba(224, 82, 96, 0.4);
-      color: var(--crimson);
-    }
-
-    .banner-info {
-      background: rgba(124, 140, 255, 0.14);
-      border-color: rgba(124, 140, 255, 0.4);
-      color: var(--indigo);
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    input, select {
-      width: 100%;
-      background: var(--bg);
-      color: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 14px;
-      font-family: inherit;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-    }
-
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .filter-pill {
-      background: var(--surface);
-      color: #d1d5db;
+      background: var(--bg);
+      color: var(--muted);
       border: 1px solid var(--border);
-      padding: 7px 13px;
+      padding: 6px 12px;
       font-size: 12px;
     }
 
     .filter-pill.active-gold {
-      background: var(--gold);
-      color: #0c0e14;
-      border-color: var(--gold);
+      background: rgba(229, 184, 92, 0.16);
+      color: var(--gold);
+      border-color: rgba(229, 184, 92, 0.45);
     }
 
     .filter-pill.active-crimson {
-      background: var(--crimson);
-      color: #ffffff;
-      border-color: var(--crimson);
+      background: rgba(224, 82, 96, 0.16);
+      color: var(--crimson);
+      border-color: rgba(224, 82, 96, 0.45);
     }
 
     .filter-pill.active-emerald {
-      background: var(--emerald);
-      color: #0c0e14;
-      border-color: var(--emerald);
+      background: rgba(62, 201, 140, 0.16);
+      color: var(--emerald);
+      border-color: rgba(62, 201, 140, 0.45);
     }
 
     .roles-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 14px;
     }
 
     .role-card {
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 18px;
+      border-radius: 14px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
+      gap: 10px;
     }
 
     .role-head {
@@ -265,13 +180,19 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 8px;
+    }
+
+    .role-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
     }
 
     .badge {
       font-size: 11px;
       font-weight: 700;
-      padding: 3px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
       border: 1px solid transparent;
       white-space: nowrap;
@@ -297,15 +218,26 @@
 
     .role-desc {
       margin: 0;
-      font-size: 14px;
+      font-size: 13px;
       color: #d1d5db;
     }
 
-    .role-foot {
-      display: flex;
-      justify-content: flex-end;
-      padding-top: 10px;
+    .role-meta {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      padding-top: 8px;
       border-top: 1px solid var(--border);
+    }
+
+    .rules-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+      color: #d1d5db;
     }
   </style>
 </head>
@@ -314,93 +246,81 @@
 
   <script>
     (function () {
-      const STORAGE_KEY = 'ombre_catalogo_tutti_ruoli_v2';
-
-      const DEFAULT_ROLES = [
+      var ROLES = [
         {
-          id: 'assassino',
+          key: 'assassino',
           name: 'Assassino',
           faction: 'Traditori',
-          description: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore. (5 missioni, 3 ripetibili, prevalentemente di contatto; non può fare missioni con altri Traditori tranne il Traditore Segreto).'
+          desc: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore.',
+          meta: '5 missioni · 3 ripetibili · Prevalentemente di contatto (no Traditori tranne Traditore Segreto).'
         },
         {
-          id: 'sabotatore',
+          key: 'sabotatore',
           name: 'Sabotatore',
           faction: 'Traditori',
-          description: 'Può bloccare l’attivazione di un altro giocatore per il turno. (5 missioni, 3 ripetibili, prevalentemente di contatto; non può fare missioni con altri Traditori tranne il Traditore Segreto).'
+          desc: 'Può bloccare l’attivazione di un altro giocatore per il turno.',
+          meta: '5 missioni · 3 ripetibili · Prevalentemente di contatto (no Traditori tranne Traditore Segreto).'
         },
         {
-          id: 'traditore_segreto',
+          key: 'traditore_segreto',
           name: 'Traditore Segreto',
           faction: 'Traditori',
-          description: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori. (5 missioni, 3 ripetibili, prevalentemente di contatto; può fare missioni anche con gli altri Traditori).'
+          desc: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori.',
+          meta: 'Può fare missioni anche con gli altri Traditori.'
         },
         {
-          id: 'investigatore',
+          key: 'investigatore',
           name: 'Investigatore',
           faction: 'Fedeli',
-          description: 'Può scoprire una delle missioni dei Traditori. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+          desc: 'Può scoprire una delle missioni dei Traditori.',
+          meta: '5 missioni · 3 ripetibili · Missioni prevalentemente verbali.'
         },
         {
-          id: 'guardia',
+          key: 'guardia',
           name: 'Guardia',
           faction: 'Fedeli',
-          description: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+          desc: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore.',
+          meta: '5 missioni · 3 ripetibili · Missioni prevalentemente verbali.'
         },
         {
-          id: 'martire',
+          key: 'martire',
           name: 'Martire',
           faction: 'Fedeli',
-          description: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo presente in partita e, se è in gioco, sblocca la Voce dell’Aldilà per proteggere un giocatore con uno Scudo.'
+          desc: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.',
+          meta: 'Attivazione reattiva su missione altrui.'
         },
         {
-          id: 'mediatore',
+          key: 'mediatore',
           name: 'Mediatore',
           faction: 'Fedeli',
-          description: 'Ha un voto extra (+1) alla Tavola Rotonda. (5 missioni, 3 ripetibili, prevalentemente verbali).'
+          desc: 'Ha un voto extra (+1) alla Tavola Rotonda.',
+          meta: '5 missioni · 3 ripetibili · Missioni prevalentemente verbali.'
         },
         {
-          id: 'cacciatore',
+          key: 'cacciatore',
           name: 'Cacciatore',
           faction: 'Neutro',
-          description: 'Usa i punti missione per fare la domanda "giocatore X è ruolo Y?" e può sempre (0 punti) indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato. (5 missioni, 3 ripetibili, prevalentemente di confronto).'
+          desc: 'Usa i punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).',
+          meta: 'Condizione di vittoria autonoma o rischio eliminazione immediata.'
         }
       ];
 
-      function normalizeFaction(raw) {
-        if (raw === 'Traditori') return 'Traditori';
-        if (raw === 'Neutro') return 'Neutro';
-        return 'Fedeli';
-      }
+      var state = {
+        filter: 'tutti'
+      };
 
-      function safeReadStorage() {
-        try {
-          if (typeof window.localStorage === 'undefined') return null;
-          const raw = window.localStorage.getItem(STORAGE_KEY);
-          if (!raw) return null;
-          const parsed = JSON.parse(raw);
-          if (!Array.isArray(parsed) || parsed.length === 0) return null;
-          return parsed.map(function (item, idx) {
-            return {
-              id: String(item && item.id ? item.id : ('role_' + idx)),
-              name: String(item && item.name ? item.name : 'Ruolo').trim() || 'Ruolo',
-              faction: normalizeFaction(item && item.faction),
-              description: String(item && item.description ? item.description : '').trim()
-            };
-          });
-        } catch (_err) {
-          return null;
-        }
-      }
+      window.setRoleFilter = function (f) {
+        state.filter = f || 'tutti';
+        render();
+      };
 
-      function safeWriteStorage(list) {
-        try {
-          if (typeof window.localStorage === 'undefined') return;
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-        } catch (_err) {
-          // Ignora in ambienti con storage limitato
-        }
-      }
+      window.goBackToAccess = function () {
+        window.location.href = 'index.html';
+      };
+
+      window.goToMaster = function () {
+        window.location.href = 'master.html';
+      };
 
       function escapeHtml(value) {
         return String(value == null ? '' : value)
@@ -411,133 +331,56 @@
           .replace(/'/g, '&#39;');
       }
 
-      const state = {
-        filter: 'tutti',
-        roles: safeReadStorage() || DEFAULT_ROLES.map(function (r) { return Object.assign({}, r); }),
-        banner: null
-      };
-
-      window.setRoleFilter = function (nextFilter) {
-        state.filter = nextFilter;
-        render();
-      };
-
-      window.addCatalogRole = function (name, faction, description) {
-        const cleanName = String(name || '').trim();
-        const cleanDesc = String(description || '').trim();
-        if (!cleanName || !cleanDesc) {
-          state.banner = { text: 'Inserisci sia il nome del ruolo sia la descrizione.', type: 'error' };
-          render();
-          return;
-        }
-        state.roles.push({
-          id: 'role_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name: cleanName,
-          faction: normalizeFaction(faction),
-          description: cleanDesc
-        });
-        state.banner = { text: 'Ruolo "' + cleanName + '" aggiunto.', type: 'success' };
-        safeWriteStorage(state.roles);
-        render();
-      };
-
-      window.removeCatalogRole = function (roleId) {
-        state.roles = state.roles.filter(function (r) { return r.id !== roleId; });
-        state.banner = { text: 'Ruolo rimosso.', type: 'info' };
-        safeWriteStorage(state.roles);
-        render();
-      };
-
-      window.resetCatalogRoles = function () {
-        state.roles = DEFAULT_ROLES.map(function (r) { return Object.assign({}, r); });
-        state.banner = { text: 'Catalogo degli 8 ruoli ufficiali ripristinato.', type: 'info' };
-        safeWriteStorage(state.roles);
-        render();
-      };
-
-      window.navigateCatalog = function (target) {
-        window.location.href = target;
-      };
-
       function render() {
-        const app = document.getElementById('roles-catalog-app');
-        if (!app) return;
+        var root = document.getElementById('roles-catalog-app');
+        if (!root) return;
 
-        const filtered = state.roles.filter(function (role) {
-          if (state.filter === 'tutti') return true;
-          return role.faction === state.filter;
-        });
+        var filtered = state.filter === 'tutti'
+          ? ROLES
+          : ROLES.filter(function (r) { return r.faction === state.filter; });
 
-        const bannerHtml = state.banner
-          ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
-          : '';
-
-        const cardsHtml = filtered.map(function (role) {
-          const faction = normalizeFaction(role.faction);
+        var cardsHtml = filtered.map(function (r) {
           return (
             '<article class="role-card">' +
-              '<div>' +
-                '<div class="role-head">' +
-                  '<h3>' + escapeHtml(role.name) + '</h3>' +
-                  '<span class="badge badge-' + faction + '">' + escapeHtml(faction) + '</span>' +
-                '</div>' +
-                '<p class="role-desc">' + escapeHtml(role.description) + '</p>' +
+              '<div class="role-head">' +
+                '<h3 class="role-title">' + escapeHtml(r.name) + '</h3>' +
+                '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.faction) + '</span>' +
               '</div>' +
-              '<div class="role-foot">' +
-                '<button type="button" class="btn-remove" onclick="removeCatalogRole('' + escapeHtml(role.id) + '')">Rimuovi</button>' +
-              '</div>' +
+              '<p class="role-desc">' + escapeHtml(r.desc) + '</p>' +
+              '<p class="role-meta">' + escapeHtml(r.meta) + '</p>' +
             '</article>'
           );
         }).join('');
 
-        app.innerHTML =
+        root.innerHTML =
           '<header class="card header-row">' +
             '<div>' +
-              '<span class="eyebrow">Archivio Completo · 8 Ruoli</span>' +
-              '<h1>Tutti i Ruoli del Gioco</h1>' +
-              '<p class="subtext">3 Traditori, 4 Fedeli e 1 Neutro — poteri, fazioni e regole delle missioni.</p>' +
+              '<span class="eyebrow">Compendio del Tavolo</span>' +
+              '<h1>Tutti i Ruoli e Regole delle Missioni</h1>' +
+              '<p class="subtext">Consulta poteri, fazioni e meccaniche principali prima o durante la partita.</p>' +
             '</div>' +
             '<div class="btn-row">' +
-              '<button type="button" class="btn-gold" onclick="navigateCatalog('master.html')">Torna al Master</button>' +
-              '<button type="button" class="btn-ghost" onclick="navigateCatalog('index.html')">Accesso</button>' +
-              '<button type="button" class="btn-ghost" onclick="resetCatalogRoles()">Ripristina 8 Ruoli</button>' +
+              '<button type="button" class="btn-gold" onclick="goBackToAccess()">Torna ad Accesso</button>' +
+              '<button type="button" class="btn-ghost" onclick="goToMaster()">Vai al Master</button>' +
             '</div>' +
           '</header>' +
-          bannerHtml +
           '<section class="card card-gold">' +
-            '<span class="eyebrow">Regole Generali delle Missioni</span>' +
-            '<h2>Struttura, Stili per Fazione e Vincoli</h2>' +
-            '<p class="role-desc">' +
-              'Ogni ruolo con missioni ha <strong>5 missioni</strong> di cui <strong>3 ripetibili</strong> (il <strong>Martire</strong> non ha missioni). ' +
-              'I <strong>Traditori</strong> hanno missioni prevalentemente di <strong>contatto</strong> e non possono fare missioni tra loro, <strong>ad eccezione del Traditore Segreto</strong>. ' +
-              'I <strong>Fedeli</strong> hanno missioni prevalentemente <strong>verbali</strong>, mentre il <strong>Neutro</strong> (Cacciatore) ha missioni prevalentemente di <strong>confronto</strong>.' +
-            '</p>' +
+            '<span class="eyebrow">Regolamento Sintetico</span>' +
+            '<h2>Missioni, Scudi e Tavola Rotonda</h2>' +
+            '<ul class="rules-list">' +
+              '<li><strong>Missioni:</strong> i ruoli attivi dispongono di 5 missioni (3 ripetibili); i Traditori non svolgono missioni con altri Traditori, ad eccezione del Traditore Segreto.</li>' +
+              '<li><strong>Scudi Protettivi:</strong> assegnabili dalla Guardia (o tramite Voce dell’Aldilà del Martire) per assorbire un’azione o eliminazione.</li>' +
+              '<li><strong>Tavola Rotonda:</strong> confronto e voto collettivo; il Mediatore dispone di un voto extra (+1).</li>' +
+            '</ul>' +
           '</section>' +
           '<section class="card">' +
-            '<h2>Aggiungi un Ruolo all’Elenco</h2>' +
-            '<form onsubmit="event.preventDefault(); var n = document.getElementById('cat-role-name'); var f = document.getElementById('cat-role-faction'); var d = document.getElementById('cat-role-desc'); addCatalogRole(n.value, f.value, d.value); n.value = ''; d.value = '';">' +
-              '<div class="form-grid">' +
-                '<input id="cat-role-name" type="text" maxlength="32" placeholder="Nome ruolo..." />' +
-                '<select id="cat-role-faction">' +
-                  '<option value="Fedeli">Fedeli</option>' +
-                  '<option value="Traditori">Traditori</option>' +
-                  '<option value="Neutro">Neutro</option>' +
-                '</select>' +
-                '<input id="cat-role-desc" type="text" maxlength="240" placeholder="Effetto, potere e note sulle missioni..." />' +
-              '</div>' +
-              '<div class="form-actions">' +
-                '<button type="submit" class="btn-indigo">Salva Ruolo nell’Elenco</button>' +
-              '</div>' +
-            '</form>' +
-          '</section>' +
-          '<section>' +
             '<div class="filter-bar">' +
               '<span class="subtext">Ruoli visualizzati: <strong>' + filtered.length + '</strong></span>' +
               '<div class="btn-row">' +
-                '<button type="button" class="filter-pill ' + (state.filter === 'tutti' ? 'active-gold' : '') + '" onclick="setRoleFilter('tutti')">Tutti</button>' +
-                '<button type="button" class="filter-pill ' + (state.filter === 'Traditori' ? 'active-crimson' : '') + '" onclick="setRoleFilter('Traditori')">Traditori</button>' +
-                '<button type="button" class="filter-pill ' + (state.filter === 'Fedeli' ? 'active-emerald' : '') + '" onclick="setRoleFilter('Fedeli')">Fedeli</button>' +
-                '<button type="button" class="filter-pill ' + (state.filter === 'Neutro' ? 'active-gold' : '') + '" onclick="setRoleFilter('Neutro')">Neutro</button>' +
+                '<button type="button" class="filter-pill ' + (state.filter === 'tutti' ? 'active-gold' : '') + '" onclick="setRoleFilter(\'tutti\')">Tutti</button>' +
+                '<button type="button" class="filter-pill ' + (state.filter === 'Traditori' ? 'active-crimson' : '') + '" onclick="setRoleFilter(\'Traditori\')">Traditori</button>' +
+                '<button type="button" class="filter-pill ' + (state.filter === 'Fedeli' ? 'active-emerald' : '') + '" onclick="setRoleFilter(\'Fedeli\')">Fedeli</button>' +
+                '<button type="button" class="filter-pill ' + (state.filter === 'Neutro' ? 'active-gold' : '') + '" onclick="setRoleFilter(\'Neutro\')">Neutro</button>' +
               '</div>' +
             '</div>' +
             '<div class="roles-grid">' + cardsHtml + '</div>' +
