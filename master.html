@@ -1733,5 +1733,306 @@
   });
 })();
 </script>
+
+<script>
+(function () {
+  var ROOM_PREFIX = 'ombre_stanza_sync_';
+  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+
+  function getRoomCode() {
+    try {
+      var raw = localStorage.getItem(ACCESS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && p.roomCode) return String(p.roomCode).trim().toUpperCase();
+      }
+    } catch (_e) {}
+    return 'TAVOLO1';
+  }
+
+  function loadRoom(code) {
+    try {
+      var raw = localStorage.getItem(ROOM_PREFIX + code);
+      return raw ? JSON.parse(raw) : { roomCode: code, players: [], ovalRoundCount: 0, assassinUsedSinceOval: false, shieldedPlayers: [] };
+    } catch (_e) {
+      return { roomCode: code, players: [], ovalRoundCount: 0, assassinUsedSinceOval: false, shieldedPlayers: [] };
+    }
+  }
+
+  function saveRoom(code, data) {
+    data.updatedAt = Date.now();
+    try {
+      localStorage.setItem(ROOM_PREFIX + code, JSON.stringify(data));
+    } catch (_e) {}
+  }
+
+  window.masterStartOvalRound = function () {
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    data.ovalRoundCount = Number(data.ovalRoundCount || 0) + 1;
+    data.assassinUsedSinceOval = false;
+    data.masterChat = Array.isArray(data.masterChat) ? data.masterChat : [];
+    data.masterChat.push({
+      id: 'oval_' + Date.now(),
+      fromMaster: true,
+      senderName: 'Master',
+      playerName: null,
+      text: '[TAVOLO OVALE #' + data.ovalRoundCount + '] Giro di confronto avviato: l’abilità dell’Assassino è nuovamente sbloccabile.',
+      createdAt: Date.now()
+    });
+    saveRoom(code, data);
+    renderOvalBox();
+  };
+
+  function renderOvalBox() {
+    var host = document.getElementById('master-oval-table-session');
+    if (!host) return;
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    var roundNum = Number(data.ovalRoundCount || 0);
+    var unlocked = !data.assassinUsedSinceOval;
+
+    host.innerHTML =
+      '<div style="border:1px solid rgba(124,140,255,0.4);border-radius:16px;padding:18px;background:#151924;">' +
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#7c8cff;">Sessione di Confronto</div>' +
+            '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Tavolo Ovale (Giri completati: ' + roundNum + ')</h2>' +
+            '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">Stato abilità Assassino: <strong style="color:' + (unlocked ? '#3ec98c' : '#e5b85c') + ';">' + (unlocked ? 'Sbloccata / Riutilizzabile' : 'Bloccata fino al prossimo Tavolo Ovale') + '</strong></p>' +
+          '</div>' +
+          '<button type="button" onclick="masterStartOvalRound()" style="padding:10px 16px;border-radius:10px;border:none;background:#7c8cff;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Avvia Giro Tavolo Ovale</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var wrap = document.createElement('section');
+    wrap.id = 'master-oval-table-session';
+    wrap.style.cssText = 'max-width:1120px;margin:20px auto 0;padding:0 16px;';
+    document.body.appendChild(wrap);
+    renderOvalBox();
+    setInterval(renderOvalBox, 2000);
+  });
+})();
+</script>
+
+
+<script>
+(function () {
+  var ROOM_PREFIX = 'ombre_stanza_sync_';
+  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+
+  var GAME_PHASES = [
+    {
+      id: 'cerimonia_ruoli',
+      step: 1,
+      title: 'Cerimonia dei Ruoli',
+      desc: 'Assegnazione dei ruoli segreti e apertura della scheda privata ai giocatori.'
+    },
+    {
+      id: 'interludio_ludico_1',
+      step: 2,
+      title: 'Interludio Ludico',
+      desc: 'Primo momento di gioco e interazione al tavolo per avviare missioni e osservazioni.'
+    },
+    {
+      id: 'notte_primo_assassinio',
+      step: 3,
+      title: 'Notte (Primo Assassinio)',
+      desc: 'Fase notturna dedicata al primo colpo dell’Assassino (e scelta del Traditore Segreto se presente).'
+    },
+    {
+      id: 'risveglio',
+      step: 4,
+      title: 'Risveglio',
+      desc: 'Annuncio dell’esito notturno al tavolo (spazio predisposto per video + selfie).'
+    },
+    {
+      id: 'interludio_ludico_2',
+      step: 5,
+      title: 'Interludio Ludico',
+      desc: 'Nuovo giro di gioco, missioni, scambi e confronti tra i partecipanti.'
+    },
+    {
+      id: 'tavolo_ovale',
+      step: 6,
+      title: 'Tavolo Ovale',
+      desc: 'Confronto collettivo, sblocco del limite di utilizzo dell’Assassino per il ciclo e preparazione al voto.'
+    },
+    {
+      id: 'notte_assassinio',
+      step: 7,
+      title: 'Notte (Assassino)',
+      desc: 'Fase notturna del ciclo: l’Assassino può tornare ad agire (poi il ciclo si ripete fino alla conclusione).'
+    }
+  ];
+
+  function getRoomCode() {
+    try {
+      var raw = localStorage.getItem(ACCESS_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && p.roomCode) return String(p.roomCode).trim().toUpperCase();
+      }
+    } catch (_e) {}
+    return 'TAVOLO1';
+  }
+
+  function loadRoom(code) {
+    try {
+      var raw = localStorage.getItem(ROOM_PREFIX + code);
+      return raw ? JSON.parse(raw) : {
+        roomCode: code,
+        players: [],
+        phaseIndex: 0,
+        cycleCount: 1,
+        ovalRoundCount: 0,
+        assassinUsedSinceOval: false,
+        masterChat: []
+      };
+    } catch (_e) {
+      return {
+        roomCode: code,
+        players: [],
+        phaseIndex: 0,
+        cycleCount: 1,
+        ovalRoundCount: 0,
+        assassinUsedSinceOval: false,
+        masterChat: []
+      };
+    }
+  }
+
+  function saveRoom(code, data) {
+    data.updatedAt = Date.now();
+    try {
+      localStorage.setItem(ROOM_PREFIX + code, JSON.stringify(data));
+    } catch (_e) {}
+  }
+
+  function applyPhaseTransition(code, data, nextIdx) {
+    var total = GAME_PHASES.length;
+    var prevIdx = Number(data.phaseIndex || 0);
+    var cycle = Number(data.cycleCount || 1);
+
+    if (nextIdx >= total) {
+      // Dal punto 7 (Notte Assassino) o fine scaletta si ripete il ciclo dalla fase 2 (Interludio Ludico)
+      nextIdx = 1;
+      cycle += 1;
+    } else if (nextIdx < 0) {
+      nextIdx = 0;
+    } else if (prevIdx === total - 1 && nextIdx === 1) {
+      cycle += 1;
+    }
+
+    var phaseObj = GAME_PHASES[nextIdx] || GAME_PHASES[0];
+    data.phaseIndex = nextIdx;
+    data.cycleCount = cycle;
+    data.currentPhase = phaseObj.id;
+    data.currentPhaseTitle = phaseObj.title;
+
+    if (phaseObj.id === 'tavolo_ovale') {
+      data.ovalRoundCount = Number(data.ovalRoundCount || 0) + 1;
+      data.assassinUsedSinceOval = false;
+    }
+
+    data.masterChat = Array.isArray(data.masterChat) ? data.masterChat : [];
+    data.masterChat.push({
+      id: 'phase_' + Date.now() + '_' + nextIdx,
+      fromMaster: true,
+      senderName: 'Master',
+      playerName: null,
+      text: '[FASE ' + phaseObj.step + ' · CICLO ' + cycle + '] ' + phaseObj.title + (phaseObj.id === 'tavolo_ovale' ? ' (abilità Assassino riattivabile)' : ''),
+      createdAt: Date.now()
+    });
+    data.masterChat = data.masterChat.slice(-150);
+
+    saveRoom(code, data);
+  }
+
+  window.masterSetPhase = function (idx) {
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    applyPhaseTransition(code, data, Number(idx));
+    renderScheduleBox();
+  };
+
+  window.masterNextPhase = function () {
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    var cur = Number(data.phaseIndex || 0);
+    applyPhaseTransition(code, data, cur + 1);
+    renderScheduleBox();
+  };
+
+  window.masterPrevPhase = function () {
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    var cur = Number(data.phaseIndex || 0);
+    applyPhaseTransition(code, data, cur - 1);
+    renderScheduleBox();
+  };
+
+  window.masterRepeatCycle = function () {
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    data.cycleCount = Number(data.cycleCount || 1) + 1;
+    applyPhaseTransition(code, data, 1);
+    renderScheduleBox();
+  };
+
+  function renderScheduleBox() {
+    var host = document.getElementById('master-phase-schedule-panel');
+    if (!host) return;
+    var code = getRoomCode();
+    var data = loadRoom(code);
+    var idx = Number(data.phaseIndex || 0);
+    if (idx < 0 || idx >= GAME_PHASES.length) idx = 0;
+    var curPhase = GAME_PHASES[idx];
+    var cycle = Number(data.cycleCount || 1);
+
+    var stepButtons = GAME_PHASES.map(function (ph, i) {
+      var active = i === idx;
+      return '<button type="button" onclick="masterSetPhase(' + i + ')" style="padding:7px 11px;border-radius:9px;border:1px solid ' +
+        (active ? '#e5b85c' : 'rgba(255,255,255,0.14)') + ';background:' +
+        (active ? '#e5b85c' : '#1d2230') + ';color:' +
+        (active ? '#0c0e14' : '#f3f4f6') + ';font-weight:700;font-size:12px;cursor:pointer;">' +
+        ph.step + '. ' + ph.title + '</button>';
+    }).join('');
+
+    host.innerHTML =
+      '<div style="border:1px solid rgba(229,184,92,0.4);border-radius:16px;padding:18px;background:#151924;">' +
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">' +
+          '<div>' +
+            '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Scaletta Fasi di Gioco · Ciclo #' + cycle + '</div>' +
+            '<h2 style="margin:2px 0 0;font-size:19px;color:#fff;">Fase ' + curPhase.step + ': ' + curPhase.title + '</h2>' +
+            '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">' + curPhase.desc + '</p>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+            '<button type="button" onclick="masterPrevPhase()" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">← Fase Precedente</button>' +
+            '<button type="button" onclick="masterNextPhase()" style="padding:9px 14px;border-radius:10px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Fase Successiva →</button>' +
+            '<button type="button" onclick="masterRepeatCycle()" style="padding:9px 14px;border-radius:10px;border:none;background:#7c8cff;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Ripeti Ciclo (Interludio)</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + stepButtons + '</div>' +
+      '</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var wrap = document.createElement('section');
+    wrap.id = 'master-phase-schedule-panel';
+    wrap.style.cssText = 'max-width:1120px;margin:20px auto 0;padding:0 16px;';
+    var ovalHost = document.getElementById('master-oval-table-session');
+    if (ovalHost && ovalHost.parentNode) {
+      ovalHost.parentNode.insertBefore(wrap, ovalHost);
+    } else {
+      document.body.appendChild(wrap);
+    }
+    renderScheduleBox();
+    setInterval(renderScheduleBox, 2000);
+  });
+})();
+</script>
+
 </body>
 </html>
