@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
-    // Configurazione tema scuro e font del gioco
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -43,47 +42,86 @@
   <div id="master-roles-app" class="max-w-6xl mx-auto px-4 py-8 space-y-6"></div>
 
   <script>
-    // Catalogo ruoli disponibili per la configurazione e l'estrazione
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const ROLE_CATALOG = {
-      investigatore: {
-        name: 'Investigatore',
-        faction: 'Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        summary: 'Indaga sul ruolo segreto di un giocatore vivo.'
-      },
-      guardia: {
-        name: 'Guardia',
-        faction: 'Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        summary: 'Protegge un giocatore dagli attacchi nel turno.'
-      },
-      cacciatore: {
-        name: 'Cacciatore',
-        faction: 'Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        summary: 'Può colpire un bersaglio sospetto rischiando il contraccolpo.'
-      },
-      martire: {
-        name: 'Martire',
-        faction: 'Cittadini',
-        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
-        summary: 'Lascia una testimonianza pubblica sul ruolo di un giocatore.'
-      },
       assassino: {
         name: 'Assassino',
         faction: 'Traditori',
+        factionKey: 'traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        summary: 'Elimina silenziosamente un bersaglio.'
+        summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
       },
       sabotatore: {
         name: 'Sabotatore',
         faction: 'Traditori',
+        factionKey: 'traditori',
         badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
-        summary: 'Ostacola o blocca l’azione di un avversario.'
+        summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).'
+      },
+      traditore_segreto: {
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        factionKey: 'traditori',
+        badgeClass: 'bg-crimson/15 text-crimson border-crimson/40',
+        summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).'
+      },
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.'
+      },
+      mediatore: {
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        badgeClass: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        factionKey: 'neutro',
+        badgeClass: 'bg-gold/15 text-gold border-gold/40',
+        summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).'
       }
     };
 
-    // Discorsi preimpostati per l'assegnazione dei ruoli al tavolo
     const SPEECH_TEMPLATES = {
       suspense: [
         'Le luci si abbassano intorno al tavolo della stanza {{STANZA}}. Ognuno ha davanti a sé un destino ancora non svelato.',
@@ -105,7 +143,34 @@
     const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
     const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
 
-    // Legge il contesto salvato dalla pagina di accesso in sicurezza
+    let firestoreDb = null;
+    let unsubscribeRoom = null;
+    let latestTraitorChat = [];
+    let latestMasterChat = [];
+    let masterChatTab = 'master'; // 'master' | 'traitors'
+    let selectedMasterPlayerFilter = 'ALL';
+    let masterChatDraft = '';
+    let syncStatusLabel = 'Connessione cloud...';
+
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) {
+          return null;
+        }
+        const app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (err) {
+        console.error('Errore inizializzazione Firestore:', err);
+        return null;
+      }
+    }
+
+    function getRoomDocRef(roomCode) {
+      if (!firestoreDb) return null;
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      return doc(firestoreDb, 'stanze', cleanRoom);
+    }
+
     function readAccessContext() {
       try {
         const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
@@ -123,26 +188,22 @@
       }
     }
 
-    // Crea lo stato iniziale della pagina Master
     function createInitialMasterRoleState() {
       const ctx = readAccessContext();
       return {
         roomCode: ctx.roomCode,
         masterName: ctx.masterName,
         roleCounts: {
+          assassino: 1,
+          sabotatore: 1,
+          traditore_segreto: 1,
           investigatore: 1,
           guardia: 1,
-          cacciatore: 1,
-          martire: 0,
-          assassino: 1,
-          sabotatore: 1
+          martire: 1,
+          mediatore: 1,
+          cacciatore: 1
         },
-        players: [
-          { id: 'm_p1', name: 'Elena', assignedRoleKey: null },
-          { id: 'm_p2', name: 'Marco', assignedRoleKey: null },
-          { id: 'm_p3', name: 'Sofia', assignedRoleKey: null },
-          { id: 'm_p4', name: 'Luca', assignedRoleKey: null }
-        ],
+        players: [],
         speechTone: 'suspense',
         customSpeechText: '',
         activeParagraphIndex: 0,
@@ -152,7 +213,6 @@
       };
     }
 
-    // Carica lo stato salvato della pagina Master in sicurezza
     function loadMasterRoleState() {
       try {
         const ctx = readAccessContext();
@@ -185,26 +245,181 @@
 
     let masterState = loadMasterRoleState();
 
-    // Sincronizza giocatori e ruoli assegnati nella stanza condivisa
-    function syncMasterRoomRecord() {
+    function getSafeSelfieForCloud(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== 'string') return null;
+      if (dataUrl.length > 650000) return null;
+      return dataUrl;
+    }
+
+    async function syncMasterRoomRecord() {
       const cleanRoom = String(masterState.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const compactPlayers = masterState.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        selfieDataUrl: getSafeSelfieForCloud(p.selfieDataUrl) || null,
+        boardUnlocked: Boolean(p.boardUnlocked),
+        assignedRoleKey: p.assignedRoleKey || null
+      }));
+
       try {
         localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify({
           roomCode: cleanRoom,
-          players: masterState.players.map(p => ({
-            id: p.id,
-            name: p.name,
-            assignedRoleKey: p.assignedRoleKey || null
-          })),
+          players: compactPlayers,
           roleCounts: { ...masterState.roleCounts },
+          traitorChat: latestTraitorChat,
+          masterChat: latestMasterChat,
           updatedAt: Date.now()
         }));
       } catch (err) {
-        console.error('Errore sincronizzazione stanza da Master:', err);
+        console.error('Errore sincronizzazione locale stanza da Master:', err);
+      }
+
+      const ref = getRoomDocRef(cleanRoom);
+      if (!ref) return;
+      try {
+        await setDoc(ref, {
+          roomCode: cleanRoom,
+          masterName: masterState.masterName,
+          players: compactPlayers,
+          roleCounts: { ...masterState.roleCounts },
+          assignmentCompleted: Boolean(masterState.assignmentCompleted),
+          updatedAt: Date.now()
+        }, { merge: true });
+        syncStatusLabel = 'Cloud Firestore attivo';
+      } catch (err) {
+        console.error('Errore sincronizzazione stanza su Firestore:', err);
+        syncStatusLabel = 'Locale (controlla regole Firestore)';
       }
     }
 
-    // Salva lo stato della pagina Master
+    function mergeCloudPlayersWithLocal(cloudPlayers) {
+      const incoming = Array.isArray(cloudPlayers) ? cloudPlayers : [];
+      const merged = [...masterState.players];
+
+      incoming.forEach(cp => {
+        const cleanName = String(cp.name || '').trim();
+        if (!cleanName) return;
+        const idx = merged.findIndex(lp => String(lp.name || '').trim().toLowerCase() === cleanName.toLowerCase());
+        if (idx >= 0) {
+          merged[idx] = {
+            ...merged[idx],
+            id: cp.id || merged[idx].id,
+            name: cleanName,
+            selfieDataUrl: cp.selfieDataUrl || merged[idx].selfieDataUrl || null,
+            boardUnlocked: Boolean(cp.boardUnlocked || merged[idx].boardUnlocked),
+            assignedRoleKey: cp.assignedRoleKey !== undefined ? cp.assignedRoleKey : (merged[idx].assignedRoleKey || null)
+          };
+        } else {
+          merged.push({
+            id: cp.id || ('p_' + cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_')),
+            name: cleanName,
+            selfieDataUrl: cp.selfieDataUrl || null,
+            boardUnlocked: Boolean(cp.boardUnlocked),
+            assignedRoleKey: cp.assignedRoleKey || null
+          });
+        }
+      });
+
+      return merged;
+    }
+
+    function subscribeToRoomUpdates() {
+      if (typeof unsubscribeRoom === 'function') {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+      const ref = getRoomDocRef(masterState.roomCode);
+      if (!ref) {
+        syncStatusLabel = 'Solo locale';
+        return;
+      }
+
+      unsubscribeRoom = onSnapshot(ref, (snap) => {
+        syncStatusLabel = 'Cloud Firestore attivo';
+        if (!snap.exists()) {
+          renderMasterRolePage();
+          return;
+        }
+        const data = snap.data() || {};
+        latestTraitorChat = Array.isArray(data.traitorChat) ? data.traitorChat : [];
+        latestMasterChat = Array.isArray(data.masterChat) ? data.masterChat : [];
+
+        if (Array.isArray(data.players)) {
+          masterState.players = mergeCloudPlayersWithLocal(data.players);
+          try {
+            localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify(masterState));
+          } catch (_) {}
+        }
+
+        renderMasterRolePage();
+      }, (err) => {
+        console.error('Errore listener Firestore Master:', err);
+        syncStatusLabel = 'Locale (permessi Firestore)';
+        renderMasterRolePage();
+      });
+    }
+
+    async function sendMasterMessage() {
+      const inputEl = document.getElementById('master-chat-input');
+      const text = String((inputEl ? inputEl.value : masterChatDraft) || '').trim();
+      if (!text) return;
+
+      const isTraitorChannel = masterChatTab === 'traitors';
+      const targetPlayer = isTraitorChannel
+        ? null
+        : (selectedMasterPlayerFilter && selectedMasterPlayerFilter !== 'ALL' ? selectedMasterPlayerFilter : null);
+
+      const newMsg = {
+        id: 'mm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        fromMaster: true,
+        senderName: masterState.masterName || 'Master',
+        playerName: targetPlayer,
+        text: text.slice(0, 400),
+        createdAt: Date.now()
+      };
+
+      masterChatDraft = '';
+      if (inputEl) inputEl.value = '';
+
+      const ref = getRoomDocRef(masterState.roomCode);
+      if (ref) {
+        try {
+          const snap = await getDoc(ref);
+          const data = snap.exists() ? (snap.data() || {}) : {};
+          if (isTraitorChannel) {
+            const existing = Array.isArray(data.traitorChat) ? data.traitorChat : [];
+            const nextList = [...existing, newMsg].slice(-100);
+            latestTraitorChat = nextList;
+            await setDoc(ref, {
+              roomCode: masterState.roomCode,
+              traitorChat: nextList,
+              updatedAt: Date.now()
+            }, { merge: true });
+          } else {
+            const existing = Array.isArray(data.masterChat) ? data.masterChat : [];
+            const nextList = [...existing, newMsg].slice(-150);
+            latestMasterChat = nextList;
+            await setDoc(ref, {
+              roomCode: masterState.roomCode,
+              masterChat: nextList,
+              updatedAt: Date.now()
+            }, { merge: true });
+          }
+          renderMasterRolePage();
+          return;
+        } catch (err) {
+          console.error('Errore invio messaggio Master:', err);
+        }
+      }
+
+      if (isTraitorChannel) {
+        latestTraitorChat = [...latestTraitorChat, newMsg].slice(-100);
+      } else {
+        latestMasterChat = [...latestMasterChat, newMsg].slice(-150);
+      }
+      renderMasterRolePage();
+    }
+
     function saveMasterRoleState() {
       try {
         localStorage.setItem(MASTER_ROLES_STORAGE_KEY, JSON.stringify(masterState));
@@ -214,20 +429,20 @@
       syncMasterRoomRecord();
     }
 
-    // Imposta un messaggio di feedback per il Master
     function setMasterBanner(text, type = 'info') {
       masterState.banner = { text, type };
       saveMasterRoleState();
       renderMasterRolePage();
     }
 
-    // Restituisce i paragrafi del discorso di assegnazione ruoli
     function getSpeechParagraphs() {
       const cleanRoom = String(masterState.roomCode || 'TAVOLO1').toUpperCase();
       const customRaw = String(masterState.customSpeechText || '').trim();
       if (customRaw) {
         return customRaw
-          .split(/\n\s*\n/)
+          .split(/
+\s*
+/)
           .map(part => part.replace(/\{\{STANZA\}\}/gi, cleanRoom).trim())
           .filter(Boolean);
       }
@@ -235,7 +450,6 @@
       return list.map(line => line.replace(/\{\{STANZA\}\}/gi, cleanRoom));
     }
 
-    // Cambia tono del discorso preimpostato
     function setSpeechTone(tone) {
       if (!SPEECH_TEMPLATES[tone]) return;
       masterState.speechTone = tone;
@@ -245,7 +459,6 @@
       renderMasterRolePage();
     }
 
-    // Aggiorna il testo personalizzato del discorso
     function updateCustomSpeechText(value) {
       masterState.customSpeechText = String(value || '');
       masterState.activeParagraphIndex = 0;
@@ -253,7 +466,6 @@
       renderMasterRolePage();
     }
 
-    // Seleziona un paragrafo specifico del discorso
     function selectSpeechParagraph(index) {
       const paragraphs = getSpeechParagraphs();
       if (paragraphs.length === 0) return;
@@ -262,9 +474,10 @@
       renderMasterRolePage();
     }
 
-    // Copia il discorso completo negli appunti con fallback sicuro
     function copyFullSpeech() {
-      const fullText = getSpeechParagraphs().join('\n\n');
+      const fullText = getSpeechParagraphs().join('
+
+');
       if (!fullText) {
         setMasterBanner('Nessun testo del discorso da copiare.', 'error');
         return;
@@ -286,7 +499,6 @@
       }
     }
 
-    // Modifica il numero di copie di un ruolo
     function adjustMasterRoleCount(roleKey, delta) {
       if (!ROLE_CATALOG[roleKey]) return;
       const cur = Number(masterState.roleCounts[roleKey] || 0);
@@ -296,7 +508,6 @@
       renderMasterRolePage();
     }
 
-    // Aggiunge un giocatore al tavolo del Master
     function addMasterPlayer(rawName) {
       const cleanName = String(rawName || '').trim();
       if (!cleanName) {
@@ -306,6 +517,8 @@
       masterState.players.push({
         id: 'm_p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: cleanName,
+        selfieDataUrl: null,
+        boardUnlocked: false,
         assignedRoleKey: null
       });
       masterState.assignmentCompleted = false;
@@ -314,7 +527,6 @@
       renderMasterRolePage();
     }
 
-    // Rimuove un giocatore dal tavolo del Master
     function removeMasterPlayer(playerId) {
       masterState.players = masterState.players.filter(p => p.id !== playerId);
       masterState.banner = null;
@@ -322,7 +534,6 @@
       renderMasterRolePage();
     }
 
-    // Estrae e assegna casualmente i ruoli configurati ai giocatori
     function assignRolesRandomly() {
       if (masterState.players.length === 0) {
         setMasterBanner('Aggiungi almeno un giocatore al tavolo prima di assegnare i ruoli.', 'error');
@@ -360,12 +571,11 @@
       masterState.assignmentCompleted = true;
 
       setMasterBanner(
-        `Assegnati casualmente ${extracted.length} ruoli: ora puoi leggere il discorso o aprire la Plancia Master.`,
+        `Assegnati casualmente ${extracted.length} ruoli e sincronizzati sulla stanza: ora puoi aprire la Plancia Master.`,
         'success'
       );
     }
 
-    // Azzera i ruoli assegnati mantenendo i giocatori al tavolo
     function resetRoleAssignments() {
       masterState.players = masterState.players.map(player => ({
         ...player,
@@ -376,7 +586,6 @@
       setMasterBanner('Ruoli assegnati azzerati: i giocatori restano al tavolo.', 'info');
     }
 
-    // Apre la plancia del Master dopo l'assegnazione dei ruoli
     function enterMasterBoard() {
       if (!masterState.assignmentCompleted) {
         setMasterBanner('Assegna prima i ruoli ai giocatori al tavolo per aprire la Plancia Master.', 'error');
@@ -391,7 +600,6 @@
       renderMasterRolePage();
     }
 
-    // Riporta alla sezione Cerimonia e Gestione Ruoli
     function openCeremonyAndRolesSection() {
       masterState.boardOpened = false;
       masterState.banner = null;
@@ -399,7 +607,6 @@
       renderMasterRolePage();
     }
 
-    // Naviga verso una pagina collegata se disponibile
     function goToPage(targetPage) {
       try {
         window.location.href = targetPage;
@@ -408,7 +615,6 @@
       }
     }
 
-    // Escape HTML per rendere sicuro l'inserimento di testo
     function escapeHtml(value) {
       return String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -418,7 +624,125 @@
         .replace(/'/g, '&#39;');
     }
 
-    // Renderizza l'intera pagina Master
+    function formatTimeShort(ts) {
+      try {
+        if (!ts) return '';
+        return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function renderMasterChatPanel() {
+      const isTraitorChannel = masterChatTab === 'traitors';
+      const filteredMasterMessages = latestMasterChat.filter(msg => {
+        if (selectedMasterPlayerFilter === 'ALL') return true;
+        return String(msg.playerName || '').trim().toLowerCase() === String(selectedMasterPlayerFilter || '').trim().toLowerCase();
+      });
+      const messages = isTraitorChannel ? latestTraitorChat : filteredMasterMessages;
+
+      const messagesHtml = messages.length
+        ? messages.map(msg => {
+            const senderLabel = msg.fromMaster
+              ? `${escapeHtml(msg.senderName || 'Master')}${msg.playerName ? ' -> ' + escapeHtml(msg.playerName) : ' (Tutti)'}`
+              : `${escapeHtml(msg.senderName || 'Giocatore')}${msg.senderRoleName && !msg.anonymousIdentity ? ' · ' + escapeHtml(msg.senderRoleName) : ''}`;
+            return `
+              <div class="rounded-xl border px-3.5 py-2.5 space-y-1 ${
+                msg.fromMaster
+                  ? 'bg-surface2 border-gold/30 ml-4'
+                  : 'bg-bgdark border-white/10 mr-4'
+              }">
+                <div class="flex items-center justify-between gap-2 text-[11px]">
+                  <span class="font-bold text-gray-100">${senderLabel}</span>
+                  <span class="text-gray-400">${msg.createdAt ? escapeHtml(formatTimeShort(msg.createdAt)) : ''}</span>
+                </div>
+                <p class="text-xs text-gray-200 leading-relaxed break-words">${escapeHtml(msg.text)}</p>
+              </div>
+            `;
+          }).join('')
+        : `<p class="text-xs text-gray-500 text-center py-4">Nessun messaggio in questo canale.</p>`;
+
+      const playerFilterOptions = masterState.players
+        .map(p => `<option value="${escapeHtml(p.name)}" ${String(selectedMasterPlayerFilter).toLowerCase() === String(p.name).toLowerCase() ? 'selected' : ''}>${escapeHtml(p.name)}</option>`)
+        .join('');
+
+      return `
+        <section class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-gold">Console Comunicazioni Master</span>
+              <h2 class="font-serif text-xl font-bold text-white mt-0.5">
+                ${isTraitorChannel ? 'Osservatorio Chat Traditori' : 'Chat Diretta con i Giocatori'}
+              </h2>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onclick="masterChatTab = 'master'; renderMasterRolePage();"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  !isTraitorChannel
+                    ? 'bg-gold text-bgdark'
+                    : 'bg-bgdark border border-white/15 text-gray-300 hover:bg-white/5'
+                }"
+              >
+                Chat Diretta Giocatori
+              </button>
+              <button
+                type="button"
+                onclick="masterChatTab = 'traitors'; renderMasterRolePage();"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  isTraitorChannel
+                    ? 'bg-crimson text-white'
+                    : 'bg-bgdark border border-white/15 text-gray-300 hover:bg-white/5'
+                }"
+              >
+                Chat Traditori
+              </button>
+            </div>
+          </div>
+
+          ${
+            !isTraitorChannel
+              ? `<div class="flex flex-wrap items-center gap-2 text-xs">
+                   <label for="master-player-filter" class="text-gray-400">Destinatario / Filtro:</label>
+                   <select
+                     id="master-player-filter"
+                     onchange="selectedMasterPlayerFilter = this.value; renderMasterRolePage();"
+                     class="rounded-xl bg-bgdark border border-white/15 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-gold"
+                   >
+                     <option value="ALL" ${selectedMasterPlayerFilter === 'ALL' ? 'selected' : ''}>Tutti i giocatori (Messaggio generale)</option>
+                     ${playerFilterOptions}
+                   </select>
+                 </div>`
+              : `<p class="text-xs text-gray-400">Visualizzazione e risposta sul canale riservato ai Traditori della stanza.</p>`
+          }
+
+          <div class="max-h-64 overflow-y-auto space-y-2.5 pr-1">
+            ${messagesHtml}
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <input
+              id="master-chat-input"
+              type="text"
+              value="${escapeHtml(masterChatDraft)}"
+              oninput="masterChatDraft = this.value;"
+              onkeydown="if(event.key === 'Enter'){ event.preventDefault(); sendMasterMessage(); }"
+              placeholder="${isTraitorChannel ? 'Scrivi nella chat dei Traditori...' : 'Scrivi ai giocatori...'}"
+              class="flex-1 rounded-xl bg-bgdark border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold"
+            />
+            <button
+              type="button"
+              onclick="sendMasterMessage()"
+              class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+            >
+              Invia
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
     function renderMasterRolePage() {
       const container = document.getElementById('master-roles-app');
       if (!container) return;
@@ -446,7 +770,10 @@
           container.innerHTML = `
             <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Master</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Master</span>
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-bgdark border border-white/10 text-gray-300">${escapeHtml(syncStatusLabel)}</span>
+                </div>
                 <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Tavolo di ${escapeHtml(masterState.roomCode)}</h1>
                 <p class="text-xs text-gray-400 mt-1">
                   Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
@@ -480,25 +807,37 @@
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${masterState.players.map(player => {
-                  const roleInfo = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
-                  return `
-                    <div class="rounded-xl bg-bgdark border border-white/10 p-4 flex items-center justify-between gap-3">
-                      <div>
-                        <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
-                        <div class="text-xs text-gray-400 mt-0.5">Giocatore al tavolo</div>
-                      </div>
-                      <div>
-                        ${roleInfo
-                          ? `<span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleInfo.badgeClass}">${escapeHtml(roleInfo.name)} · ${escapeHtml(roleInfo.faction)}</span>`
-                          : `<span class="text-xs text-gray-400">Nessun ruolo</span>`
-                        }
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
+                ${masterState.players.length
+                  ? masterState.players.map(player => {
+                      const roleInfo = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
+                      return `
+                        <div class="rounded-xl bg-bgdark border border-white/10 p-4 flex items-center justify-between gap-3">
+                          <div class="flex items-center gap-3">
+                            ${
+                              player.selfieDataUrl
+                                ? `<img src="${player.selfieDataUrl}" alt="${escapeHtml(player.name)}" class="w-10 h-10 rounded-full object-cover border border-white/15" />`
+                                : `<div class="w-10 h-10 rounded-full bg-surface2 border border-white/10 flex items-center justify-center text-xs font-bold text-gold">${escapeHtml(String(player.name || '?').slice(0, 1).toUpperCase())}</div>`
+                            }
+                            <div>
+                              <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
+                              <div class="text-xs text-gray-400 mt-0.5">${player.boardUnlocked ? 'Plancia attiva' : 'In attesa sulla stanza'}</div>
+                            </div>
+                          </div>
+                          <div>
+                            ${roleInfo
+                              ? `<span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleInfo.badgeClass}">${escapeHtml(roleInfo.name)} · ${escapeHtml(roleInfo.faction)}</span>`
+                              : `<span class="text-xs text-gray-400">Nessun ruolo</span>`
+                            }
+                          </div>
+                        </div>
+                      `;
+                    }).join('')
+                  : `<p class="text-xs text-gray-400 col-span-2">Nessun giocatore ancora collegato a questa stanza.</p>`
+                }
               </div>
             </section>
+
+            ${renderMasterChatPanel()}
           `;
           return;
         }
@@ -506,7 +845,10 @@
         container.innerHTML = `
           <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span class="text-xs font-bold uppercase tracking-widest text-gold">Pagina Master · Cerimonia e Gestione Ruoli</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-gold">Pagina Master · Cerimonia e Gestione Ruoli</span>
+                <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-bgdark border border-white/10 text-gray-300">${escapeHtml(syncStatusLabel)}</span>
+              </div>
               <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Cerimonia di Assegnazione Ruoli</h1>
               <p class="text-xs text-gray-400 mt-1">
                 Master: <strong class="text-gray-200">${escapeHtml(masterState.masterName)}</strong> ·
@@ -694,7 +1036,7 @@
                             ${escapeHtml(role.faction)}
                           </span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1.5">${escapeHtml(role.summary)}</p>
+                        <p class="text-xs text-gray-400 mt-1.5 leading-relaxed">${escapeHtml(role.summary)}</p>
                       </div>
                       <div class="flex items-center justify-between pt-2 border-t border-white/10">
                         <span class="text-xs text-gray-400">Copie:</span>
@@ -743,29 +1085,32 @@
               </form>
 
               <div class="space-y-2.5">
-                ${masterState.players.map(player => {
-                  const assignedRole = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
-                  return `
-                    <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
-                      <div>
-                        <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
-                        <div class="text-xs mt-1">
-                          ${assignedRole
-                            ? `<span class="font-semibold px-2 py-0.5 rounded-full border ${assignedRole.badgeClass}">${escapeHtml(assignedRole.name)} (${escapeHtml(assignedRole.faction)})</span>`
-                            : `<span class="text-gray-400">In attesa di assegnazione ruolo</span>`
-                          }
+                ${masterState.players.length
+                  ? masterState.players.map(player => {
+                      const assignedRole = player.assignedRoleKey ? ROLE_CATALOG[player.assignedRoleKey] : null;
+                      return `
+                        <div class="rounded-xl bg-bgdark border border-white/10 p-3.5 flex items-center justify-between gap-3">
+                          <div>
+                            <div class="font-semibold text-sm text-white">${escapeHtml(player.name)}</div>
+                            <div class="text-xs mt-1">
+                              ${assignedRole
+                                ? `<span class="font-semibold px-2 py-0.5 rounded-full border ${assignedRole.badgeClass}">${escapeHtml(assignedRole.name)} (${escapeHtml(assignedRole.faction)})</span>`
+                                : `<span class="text-gray-400">In attesa di assegnazione ruolo</span>`
+                              }
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onclick="removeMasterPlayer('${player.id}')"
+                            class="px-2.5 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
+                          >
+                            Rimuovi
+                          </button>
                         </div>
-                      </div>
-                      <button
-                        type="button"
-                        onclick="removeMasterPlayer('${player.id}')"
-                        class="px-2.5 py-1.5 rounded-lg bg-surface2 hover:bg-crimson/20 text-xs text-gray-300 hover:text-crimson transition cursor-pointer"
-                      >
-                        Rimuovi
-                      </button>
-                    </div>
-                  `;
-                }).join('')}
+                      `;
+                    }).join('')
+                  : `<p class="text-xs text-gray-400 py-2">Nessun giocatore ancora al tavolo. Aggiungine uno oppure attendi che i giocatori entrino dalla pagina di accesso con il codice stanza.</p>`
+                }
               </div>
             </section>
           </div>
@@ -790,7 +1135,6 @@
       }
     }
 
-    // Esposizione esplicita delle funzioni globali richiamate dai pulsanti
     window.setSpeechTone = setSpeechTone;
     window.updateCustomSpeechText = updateCustomSpeechText;
     window.selectSpeechParagraph = selectSpeechParagraph;
@@ -803,8 +1147,25 @@
     window.enterMasterBoard = enterMasterBoard;
     window.openCeremonyAndRolesSection = openCeremonyAndRolesSection;
     window.goToPage = goToPage;
+    window.sendMasterMessage = sendMasterMessage;
+    window.renderMasterRolePage = renderMasterRolePage;
+    Object.defineProperty(window, 'masterChatDraft', {
+      get: () => masterChatDraft,
+      set: (v) => { masterChatDraft = v; }
+    });
+    Object.defineProperty(window, 'masterChatTab', {
+      get: () => masterChatTab,
+      set: (v) => { masterChatTab = v; }
+    });
+    Object.defineProperty(window, 'selectedMasterPlayerFilter', {
+      get: () => selectedMasterPlayerFilter,
+      set: (v) => { selectedMasterPlayerFilter = v; }
+    });
 
+    firestoreDb = initFirestore();
     renderMasterRolePage();
+    syncMasterRoomRecord();
+    subscribeToRoomUpdates();
   </script>
 </body>
 </html>
