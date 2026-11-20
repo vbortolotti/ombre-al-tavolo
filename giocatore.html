@@ -181,6 +181,34 @@
       font-size: 12px;
     }
 
+
+    .shield-box {
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(62, 201, 140, 0.45);
+      background: rgba(62, 201, 140, 0.12);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .shield-box.shield-inactive {
+      border-color: var(--border);
+      background: var(--surface);
+      opacity: 0.9;
+    }
+
+    .shield-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .badge {
       font-size: 11px;
       font-weight: 700;
@@ -1284,6 +1312,54 @@
       var missions = ensureFiveMissions(state.missions, faction, null);
       state.missions = missions;
 
+
+    function getActiveShieldsForMe() {
+      var meKey = String(state.playerName || '').trim().toLowerCase();
+      var hasNightShield = (state.shieldedPlayers || []).some(function (n) {
+        return String(n || '').trim().toLowerCase() === meKey;
+      });
+      var hasMartyrShield = (state.martyrShieldedPlayers || []).some(function (n) {
+        return String(n || '').trim().toLowerCase() === meKey;
+      });
+      return {
+        hasNightShield: hasNightShield,
+        hasMartyrShield: hasMartyrShield,
+        anyShield: hasNightShield || hasMartyrShield
+      };
+    }
+
+    function renderVisibleShieldBanner() {
+      var sh = getActiveShieldsForMe();
+      var badges = [];
+      if (sh.hasNightShield) badges.push('<span class="badge badge-Fedeli">Scudo Guardia · 1 Notte</span>');
+      if (sh.hasMartyrShield) badges.push('<span class="badge badge-Gold" style="background:rgba(229,184,92,0.16);color:var(--gold);border-color:rgba(229,184,92,0.45);">Scudo Martire · Persistente</span>');
+
+      if (sh.anyShield) {
+        var details = [];
+        if (sh.hasNightShield) details.push('protezione notturna attiva per 1 notte');
+        if (sh.hasMartyrShield) details.push('protezione del Martire attiva finché non vieni colpito da Assassino o Sabotatore');
+        return (
+          '<section class="shield-box" id="player-visible-shield-box">' +
+            '<div>' +
+              '<div class="shield-title">🛡️ Scudo Protettivo Attivo e Visibile</div>' +
+              '<p class="subtext" style="color:#d1fae5;margin-top:3px;">Sei attualmente protetto: ' + escapeHtml(details.join(' · ')) + '.</p>' +
+            '</div>' +
+            '<div class="btn-row">' + badges.join('') + '</div>' +
+          '</section>'
+        );
+      }
+
+      return (
+        '<section class="shield-box shield-inactive" id="player-visible-shield-box">' +
+          '<div>' +
+            '<div class="shield-title" style="color:var(--muted);">🛡️ Stato Scudo Protettivo: Nessuno Scudo Attivo</div>' +
+            '<p class="subtext" style="margin-top:2px;">Se la Guardia o il Martire ti assegna uno Scudo, comparirà qui in modo ben visibile.</p>' +
+          '</div>' +
+          '<span class="badge" style="background:var(--surface-2);color:var(--muted);border-color:var(--border);">Scudo Assente</span>' +
+        '</section>'
+      );
+    }
+
       var bannerHtml = state.banner
         ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
         : '';
@@ -1354,6 +1430,7 @@
           '</div>' +
         '</header>' +
         bannerHtml +
+        renderVisibleShieldBanner() +
         actionBannerHtml +
         '<section class="card card-gold">' +
           '<div class="header-row">' +
