@@ -90,8 +90,8 @@
       return {
         roomCode: 'TAVOLO1',
         playerName: '',
-        role: 'player', // 'player' | 'master'
-        syncStatus: 'Cloud Firestore attivo',
+        role: 'player',
+        syncStatus: firestoreDb ? 'Cloud Firestore pronto' : 'Locale',
         banner: null
       };
     }
@@ -105,7 +105,7 @@
           roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
           playerName: String(parsed.playerName || '').trim(),
           role: parsed.role === 'master' ? 'master' : 'player',
-          syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Sincronizzazione locale',
+          syncStatus: firestoreDb ? 'Cloud Firestore pronto' : 'Locale',
           banner: parsed.banner || null
         };
       } catch (err) {
@@ -114,6 +114,7 @@
       }
     }
 
+    firestoreDb = initFirestore();
     let accessState = loadAccessState();
 
     function saveAccessState() {
@@ -136,12 +137,19 @@
       renderAccessPage();
     }
 
-    function updateRoomCode(value, shouldRender = true) {
-      accessState.roomCode = String(value || '').trim().toUpperCase() || 'TAVOLO1';
+    function updateRoomCode(value) {
+      const rawCode = String(value || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 16);
+      accessState.roomCode = rawCode;
       accessState.banner = null;
       saveAccessState();
-      if (shouldRender) {
-        renderAccessPage();
+      renderAccessPage();
+
+      const inp = document.getElementById('access-room-input');
+      if (inp && document.activeElement !== inp) {
+        inp.focus();
+      } else if (inp) {
+        const pos = inp.value.length;
+        inp.setSelectionRange(pos, pos);
       }
     }
 
@@ -159,4 +167,319 @@
     }
 
     function copySyncId() {
-      const syncId = 'SYNC-' + (
+      const syncId = 'SYNC-' + (accessState.roomCode || 'TAVOLO1');
+      try {
+        const temp = document.createElement('textarea');
+        temp.value = syncId;
+        temp.setAttribute('readonly', '');
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        setAccessBanner('ID Sync copiato: ' + syncId, 'success');
+      } catch (err) {
+        console.error('Errore copia ID Sync:', err);
+        setAccessBanner('ID Sync della stanza: ' + syncId, 'info');
+      }
+    }
+
+    async function registerParticipantInRoom(roomCode, participantName, role) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      const cleanName = String(participantName || '').trim();
+      if (!cleanName) return;
+
+      let record = { roomCode: cleanRoom, players: [], roleCounts: {}, updatedAt: Date.now() };
+      try {
+        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
+        if (raw) {
+          record = { ...record, ...JSON.parse(raw) };
+        }
+      } catch (err) {
+        console.error('Errore lettura stanza locale:', err);
+      }
+
+      const list = Array.isArray(record.players) ? [...record.players] : [];
+      const existsIdx = list.findIndex(
+        p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+      );
+
+      if (role === 'player') {
+        if (existsIdx === -1) {
+          list.push({
+            id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            name: cleanName,
+            selfieDataUrl: null,
+            boardUnlocked: false,
+            assignedRoleKey: null,
+            joinedAt: Date.now()
+          });
+        } else {
+          list[existsIdx] = {
+            ...list[existsIdx],
+            name: cleanName,
+            joinedAt: Date.now()
+          };
+        }
+      }
+
+      record.players = list;
+      record.updatedAt = Date.now();
+
+      try {
+        localStorage.setItem(ROOM_SYNC_PREFIX + cleanRoom, JSON.stringify(record));
+      } catch (err) {
+        console.error('Errore salvataggio stanza locale:', err);
+      }
+
+      const ref = getRoomDocRef(cleanRoom);
+      if (ref) {
+        try {
+          const snap = await getDoc(ref);
+          const cloudData = snap.exists() ? (snap.data() || {}) : {};
+          const cloudPlayers = Array.isArray(cloudData.players) ? [...cloudData.players] : [];
+
+          if (role === 'player') {
+            const cIdx = cloudPlayers.findIndex(
+              p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+            );
+            if (cIdx === -1) {
+              cloudPlayers.push({
+                id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                name: cleanName,
+                selfieDataUrl: null,
+                boardUnlocked: false,
+                assignedRoleKey: null,
+                joinedAt: Date.now()
+              });
+            } else {
+              cloudPlayers[cIdx] = {
+                ...cloudPlayers[cIdx],
+                name: cleanName,
+                joinedAt: Date.now()
+              };
+            }
+          }
+
+          await setDoc(ref, {
+            roomCode: cleanRoom,
+            masterName: role === 'master' ? cleanName : (cloudData.masterName || 'Master'),
+            players: cloudPlayers,
+            updatedAt: Date.now()
+          }, { merge: true });
+          accessState.syncStatus = 'Cloud Firestore attivo';
+        } catch (err) {
+          console.error('Errore registrazione su Firestore:', err);
+          accessState.syncStatus = 'Locale (controlla regole Firestore)';
+        }
+      }
+    }
+
+    async function proceedToRolePage() {
+      const cleanRoom = String(accessState.roomCode || '').trim().toUpperCase();
+      const nameInput = document.getElementById('access-name-input');
+      const cleanName = String((nameInput ? nameInput.value : accessState.playerName) || '').trim();
+
+      if (!cleanRoom) {
+        setAccessBanner('Inserisci il Codice Stanza per sincronizzare i telefoni.', 'error');
+        return;
+      }
+      if (!cleanName) {
+        setAccessBanner('Inserisci il tuo nome prima di proseguire.', 'error');
+        return;
+      }
+
+      accessState.roomCode = cleanRoom;
+      accessState.playerName = cleanName;
+      accessState.banner = null;
+      saveAccessState();
+
+      await registerParticipantInRoom(cleanRoom, cleanName, accessState.role);
+
+      if (accessState.role === 'master') {
+        try {
+          window.location.href = 'master.html';
+        } catch (err) {
+          console.error('Errore apertura master.html:', err);
+          setAccessBanner('Ruolo Master salvato per la stanza ' + cleanRoom + '.', 'success');
+        }
+      } else {
+        try {
+          window.location.href = 'giocatore.html';
+        } catch (err) {
+          console.error('Errore apertura giocatore.html:', err);
+          setAccessBanner('Accesso Giocatore salvato per ' + cleanName + ' nella stanza ' + cleanRoom + '.', 'success');
+        }
+      }
+    }
+
+    function goToRolesCatalog() {
+      try {
+        window.location.href = 'ruoli.html';
+      } catch (err) {
+        console.error('Errore apertura ruoli.html:', err);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderAccessPage() {
+      const container = document.getElementById('access-app');
+      if (!container) return;
+
+      try {
+        const displayRoom = accessState.roomCode || 'TAVOLO1';
+        const syncId = 'SYNC-' + displayRoom;
+        const banner = accessState.banner;
+
+        const bannerHtml = banner
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              banner.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : banner.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(banner.text)}</div>`
+          : '';
+
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl">
+            <header class="text-center space-y-2 border-b border-white/10 pb-5">
+              <span class="inline-block text-xs font-bold uppercase tracking-widest text-gold">Accesso al Tavolo</span>
+              <h1 class="font-serif text-3xl sm:text-4xl font-bold text-white">Ombre al Tavolo</h1>
+              <p class="text-xs sm:text-sm text-gray-400">
+                Inserisci il codice stanza per sincronizzare i telefoni, il tuo nome e scegli il tuo ruolo.
+              </p>
+            </header>
+
+            ${bannerHtml}
+
+            <form
+              onsubmit="event.preventDefault(); proceedToRolePage();"
+              class="space-y-5"
+            >
+              <div class="space-y-1.5">
+                <label for="access-room-input" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                  Codice Stanza
+                </label>
+                <input
+                  id="access-room-input"
+                  type="text"
+                  maxlength="16"
+                  value="${escapeHtml(accessState.roomCode)}"
+                  oninput="updateRoomCode(this.value)"
+                  placeholder="Es. TAVOLO1"
+                  class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm font-mono uppercase text-white focus:outline-none focus:border-gold"
+                />
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-gray-400">
+                  <span>
+                    ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                    <span class="text-gray-300">${escapeHtml(accessState.syncStatus)}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onclick="copySyncId()"
+                    class="px-2.5 py-1 rounded-lg bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gold transition cursor-pointer"
+                  >
+                    Copia ID Sync
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label for="access-name-input" class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                  Il Tuo Nome
+                </label>
+                <input
+                  id="access-name-input"
+                  type="text"
+                  maxlength="24"
+                  value="${escapeHtml(accessState.playerName)}"
+                  oninput="updatePlayerName(this.value)"
+                  placeholder="Come vuoi essere chiamato al tavolo"
+                  class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm text-white focus:outline-none focus:border-gold"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <span class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                  Chi Sei?
+                </span>
+                <div class="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onclick="selectRole('player')"
+                    class="rounded-xl border p-4 text-left transition cursor-pointer ${
+                      accessState.role === 'player'
+                        ? 'bg-indigo/15 border-indigo text-white'
+                        : 'bg-bgdark border-white/10 text-gray-300 hover:border-white/25'
+                    }"
+                  >
+                    <div class="font-semibold text-sm">Giocatore</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Selfie e scheda privata</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onclick="selectRole('master')"
+                    class="rounded-xl border p-4 text-left transition cursor-pointer ${
+                      accessState.role === 'master'
+                        ? 'bg-gold/15 border-gold text-white'
+                        : 'bg-bgdark border-white/10 text-gray-300 hover:border-white/25'
+                    }"
+                  >
+                    <div class="font-semibold text-sm">Master</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Cerimonia, ruoli e plancia</div>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="w-full py-3.5 rounded-xl bg-gold text-bgdark font-bold text-sm hover:brightness-110 transition cursor-pointer"
+              >
+                Prosegui
+              </button>
+            </form>
+
+            <div class="pt-4 border-t border-white/10 flex items-center justify-between gap-2 text-xs text-gray-400">
+              <span>Vuoi consultare i poteri e le regole delle missioni?</span>
+              <button
+                type="button"
+                onclick="goToRolesCatalog()"
+                class="px-3 py-1.5 rounded-lg bg-surface2 hover:bg-white/10 border border-white/10 font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Tutti i Ruoli
+              </button>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Errore rendering pagina accesso:', err);
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Errore durante il caricamento della pagina di accesso.
+          </div>
+        `;
+      }
+    }
+
+    window.updateRoomCode = updateRoomCode;
+    window.updatePlayerName = updatePlayerName;
+    window.selectRole = selectRole;
+    window.copySyncId = copySyncId;
+    window.proceedToRolePage = proceedToRolePage;
+    window.goToRolesCatalog = goToRolesCatalog;
+
+    renderAccessPage();
+  </script>
+</body>
+</html>
