@@ -53,13 +53,24 @@
 <body class="min-h-screen bg-bgdark text-gray-100 antialiased selection:bg-gold/30 selection:text-gold">
   <div id="app" class="min-h-screen flex flex-col"></div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     const STORAGE_KEY = 'ombre_al_tavolo_v4_clean';
     const TAB_SESSION_KEY = 'ombre_al_tavolo_tab_session_v1';
     const SYNC_CHANNEL_NAME = 'ombre_al_tavolo_sync_v1';
     const DEFAULT_ROOM_CODE = 'TAVOLO1';
     const SYNC_POLL_INTERVAL_MS = 2000;
     const SYNC_PUBLIC_BUCKET_KEY = 'ombre_al_tavolo_cloud_bin_id_v1';
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ombre-al-tavolo-app';
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let roomUnsubscribe = null;
+    let cloudReady = false;
 
     const ROLE_DEFS = {
       investigatore: {
@@ -282,9 +293,101 @@
       const normalized = normalizeRoomCode(roomCode);
       const existing = getCloudBinId(normalized);
       if (existing) return existing;
-      const generated = `SYNC_${normalized}`;
+      const generated = `ROOM_${normalized}`;
       setCloudBinId(normalized, generated);
       return generated;
+    }
+
+    function getRoomDocRef(roomCode) {
+      if (!db || !currentUser) return null;
+      const normalized = normalizeRoomCode(roomCode);
+      return doc(db, 'artifacts', appId, 'public', 'data', 'ombre_rooms', normalized);
+    }
+
+    async function initCloudSync() {
+      try {
+        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+          cloudReady = false;
+          return;
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        currentUser = auth.currentUser;
+        if (!currentUser) {
+          cloudReady = false;
+          return;
+        }
+
+        cloudReady = true;
+        subscribeToCloudRoom(state.roomCode);
+        await pullRemoteSnapshot();
+      } catch (err) {
+        console.error('Errore inizializzazione sincronizzazione remota:', err);
+        cloudReady = false;
+      }
+    }
+
+    function subscribeToCloudRoom(roomCode) {
+      if (roomUnsubscribe) {
+        try {
+          roomUnsubscribe();
+        } catch (err) {
+          // Ignora errore chiusura listener precedente
+        }
+        roomUnsubscribe = null;
+      }
+
+      const ref = getRoomDocRef(roomCode);
+      if (!ref) return;
+
+      roomUnsubscribe = onSnapshot(
+        ref,
+        (snap) => {
+          if (!snap.exists()) return;
+          const data = snap.data();
+          if (!data) return;
+
+          let parsedSnapshot = data;
+          if (typeof data.payloadJson === 'string') {
+            try {
+              parsedSnapshot = JSON.parse(data.payloadJson);
+            } catch (err) {
+              console.error('Errore parsing payload stanza:', err);
+              return;
+            }
+          }
+          applySharedSnapshot(parsedSnapshot, 'cloud_listener');
+        },
+        (err) => {
+          console.error('Errore ascolto stanza remota:', err);
+        }
+      );
+    }
+
+    async function pushCloudSnapshot(snapshot) {
+      if (!cloudReady || !currentUser || isRemoteApplying) return;
+      const ref = getRoomDocRef(snapshot.roomCode);
+      if (!ref) return;
+
+      try {
+        await setDoc(ref, {
+          roomCode: normalizeRoomCode(snapshot.roomCode),
+          lastUpdatedAt: Number(snapshot.lastUpdatedAt || Date.now()),
+          updatedBy: currentUser.uid,
+          payloadJson: JSON.stringify(snapshot)
+        });
+      } catch (err) {
+        console.error('Errore invio stato su stanza remota:', err);
+      }
     }
 
     function applySharedSnapshot(snapshot, sourceLabel = 'sync') {
@@ -350,11 +453,32 @@
     async function pullRemoteSnapshot() {
       if (isRemoteApplying) return;
       const roomCode = normalizeRoomCode(state.roomCode);
+
+      if (cloudReady && currentUser) {
+        try {
+          const ref = getRoomDocRef(roomCode);
+          if (ref) {
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+              const data = snap.data();
+              let parsedSnapshot = data;
+              if (data && typeof data.payloadJson === 'string') {
+                parsedSnapshot = JSON.parse(data.payloadJson);
+              }
+              applySharedSnapshot(parsedSnapshot, sourceLabel === 'manual' ? 'force' : 'cloud_pull');
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Errore lettura remota stanza:', err);
+        }
+      }
+
       try {
         const raw = localStorage.getItem(getRoomStorageKey(roomCode));
         if (raw) {
           const parsed = JSON.parse(raw);
-          applySharedSnapshot(parsed, 'poll');
+          applySharedSnapshot(parsed, sourceLabel === 'manual' ? 'force' : 'poll');
         }
       } catch (err) {
         // Ignora errori temporanei
@@ -364,6 +488,10 @@
     function initSyncTransport() {
       const roomCode = normalizeRoomCode(state.roomCode);
       getOrCreateDisplaySyncId(roomCode);
+
+      if (cloudReady) {
+        subscribeToCloudRoom(roomCode);
+      }
 
       if (syncChannel) {
         try {
@@ -449,6 +577,7 @@
       if (!isRemoteApplying && !skipBump) {
         const snap = getSharedSnapshot();
         broadcastSnapshot(snap);
+        pushCloudSnapshot(snap);
       }
     }
 
@@ -1386,7 +1515,7 @@
               </div>
               <button
                 type="button"
-                onclick="pullRemoteSnapshot()"
+                onclick="pullRemoteSnapshot('manual')"
                 class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/10 text-xs font-semibold text-gray-200 transition"
               >
                 Aggiorna
@@ -1709,7 +1838,7 @@
             <div class="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onclick="pullRemoteSnapshot()"
+                onclick="pullRemoteSnapshot('manual')"
                 class="px-3.5 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition"
               >
                 Aggiorna
@@ -2101,10 +2230,35 @@
       }
     }
 
+    window.clearBanner = clearBanner;
+    window.setRoomCodeAndReload = setRoomCodeAndReload;
+    window.exitToEntry = exitToEntry;
+    window.enterMasterMode = enterMasterMode;
+    window.openPlayerJoin = openPlayerJoin;
+    window.startCamera = startCamera;
+    window.snapSelfie = snapSelfie;
+    window.handleSelfieFileUpload = handleSelfieFileUpload;
+    window.handleJoinSubmit = handleJoinSubmit;
+    window.submitMission = submitMission;
+    window.approveSubmission = approveSubmission;
+    window.rejectSubmission = rejectSubmission;
+    window.submitReport = submitReport;
+    window.resolveReport = resolveReport;
+    window.handlePowerSubmit = handlePowerSubmit;
+    window.handleMartyrSubmit = handleMartyrSubmit;
+    window.handleReportSubmit = handleReportSubmit;
+    window.togglePlayerAlive = togglePlayerAlive;
+    window.adjustPlayerPoints = adjustPlayerPoints;
+    window.advancePhase = advancePhase;
+    window.resetGame = resetGame;
+    window.toggleInspectPlayer = toggleInspectPlayer;
+    window.handleMasterMessageSubmit = handleMasterMessageSubmit;
+    window.pullRemoteSnapshot = pullRemoteSnapshot;
+
     state = loadState();
     initSyncTransport();
     render();
-    pullRemoteSnapshot();
+    initCloudSync();
   </script>
 </body>
 </html>
