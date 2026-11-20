@@ -42,6 +42,27 @@
   <div id="player-app" class="max-w-2xl mx-auto px-4 py-8 space-y-6"></div>
 
   <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const ROLE_DETAILS = {
       investigatore: {
         name: 'Investigatore',
@@ -86,8 +107,29 @@
     const ROOM_SYNC_PREFIX = 'ombre_stanza_sync_';
 
     let activeCameraStream = null;
+    let firestoreDb = null;
+    let unsubscribeRoom = null;
+    let latestRoomPlayers = [];
 
-    // Legge codice stanza e nome giocatore salvati nella pagina di accesso
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) {
+          return null;
+        }
+        const app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (err) {
+        console.error('Errore inizializzazione Firestore:', err);
+        return null;
+      }
+    }
+
+    function getRoomDocRef(roomCode) {
+      if (!firestoreDb) return null;
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      return doc(firestoreDb, 'stanze', cleanRoom);
+    }
+
     function readPlayerAccessContext() {
       try {
         const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
@@ -105,26 +147,29 @@
       }
     }
 
-    // Legge il ruolo eventualmente assegnato dal Master per questo giocatore nella stanza
-    function readAssignedRoleFromRoom(roomCode, playerName) {
-      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+    function findRoleInPlayersList(players, playerName) {
       const cleanName = String(playerName || '').trim().toLowerCase();
-      try {
-        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        const players = Array.isArray(parsed.players) ? parsed.players : [];
-        const match = players.find(p => String(p.name || '').trim().toLowerCase() === cleanName);
-        if (match && match.assignedRoleKey && ROLE_DETAILS[match.assignedRoleKey]) {
-          return match.assignedRoleKey;
-        }
-      } catch (err) {
-        console.error('Errore lettura ruolo assegnato:', err);
+      if (!Array.isArray(players) || !cleanName) return null;
+      const match = players.find(p => String(p.name || '').trim().toLowerCase() === cleanName);
+      if (match && match.assignedRoleKey && ROLE_DETAILS[match.assignedRoleKey]) {
+        return match.assignedRoleKey;
       }
       return null;
     }
 
-    // Crea lo stato iniziale della pagina Giocatore
+    function readAssignedRoleFromLocalRoom(roomCode, playerName) {
+      const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
+      try {
+        const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return findRoleInPlayersList(parsed.players, playerName);
+      } catch (err) {
+        console.error('Errore lettura ruolo locale:', err);
+      }
+      return null;
+    }
+
     function createInitialPlayerState() {
       const ctx = readPlayerAccessContext();
       return {
@@ -134,12 +179,12 @@
         cameraActive: false,
         boardUnlocked: false,
         privateCardOpen: false,
-        assignedRoleKey: readAssignedRoleFromRoom(ctx.roomCode, ctx.playerName),
+        assignedRoleKey: readAssignedRoleFromLocalRoom(ctx.roomCode, ctx.playerName),
+        syncStatus: 'Connessione cloud...',
         banner: null
       };
     }
 
-    // Carica lo stato della sessione giocatore in sicurezza
     function loadPlayerState() {
       try {
         const ctx = readPlayerAccessContext();
@@ -150,7 +195,7 @@
         const samePlayer =
           String(parsed.roomCode || '').toUpperCase() === ctx.roomCode &&
           String(parsed.playerName || '').trim().toLowerCase() === ctx.playerName.toLowerCase();
-        const syncedRole = readAssignedRoleFromRoom(ctx.roomCode, ctx.playerName);
+        const syncedRole = readAssignedRoleFromLocalRoom(ctx.roomCode, ctx.playerName);
         const roleKey = syncedRole || (samePlayer && parsed.assignedRoleKey && ROLE_DETAILS[parsed.assignedRoleKey] ? parsed.assignedRoleKey : null);
 
         return {
@@ -172,7 +217,6 @@
 
     let playerState = loadPlayerState();
 
-    // Salva la sessione del giocatore
     function savePlayerState() {
       try {
         localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify({
@@ -189,14 +233,111 @@
       }
     }
 
-    // Imposta un messaggio di feedback per il giocatore
+    // Evita di salvare dataUrl troppo grandi su Firestore se superano il limite documento
+    function getSafeSelfieForCloud(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== 'string') return null;
+      if (dataUrl.length > 650000) return null;
+      return dataUrl;
+    }
+
+    async function syncPlayerToFirestore() {
+      const ref = getRoomDocRef(playerState.roomCode);
+      if (!ref) return;
+      try {
+        const snap = await getDoc(ref);
+        const existingData = snap.exists() ? snap.data() : {};
+        const players = Array.isArray(existingData.players) ? [...existingData.players] : [];
+        const cleanName = playerState.playerName.trim();
+        const idx = players.findIndex(p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase());
+
+        const existingPlayer = idx >= 0 ? players[idx] : {};
+        const updatedPlayer = {
+          id: existingPlayer.id || ('p_' + cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_')),
+          name: cleanName,
+          selfieDataUrl: getSafeSelfieForCloud(playerState.selfieDataUrl) || existingPlayer.selfieDataUrl || null,
+          boardUnlocked: Boolean(playerState.boardUnlocked || existingPlayer.boardUnlocked),
+          assignedRoleKey: existingPlayer.assignedRoleKey || playerState.assignedRoleKey || null,
+          updatedAt: Date.now()
+        };
+
+        if (idx >= 0) {
+          players[idx] = updatedPlayer;
+        } else {
+          players.push(updatedPlayer);
+        }
+
+        await setDoc(ref, {
+          roomCode: playerState.roomCode,
+          players,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        playerState.syncStatus = 'Cloud Firestore attivo';
+      } catch (err) {
+        console.error('Errore sincronizzazione giocatore su Firestore:', err);
+        playerState.syncStatus = 'Locale (controlla regole Firestore)';
+      }
+    }
+
+    function subscribeToRoomUpdates() {
+      if (typeof unsubscribeRoom === 'function') {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+      const ref = getRoomDocRef(playerState.roomCode);
+      if (!ref) {
+        playerState.syncStatus = 'Solo locale';
+        return;
+      }
+
+      unsubscribeRoom = onSnapshot(ref, (snap) => {
+        playerState.syncStatus = 'Cloud Firestore attivo';
+        if (!snap.exists()) {
+          renderPlayerPage();
+          return;
+        }
+        const data = snap.data() || {};
+        const players = Array.isArray(data.players) ? data.players : [];
+        latestRoomPlayers = players;
+
+        try {
+          localStorage.setItem(ROOM_SYNC_PREFIX + playerState.roomCode, JSON.stringify({
+            roomCode: playerState.roomCode,
+            players,
+            updatedAt: data.updatedAt || Date.now()
+          }));
+        } catch (err) {
+          console.error('Errore cache locale stanza:', err);
+        }
+
+        const cloudRole = findRoleInPlayersList(players, playerState.playerName);
+        const previousRole = playerState.assignedRoleKey;
+        playerState.assignedRoleKey = cloudRole;
+
+        if (!cloudRole) {
+          playerState.privateCardOpen = false;
+        } else if (!previousRole && cloudRole) {
+          playerState.banner = {
+            text: 'Il Master ti ha assegnato un ruolo in tempo reale! Ora puoi aprire la tua Scheda Privata.',
+            type: 'success'
+          };
+        }
+
+        savePlayerState();
+        renderPlayerPage();
+      }, (err) => {
+        console.error('Errore listener stanza Firestore:', err);
+        playerState.syncStatus = 'Locale (permessi Firestore)';
+        renderPlayerPage();
+      });
+    }
+
     function setPlayerBanner(text, type = 'info') {
       playerState.banner = { text, type };
       savePlayerState();
       renderPlayerPage();
     }
 
-    // Ferma eventuali stream attivi della fotocamera
     function stopCameraStream() {
       try {
         if (activeCameraStream && typeof activeCameraStream.getTracks === 'function') {
@@ -209,7 +350,6 @@
       playerState.cameraActive = false;
     }
 
-    // Avvia la fotocamera frontale se supportata dal browser
     async function startPlayerCamera() {
       if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
         setPlayerBanner('Fotocamera diretta non disponibile qui: usa "Carica Foto" dalla galleria.', 'error');
@@ -237,7 +377,6 @@
       }
     }
 
-    // Scatta il selfie dal video attivo
     function captureSelfiePhoto() {
       const videoEl = document.getElementById('player-camera-video');
       if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
@@ -246,14 +385,18 @@
       }
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = videoEl.videoWidth;
-        canvas.height = videoEl.videoHeight;
+        canvas.width = 480;
+        canvas.height = 480;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-        playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const size = Math.min(videoEl.videoWidth, videoEl.videoHeight);
+        const sx = (videoEl.videoWidth - size) / 2;
+        const sy = (videoEl.videoHeight - size) / 2;
+        ctx.drawImage(videoEl, sx, sy, size, size, 0, 0, 480, 480);
+        playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.75);
         stopCameraStream();
         playerState.banner = { text: 'Selfie acquisito! Ora puoi proseguire alla tua plancia.', type: 'success' };
         savePlayerState();
+        syncPlayerToFirestore();
         renderPlayerPage();
       } catch (err) {
         console.error('Errore acquisizione selfie:', err);
@@ -261,7 +404,6 @@
       }
     }
 
-    // Carica una foto direttamente dalla galleria/archivio del dispositivo
     function handleGalleryFileSelect(file) {
       if (!file) return;
       if (!file.type || !file.type.startsWith('image/')) {
@@ -270,11 +412,37 @@
       }
       const reader = new FileReader();
       reader.onload = function (ev) {
-        playerState.selfieDataUrl = String(ev.target && ev.target.result ? ev.target.result : '');
-        stopCameraStream();
-        playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi proseguire alla tua plancia.', type: 'success' };
-        savePlayerState();
-        renderPlayerPage();
+        const rawUrl = String(ev.target && ev.target.result ? ev.target.result : '');
+        const img = new Image();
+        img.onload = function () {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 480;
+            canvas.height = 480;
+            const ctx = canvas.getContext('2d');
+            const size = Math.min(img.width, img.height);
+            const sx = (img.width - size) / 2;
+            const sy = (img.height - size) / 2;
+            ctx.drawImage(img, sx, sy, size, size, 0, 0, 480, 480);
+            playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          } catch (_) {
+            playerState.selfieDataUrl = rawUrl;
+          }
+          stopCameraStream();
+          playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi proseguire alla tua plancia.', type: 'success' };
+          savePlayerState();
+          syncPlayerToFirestore();
+          renderPlayerPage();
+        };
+        img.onerror = function () {
+          playerState.selfieDataUrl = rawUrl;
+          stopCameraStream();
+          playerState.banner = { text: 'Foto caricata dalla galleria! Ora puoi proseguire alla tua plancia.', type: 'success' };
+          savePlayerState();
+          syncPlayerToFirestore();
+          renderPlayerPage();
+        };
+        img.src = rawUrl;
       };
       reader.onerror = function () {
         setPlayerBanner('Errore durante il caricamento della foto.', 'error');
@@ -282,7 +450,6 @@
       reader.readAsDataURL(file);
     }
 
-    // Reindirizza dalla prima sessione selfie alla plancia del giocatore
     function goToPlayerBoard() {
       if (!playerState.selfieDataUrl) {
         setPlayerBanner('Scatta o carica prima il tuo selfie per accedere alla plancia.', 'error');
@@ -292,257 +459,9 @@
       playerState.boardUnlocked = true;
       playerState.banner = null;
       savePlayerState();
+      syncPlayerToFirestore();
       renderPlayerPage();
     }
 
-    // Torna alla schermata selfie per cambiare foto
     function reopenSelfieStep() {
-      playerState.boardUnlocked = false;
-      playerState.privateCardOpen = false;
-      playerState.banner = null;
-      savePlayerState();
-      renderPlayerPage();
-    }
-
-    // Controlla se il Master ha assegnato un ruolo a questo giocatore
-    function refreshAssignedRoleFromMaster() {
-      const roleKey = readAssignedRoleFromRoom(playerState.roomCode, playerState.playerName);
-      playerState.assignedRoleKey = roleKey;
-      if (roleKey) {
-        setPlayerBanner('Il Master ti ha assegnato un ruolo: ora puoi aprire la tua scheda privata.', 'success');
-      } else {
-        playerState.privateCardOpen = false;
-        setPlayerBanner('Nessun ruolo ancora assegnato dal Master: la scheda privata resta bloccata.', 'info');
-      }
-    }
-
-    // Apre o chiude la scheda privata solo se il Master ha assegnato un ruolo
-    function togglePrivateCard() {
-      const latestRole = readAssignedRoleFromRoom(playerState.roomCode, playerState.playerName) || playerState.assignedRoleKey;
-      playerState.assignedRoleKey = latestRole;
-
-      if (!latestRole) {
-        playerState.privateCardOpen = false;
-        setPlayerBanner('Scheda privata bloccata: attendi che il Master ti assegni un ruolo.', 'error');
-        return;
-      }
-
-      playerState.privateCardOpen = !playerState.privateCardOpen;
-      playerState.banner = null;
-      savePlayerState();
-      renderPlayerPage();
-    }
-
-    // Escaping HTML sicuro
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    // Renderizza la pagina Giocatore (prima sessione selfie oppure plancia con scheda privata)
-    function renderPlayerPage() {
-      const container = document.getElementById('player-app');
-      if (!container) return;
-
-      try {
-        const banner = playerState.banner;
-        const bannerHtml = banner
-          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
-              banner.type === 'success'
-                ? 'bg-emerald/15 border-emerald/40 text-emerald'
-                : banner.type === 'error'
-                ? 'bg-crimson/15 border-crimson/40 text-crimson'
-                : 'bg-indigo/15 border-indigo/40 text-indigo'
-            }">${escapeHtml(banner.text)}</div>`
-          : '';
-
-        if (!playerState.boardUnlocked) {
-          container.innerHTML = `
-            <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
-              <header class="space-y-1 border-b border-white/10 pb-4">
-                <span class="text-xs font-bold uppercase tracking-widest text-indigo">Prima Sessione · Giocatore</span>
-                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white">Il Tuo Selfie al Tavolo</h1>
-                <p class="text-xs text-gray-400">
-                  Giocatore: <strong class="text-gray-200">${escapeHtml(playerState.playerName)}</strong> ·
-                  Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong>
-                </p>
-              </header>
-
-              ${bannerHtml}
-
-              <div class="rounded-2xl bg-bgdark border border-white/10 p-5 flex flex-col items-center justify-center min-h-[240px] space-y-4">
-                ${
-                  playerState.cameraActive
-                    ? `<video id="player-camera-video" autoplay playsinline muted class="w-full max-w-xs aspect-square object-cover rounded-2xl border border-indigo/40"></video>`
-                    : playerState.selfieDataUrl
-                    ? `<img src="${playerState.selfieDataUrl}" alt="Selfie giocatore" onerror="this.src='https://placehold.co/320x320/151924/e5b85c?text=Selfie'" class="w-48 h-48 object-cover rounded-2xl border-2 border-emerald/50 shadow-lg" />`
-                    : `<div class="w-48 h-48 rounded-2xl bg-surface border border-dashed border-white/20 flex flex-col items-center justify-center text-center p-4">
-                         <span class="text-xs font-semibold text-gray-300">Nessun selfie ancora</span>
-                         <span class="text-[11px] text-gray-500 mt-1">Scatta una foto o caricala dalla galleria</span>
-                       </div>`
-                }
-              </div>
-
-              <div class="flex flex-wrap items-center justify-center gap-3">
-                ${
-                  playerState.cameraActive
-                    ? `<button
-                         type="button"
-                         onclick="captureSelfiePhoto()"
-                         class="px-4 py-2.5 rounded-xl bg-emerald text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
-                       >
-                         Scatta Selfie
-                       </button>
-                       <button
-                         type="button"
-                         onclick="stopCameraStream(); renderPlayerPage();"
-                         class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 text-xs font-semibold text-gray-200 transition cursor-pointer"
-                       >
-                         Chiudi Fotocamera
-                       </button>`
-                    : `<button
-                         type="button"
-                         onclick="startPlayerCamera()"
-                         class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
-                       >
-                         Apri Fotocamera
-                       </button>`
-                }
-
-                <label class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
-                  Carica Foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onchange="if(this.files && this.files[0]) handleGalleryFileSelect(this.files[0]); this.value='';"
-                    class="hidden"
-                  />
-                </label>
-              </div>
-
-              <button
-                type="button"
-                onclick="goToPlayerBoard()"
-                class="w-full py-3.5 rounded-xl font-bold text-sm transition cursor-pointer ${
-                  playerState.selfieDataUrl
-                    ? 'bg-gold text-bgdark hover:brightness-110'
-                    : 'bg-surface2 text-gray-500 border border-white/10'
-                }"
-              >
-                Conferma Selfie e Vai alla Plancia
-              </button>
-            </div>
-          `;
-          return;
-        }
-
-        const hasRole = Boolean(playerState.assignedRoleKey && ROLE_DETAILS[playerState.assignedRoleKey]);
-        const roleObj = hasRole ? ROLE_DETAILS[playerState.assignedRoleKey] : null;
-
-        container.innerHTML = `
-          <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
-            <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-              <div class="flex items-center gap-3.5">
-                <img
-                  src="${playerState.selfieDataUrl}"
-                  alt="Selfie di ${escapeHtml(playerState.playerName)}"
-                  onerror="this.src='https://placehold.co/96x96/151924/e5b85c?text=Foto'"
-                  class="w-16 h-16 rounded-2xl object-cover border border-white/15"
-                />
-                <div>
-                  <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Giocatore</span>
-                  <h1 class="font-serif text-2xl font-bold text-white">${escapeHtml(playerState.playerName)}</h1>
-                  <p class="text-xs text-gray-400">Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong></p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onclick="reopenSelfieStep()"
-                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-              >
-                Cambia Selfie
-              </button>
-            </header>
-
-            ${bannerHtml}
-
-            <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 class="font-serif text-xl font-bold text-white">Scheda Privata</h2>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    ${hasRole
-                      ? 'Il Master ti ha assegnato un ruolo: puoi aprire o chiudere la tua scheda segreta.'
-                      : 'Bloccata finché il Master non ti assegna un ruolo.'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onclick="refreshAssignedRoleFromMaster()"
-                  class="px-3 py-1.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
-                >
-                  Aggiorna Stato Ruolo
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onclick="togglePrivateCard()"
-                class="w-full py-3 px-4 rounded-xl text-sm font-bold transition cursor-pointer ${
-                  hasRole
-                    ? 'bg-gold text-bgdark hover:brightness-110'
-                    : 'bg-surface2 text-gray-400 border border-white/10'
-                }"
-              >
-                ${
-                  !hasRole
-                    ? 'Scheda Privata Bloccata (In attesa del ruolo dal Master)'
-                    : playerState.privateCardOpen
-                    ? 'Nascondi Scheda Privata'
-                    : 'Apri Scheda Privata'
-                }
-              </button>
-
-              ${
-                hasRole && playerState.privateCardOpen
-                  ? `<div class="rounded-xl bg-surface border border-white/15 p-5 space-y-2.5">
-                       <div class="flex items-center justify-between gap-2">
-                         <span class="font-serif text-xl font-bold text-white">${escapeHtml(roleObj.name)}</span>
-                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleObj.badge}">
-                           ${escapeHtml(roleObj.faction)}
-                         </span>
-                       </div>
-                       <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(roleObj.power)}</p>
-                     </div>`
-                  : ''
-              }
-            </section>
-          </div>
-        `;
-      } catch (err) {
-        console.error('Errore rendering pagina giocatore:', err);
-        container.innerHTML = `
-          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
-            Errore durante il caricamento della pagina giocatore.
-          </div>
-        `;
-      }
-    }
-
-    window.startPlayerCamera = startPlayerCamera;
-    window.stopCameraStream = stopCameraStream;
-    window.captureSelfiePhoto = captureSelfiePhoto;
-    window.handleGalleryFileSelect = handleGalleryFileSelect;
-    window.goToPlayerBoard = goToPlayerBoard;
-    window.reopenSelfieStep = reopenSelfieStep;
-    window.refreshAssignedRoleFromMaster = refreshAssignedRoleFromMaster;
-    window.togglePrivateCard = togglePrivateCard;
-
-    renderPlayerPage();
-  </script>
-</body>
-</html>
+      player
