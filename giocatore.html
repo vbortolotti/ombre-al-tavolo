@@ -64,41 +64,69 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const ROLE_DETAILS = {
-      investigatore: {
-        name: 'Investigatore',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Puoi indagare su un giocatore vivo per scoprire la sua fazione o il suo ruolo.'
-      },
-      guardia: {
-        name: 'Guardia',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Proteggi un giocatore al tavolo durante il turno corrente.'
-      },
-      cacciatore: {
-        name: 'Cacciatore',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Puoi tentare di eliminare un bersaglio sospetto.'
-      },
-      martire: {
-        name: 'Martire',
-        faction: 'Cittadini',
-        badge: 'bg-emerald/15 text-emerald border-emerald/40',
-        power: 'Lasci una testimonianza sul ruolo di un giocatore.'
-      },
       assassino: {
         name: 'Assassino',
         faction: 'Traditori',
+        factionKey: 'traditori',
+        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; no missioni con altri Traditori tranne il Traditore Segreto).',
         badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        power: 'Colpisci in segreto un bersaglio durante la fase notturna.'
+        power: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore.'
       },
       sabotatore: {
         name: 'Sabotatore',
         faction: 'Traditori',
+        factionKey: 'traditori',
+        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; no missioni con altri Traditori tranne il Traditore Segreto).',
         badge: 'bg-crimson/15 text-crimson border-crimson/40',
-        power: 'Ostacola o blocca l’azione di un avversario.'
+        power: 'Può bloccare l’attivazione di un altro giocatore per il turno.'
+      },
+      traditore_segreto: {
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        factionKey: 'traditori',
+        missionStyle: 'Missioni prevalentemente di contatto (5 missioni, di cui 3 ripetibili; può fare missioni anche con gli altri Traditori).',
+        badge: 'bg-crimson/15 text-crimson border-crimson/40',
+        power: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori.'
+      },
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        power: 'Può scoprire una delle missioni dei Traditori.'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        power: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore.'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        missionStyle: 'Non ha missioni.',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        power: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo presente in partita e, se è in gioco, sblocca la Voce dell’Aldilà per proteggere un giocatore con uno Scudo.'
+      },
+      mediatore: {
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        factionKey: 'fedeli',
+        missionStyle: 'Missioni prevalentemente verbali (5 missioni, di cui 3 ripetibili).',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        power: 'Ha un voto extra (+1) alla Tavola Rotonda.'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        factionKey: 'neutro',
+        missionStyle: 'Missioni prevalentemente di confronto (5 missioni, di cui 3 ripetibili).',
+        badge: 'bg-gold/15 text-gold border-gold/40',
+        power: 'Può indicare il ruolo di 3 giocatori: se li indovina tutti vince subito, se sbaglia viene eliminato.'
       }
     };
 
@@ -110,6 +138,9 @@
     let firestoreDb = null;
     let unsubscribeRoom = null;
     let latestRoomPlayers = [];
+    let latestTraitorMessages = [];
+    let latestMasterMessages = [];
+    let chatDraft = '';
 
     function initFirestore() {
       try {
@@ -233,11 +264,18 @@
       }
     }
 
-    // Evita di salvare dataUrl troppo grandi su Firestore se superano il limite documento
     function getSafeSelfieForCloud(dataUrl) {
       if (!dataUrl || typeof dataUrl !== 'string') return null;
       if (dataUrl.length > 650000) return null;
       return dataUrl;
+    }
+
+    function isTraitorRole(roleKey) {
+      return Boolean(roleKey && ROLE_DETAILS[roleKey] && ROLE_DETAILS[roleKey].factionKey === 'traditori');
+    }
+
+    function isSecretTraitorRole(roleKey) {
+      return roleKey === 'traditore_segreto';
     }
 
     async function syncPlayerToFirestore() {
@@ -299,11 +337,21 @@
         const data = snap.data() || {};
         const players = Array.isArray(data.players) ? data.players : [];
         latestRoomPlayers = players;
+        latestTraitorMessages = Array.isArray(data.traitorChat) ? data.traitorChat : [];
+
+        const allMasterChat = Array.isArray(data.masterChat) ? data.masterChat : [];
+        const cleanName = playerState.playerName.trim().toLowerCase();
+        latestMasterMessages = allMasterChat.filter(msg => {
+          const target = String(msg.playerName || '').trim().toLowerCase();
+          return !target || target === cleanName;
+        });
 
         try {
           localStorage.setItem(ROOM_SYNC_PREFIX + playerState.roomCode, JSON.stringify({
             roomCode: playerState.roomCode,
             players,
+            traitorChat: latestTraitorMessages,
+            masterChat: allMasterChat,
             updatedAt: data.updatedAt || Date.now()
           }));
         } catch (err) {
@@ -330,6 +378,78 @@
         playerState.syncStatus = 'Locale (permessi Firestore)';
         renderPlayerPage();
       });
+    }
+
+    async function sendChatMessage() {
+      const roleKey = playerState.assignedRoleKey;
+      if (!roleKey || !ROLE_DETAILS[roleKey]) {
+        setPlayerBanner('Attendi che il Master ti assegni un ruolo per usare la chat.', 'error');
+        return;
+      }
+
+      const inputEl = document.getElementById('player-chat-input');
+      const text = String((inputEl ? inputEl.value : chatDraft) || '').trim();
+      if (!text) return;
+
+      const isTraitor = isTraitorRole(roleKey);
+      const isSecretTraitor = isSecretTraitorRole(roleKey);
+      const roleObj = ROLE_DETAILS[roleKey];
+
+      const newMessage = {
+        id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        senderName: isTraitor && isSecretTraitor ? roleObj.name : playerState.playerName,
+        senderRoleName: roleObj.name,
+        senderFaction: roleObj.faction,
+        anonymousIdentity: Boolean(isTraitor && isSecretTraitor),
+        playerName: playerState.playerName,
+        text: text.slice(0, 400),
+        createdAt: Date.now()
+      };
+
+      chatDraft = '';
+      if (inputEl) inputEl.value = '';
+
+      const ref = getRoomDocRef(playerState.roomCode);
+      if (ref) {
+        try {
+          const snap = await getDoc(ref);
+          const data = snap.exists() ? (snap.data() || {}) : {};
+          if (isTraitor) {
+            const existing = Array.isArray(data.traitorChat) ? data.traitorChat : [];
+            const nextList = [...existing, newMessage].slice(-100);
+            latestTraitorMessages = nextList;
+            await setDoc(ref, {
+              roomCode: playerState.roomCode,
+              traitorChat: nextList,
+              updatedAt: Date.now()
+            }, { merge: true });
+          } else {
+            const existing = Array.isArray(data.masterChat) ? data.masterChat : [];
+            const nextList = [...existing, newMessage].slice(-150);
+            const cleanName = playerState.playerName.trim().toLowerCase();
+            latestMasterMessages = nextList.filter(msg => {
+              const target = String(msg.playerName || '').trim().toLowerCase();
+              return !target || target === cleanName;
+            });
+            await setDoc(ref, {
+              roomCode: playerState.roomCode,
+              masterChat: nextList,
+              updatedAt: Date.now()
+            }, { merge: true });
+          }
+          renderPlayerPage();
+          return;
+        } catch (err) {
+          console.error('Errore invio messaggio chat su Firestore:', err);
+        }
+      }
+
+      if (isTraitor) {
+        latestTraitorMessages = [...latestTraitorMessages, newMessage].slice(-100);
+      } else {
+        latestMasterMessages = [...latestMasterMessages, newMessage].slice(-150);
+      }
+      renderPlayerPage();
     }
 
     function setPlayerBanner(text, type = 'info') {
@@ -464,4 +584,376 @@
     }
 
     function reopenSelfieStep() {
-      player
+      playerState.boardUnlocked = false;
+      playerState.privateCardOpen = false;
+      playerState.banner = null;
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    async function refreshAssignedRoleFromMaster() {
+      const ref = getRoomDocRef(playerState.roomCode);
+      if (ref) {
+        try {
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            const players = Array.isArray(snap.data().players) ? snap.data().players : [];
+            latestRoomPlayers = players;
+            const cloudRole = findRoleInPlayersList(players, playerState.playerName);
+            playerState.assignedRoleKey = cloudRole;
+            savePlayerState();
+          }
+        } catch (err) {
+          console.error('Errore aggiornamento ruolo da Firestore:', err);
+        }
+      }
+
+      const roleKey = playerState.assignedRoleKey || readAssignedRoleFromLocalRoom(playerState.roomCode, playerState.playerName);
+      playerState.assignedRoleKey = roleKey;
+      if (roleKey) {
+        setPlayerBanner('Il Master ti ha assegnato un ruolo: ora puoi aprire la tua scheda privata.', 'success');
+      } else {
+        playerState.privateCardOpen = false;
+        setPlayerBanner('Nessun ruolo ancora assegnato dal Master: la scheda privata resta bloccata.', 'info');
+      }
+    }
+
+    function togglePrivateCard() {
+      const latestRole =
+        findRoleInPlayersList(latestRoomPlayers, playerState.playerName) ||
+        readAssignedRoleFromLocalRoom(playerState.roomCode, playerState.playerName) ||
+        playerState.assignedRoleKey;
+      playerState.assignedRoleKey = latestRole;
+
+      if (!latestRole) {
+        playerState.privateCardOpen = false;
+        setPlayerBanner('Scheda privata bloccata: attendi che il Master ti assegni un ruolo.', 'error');
+        return;
+      }
+
+      playerState.privateCardOpen = !playerState.privateCardOpen;
+      playerState.banner = null;
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTimeShort(ts) {
+      try {
+        if (!ts) return '';
+        return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function renderChatSection(roleObj) {
+      if (!roleObj) {
+        return `
+          <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-2">
+            <h2 class="font-serif text-lg font-bold text-white">Canale di Comunicazione</h2>
+            <p class="text-xs text-gray-400">
+              Disponibile non appena il Master ti assegna un ruolo: i Traditori avranno la chat interna dei Traditori, mentre Fedeli e Neutro avranno la chat diretta con il Master.
+            </p>
+          </section>
+        `;
+      }
+
+      const isTraitor = isTraitorRole(playerState.assignedRoleKey);
+      const isSecretTraitor = isSecretTraitorRole(playerState.assignedRoleKey);
+      const messages = isTraitor ? latestTraitorMessages : latestMasterMessages;
+
+      const chatTitle = isTraitor ? 'Chat Interna dei Traditori' : 'Chat Diretta con il Master';
+      const chatSubtitle = isTraitor
+        ? (isSecretTraitor
+            ? 'Scrivi ai Traditori: per te compare solo il ruolo "Traditore Segreto", senza mostrare il tuo nome.'
+            : 'Canale riservato ai Traditori della stanza.')
+        : 'Canale privato tra te e il Master.';
+
+      const messagesHtml = messages.length
+        ? messages.map(msg => {
+            const isSelf = String(msg.playerName || '').trim().toLowerCase() === playerState.playerName.trim().toLowerCase();
+            const label = msg.fromMaster
+              ? 'Master'
+              : (msg.anonymousIdentity ? 'Traditore Segreto' : (msg.senderName || 'Giocatore'));
+            const roleTag = msg.fromMaster
+              ? 'Master'
+              : (msg.anonymousIdentity ? 'Anonimo' : (msg.senderRoleName || ''));
+            return `
+              <div class="rounded-xl border px-3.5 py-2.5 space-y-1 ${
+                isSelf
+                  ? 'bg-surface2 border-gold/30 ml-4'
+                  : 'bg-surface border-white/10 mr-4'
+              }">
+                <div class="flex items-center justify-between gap-2 text-[11px]">
+                  <span class="font-bold text-gray-100">${escapeHtml(label)}</span>
+                  <span class="text-gray-400">${escapeHtml(roleTag)}${msg.createdAt ? ' · ' + escapeHtml(formatTimeShort(msg.createdAt)) : ''}</span>
+                </div>
+                <p class="text-xs text-gray-200 leading-relaxed break-words">${escapeHtml(msg.text)}</p>
+              </div>
+            `;
+          }).join('')
+        : `<p class="text-xs text-gray-500 text-center py-4">Nessun messaggio ancora in questo canale.</p>`;
+
+      return `
+        <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
+          <div class="space-y-0.5">
+            <h2 class="font-serif text-xl font-bold text-white">${escapeHtml(chatTitle)}</h2>
+            <p class="text-xs text-gray-400">${escapeHtml(chatSubtitle)}</p>
+          </div>
+
+          <div class="max-h-60 overflow-y-auto space-y-2.5 pr-1">
+            ${messagesHtml}
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <input
+              id="player-chat-input"
+              type="text"
+              value="${escapeHtml(chatDraft)}"
+              oninput="chatDraft = this.value;"
+              onkeydown="if(event.key === 'Enter'){ event.preventDefault(); sendChatMessage(); }"
+              placeholder="${isTraitor ? 'Scrivi ai Traditori...' : 'Scrivi al Master...'}"
+              class="flex-1 rounded-xl bg-surface border border-white/15 px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold"
+            />
+            <button
+              type="button"
+              onclick="sendChatMessage()"
+              class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+            >
+              Invia
+            </button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderPlayerPage() {
+      const container = document.getElementById('player-app');
+      if (!container) return;
+
+      try {
+        const banner = playerState.banner;
+        const bannerHtml = banner
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              banner.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : banner.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(banner.text)}</div>`
+          : '';
+
+        if (!playerState.boardUnlocked) {
+          container.innerHTML = `
+            <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
+              <header class="space-y-1 border-b border-white/10 pb-4">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold uppercase tracking-widest text-indigo">Prima Sessione · Giocatore</span>
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-surface2 border border-white/10 text-gray-300">${escapeHtml(playerState.syncStatus)}</span>
+                </div>
+                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white">Il Tuo Selfie al Tavolo</h1>
+                <p class="text-xs text-gray-400">
+                  Giocatore: <strong class="text-gray-200">${escapeHtml(playerState.playerName)}</strong> ·
+                  Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong>
+                </p>
+              </header>
+
+              ${bannerHtml}
+
+              <div class="rounded-2xl bg-bgdark border border-white/10 p-5 flex flex-col items-center justify-center min-h-[240px] space-y-4">
+                ${
+                  playerState.cameraActive
+                    ? `<video id="player-camera-video" autoplay playsinline muted class="w-full max-w-xs aspect-square object-cover rounded-2xl border border-indigo/40"></video>`
+                    : playerState.selfieDataUrl
+                    ? `<img src="${playerState.selfieDataUrl}" alt="Selfie giocatore" onerror="this.src='https://placehold.co/320x320/151924/e5b85c?text=Selfie'" class="w-48 h-48 object-cover rounded-2xl border-2 border-emerald/50 shadow-lg" />`
+                    : `<div class="w-48 h-48 rounded-2xl bg-surface border border-dashed border-white/20 flex flex-col items-center justify-center text-center p-4">
+                         <span class="text-xs font-semibold text-gray-300">Nessun selfie ancora</span>
+                         <span class="text-[11px] text-gray-500 mt-1">Scatta una foto o caricala dalla galleria</span>
+                       </div>`
+                }
+              </div>
+
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                ${
+                  playerState.cameraActive
+                    ? `<button
+                         type="button"
+                         onclick="captureSelfiePhoto()"
+                         class="px-4 py-2.5 rounded-xl bg-emerald text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                       >
+                         Scatta Selfie
+                       </button>
+                       <button
+                         type="button"
+                         onclick="stopCameraStream(); renderPlayerPage();"
+                         class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 text-xs font-semibold text-gray-200 transition cursor-pointer"
+                       >
+                         Chiudi Fotocamera
+                       </button>`
+                    : `<button
+                         type="button"
+                         onclick="startPlayerCamera()"
+                         class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
+                       >
+                         Apri Fotocamera
+                       </button>`
+                }
+
+                <label class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
+                  Carica Foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onchange="if(this.files && this.files[0]) handleGalleryFileSelect(this.files[0]); this.value='';"
+                    class="hidden"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onclick="goToPlayerBoard()"
+                class="w-full py-3.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+                  playerState.selfieDataUrl
+                    ? 'bg-gold text-bgdark hover:brightness-110'
+                    : 'bg-surface2 text-gray-500 border border-white/10'
+                }"
+              >
+                Conferma Selfie e Vai alla Plancia
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        const hasRole = Boolean(playerState.assignedRoleKey && ROLE_DETAILS[playerState.assignedRoleKey]);
+        const roleObj = hasRole ? ROLE_DETAILS[playerState.assignedRoleKey] : null;
+
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-white/10 p-6 space-y-6 shadow-xl">
+            <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div class="flex items-center gap-3.5">
+                <img
+                  src="${playerState.selfieDataUrl}"
+                  alt="Selfie di ${escapeHtml(playerState.playerName)}"
+                  onerror="this.src='https://placehold.co/96x96/151924/e5b85c?text=Foto'"
+                  class="w-16 h-16 rounded-2xl object-cover border border-white/15"
+                />
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-widest text-gold">Plancia Giocatore</span>
+                  <h1 class="font-serif text-2xl font-bold text-white">${escapeHtml(playerState.playerName)}</h1>
+                  <p class="text-xs text-gray-400">
+                    Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
+                    <span>${escapeHtml(playerState.syncStatus)}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="reopenSelfieStep()"
+                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Cambia Selfie
+              </button>
+            </header>
+
+            ${bannerHtml}
+
+            <section class="rounded-2xl bg-bgdark border border-white/10 p-5 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 class="font-serif text-xl font-bold text-white">Scheda Privata</h2>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    ${hasRole
+                      ? 'Il Master ti ha assegnato un ruolo: puoi aprire o chiudere la tua scheda segreta.'
+                      : 'Bloccata finché il Master non ti assegna un ruolo.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onclick="refreshAssignedRoleFromMaster()"
+                  class="px-3 py-1.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+                >
+                  Aggiorna Stato Ruolo
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onclick="togglePrivateCard()"
+                class="w-full py-3 px-4 rounded-xl text-sm font-bold transition cursor-pointer ${
+                  hasRole
+                    ? 'bg-gold text-bgdark hover:brightness-110'
+                    : 'bg-surface2 text-gray-400 border border-white/10'
+                }"
+              >
+                ${
+                  !hasRole
+                    ? 'Scheda Privata Bloccata (In attesa del ruolo dal Master)'
+                    : playerState.privateCardOpen
+                    ? 'Nascondi Scheda Privata'
+                    : 'Apri Scheda Privata'
+                }
+              </button>
+
+              ${
+                hasRole && playerState.privateCardOpen
+                  ? `<div class="rounded-xl bg-surface border border-white/15 p-5 space-y-3">
+                       <div class="flex items-center justify-between gap-2">
+                         <span class="font-serif text-xl font-bold text-white">${escapeHtml(roleObj.name)}</span>
+                         <span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleObj.badge}">
+                           ${escapeHtml(roleObj.faction)}
+                         </span>
+                       </div>
+                       <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(roleObj.power)}</p>
+                       <div class="rounded-lg bg-bgdark/80 border border-white/10 p-3 text-xs text-gray-400 leading-relaxed">
+                         <strong class="text-gray-200">Regole Missioni:</strong> ${escapeHtml(roleObj.missionStyle)}
+                       </div>
+                     </div>`
+                  : ''
+              }
+            </section>
+
+            ${renderChatSection(roleObj)}
+          </div>
+        `;
+      } catch (err) {
+        console.error('Errore rendering pagina giocatore:', err);
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Errore durante il caricamento della pagina giocatore.
+          </div>
+        `;
+      }
+    }
+
+    window.startPlayerCamera = startPlayerCamera;
+    window.stopCameraStream = stopCameraStream;
+    window.captureSelfiePhoto = captureSelfiePhoto;
+    window.handleGalleryFileSelect = handleGalleryFileSelect;
+    window.goToPlayerBoard = goToPlayerBoard;
+    window.reopenSelfieStep = reopenSelfieStep;
+    window.refreshAssignedRoleFromMaster = refreshAssignedRoleFromMaster;
+    window.togglePrivateCard = togglePrivateCard;
+    window.sendChatMessage = sendChatMessage;
+    Object.defineProperty(window, 'chatDraft', {
+      get: () => chatDraft,
+      set: (v) => { chatDraft = v; }
+    });
+
+    firestoreDb = initFirestore();
+    renderPlayerPage();
+    syncPlayerToFirestore();
+    subscribeToRoomUpdates();
+  </script>
+</body>
+</html>
