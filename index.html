@@ -94,6 +94,35 @@
       return 'SYNC-' + normalizeRoomCode(roomCode);
     }
 
+    // Restituisce il nome file di destinazione in base alla pagina richiesta
+    function getTargetPageFile(pageType) {
+      return pageType === 'master' ? 'master_ruoli.html' : 'giocatore.html';
+    }
+
+    // Apre una pagina dedicata se disponibile nel contesto, oppure mostra un avviso chiaro
+    function navigateToTargetPage(pageType) {
+      const targetFile = getTargetPageFile(pageType);
+      const isBlobOrSrcdoc =
+        window.location.protocol === 'blob:' ||
+        window.location.href === 'about:srcdoc' ||
+        window.location.href.startsWith('data:');
+
+      if (!isBlobOrSrcdoc) {
+        try {
+          window.location.href = targetFile;
+          return true;
+        } catch (err) {
+          console.error('Errore navigazione verso', targetFile, err);
+        }
+      }
+
+      setBanner(
+        `Stato salvato per "${targetFile}". Nell'anteprima isolata non è possibile caricare altri file locali: pubblica i file nella stessa cartella (es. su GitHub Pages) oppure seleziona "${targetFile}" dall'elenco schede.`,
+        'info'
+      );
+      return false;
+    }
+
     // Salva lo stato della pagina di accesso
     function saveAccessState() {
       try {
@@ -172,14 +201,13 @@
       const displayLabel = cleanName || (accessState.selectedRoleType === 'master' ? 'Master' : 'Giocatore');
       saveAccessState();
 
-      if (accessState.selectedRoleType === 'player') {
+      const targetPage = accessState.selectedRoleType === 'player' ? 'player' : 'master';
+      const targetFile = getTargetPageFile(targetPage);
+
+      const moved = navigateToTargetPage(targetPage);
+      if (!moved) {
         setBanner(
-          `Pronto per la pagina Giocatore: "${displayLabel}" nella stanza ${roomCode} (${syncId}). Puoi aprire giocatore.html.`,
-          'success'
-        );
-      } else {
-        setBanner(
-          `Pronto per la pagina Master: "${displayLabel}" nella stanza ${roomCode} (${syncId}). Puoi aprire master_ruoli.html.`,
+          `Accesso salvato per "${displayLabel}" (${accessState.roomCode} · ${syncId}). Apri la scheda "${targetFile}" oppure carica index.html, giocatore.html e master_ruoli.html nella stessa cartella.`,
           'success'
         );
       }
@@ -321,12 +349,20 @@
               </button>
 
               <div class="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-400">
-                <a href="giocatore.html" class="hover:text-indigo underline underline-offset-4">
+                <button
+                  type="button"
+                  onclick="navigateToTargetPage('player')"
+                  class="hover:text-indigo underline underline-offset-4 cursor-pointer"
+                >
                   Apri giocatore.html
-                </a>
-                <a href="master_ruoli.html" class="hover:text-gold underline underline-offset-4">
+                </button>
+                <button
+                  type="button"
+                  onclick="navigateToTargetPage('master')"
+                  class="hover:text-gold underline underline-offset-4 cursor-pointer"
+                >
                   Apri master_ruoli.html
-                </a>
+                </button>
               </div>
             </div>
           </section>
@@ -347,6 +383,7 @@
     window.chooseRoleType = chooseRoleType;
     window.copySyncId = copySyncId;
     window.proceedToSession = proceedToSession;
+    window.navigateToTargetPage = navigateToTargetPage;
 
     renderAccessPage();
   </script>
