@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Regia TV</title>
+  <style>
+    :root {
+      --bg: #07080d;
+      --surface: #121622;
+      --surface-2: #1a2030;
+      --border: rgba(255, 255, 255, 0.14);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --gold: #e5b85c;
+      --crimson: #e05260;
+      --emerald: #3ec98c;
+      --indigo: #7c8cff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 15%, #1d1626 0%, var(--bg) 68%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tv-topbar {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(12, 14, 22, 0.85);
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--emerald);
+    }
+
+    .tv-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+
+    .idle-box {
+      max-width: 720px;
+      width: 100%;
+      text-align: center;
+      background: rgba(18, 22, 34, 0.78);
+      border: 1px solid rgba(229, 184, 92, 0.35);
+      border-radius: 24px;
+      padding: 48px 28px;
+    }
+
+    .idle-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin: 10px 0 8px;
+      color: #fff;
+    }
+
+    .idle-sub {
+      font-size: 16px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .vote-card {
+      max-width: 580px;
+      width: 100%;
+      background: var(--surface);
+      border: 2px solid rgba(229, 184, 92, 0.55);
+      border-radius: 28px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+      animation: fadeZoomIn 0.55s ease forwards;
+    }
+
+    @keyframes fadeZoomIn {
+      0% { opacity: 0; transform: translateY(14px) scale(0.94); filter: blur(4px); }
+      65% { opacity: 1; filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+
+    .selfie-frame {
+      width: 230px;
+      height: 230px;
+      margin: 18px auto 20px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 3px solid var(--gold);
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 74px;
+      font-weight: 900;
+      color: var(--gold);
+      animation: slowKenBurns 7s ease-in-out infinite alternate;
+    }
+
+    @keyframes slowKenBurns {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.06); }
+    }
+
+    .selfie-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .voter-label {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .voted-under-box {
+      margin-top: 8px;
+      padding: 16px 20px;
+      border-radius: 18px;
+      background: rgba(224, 82, 96, 0.16);
+      border: 1px solid rgba(224, 82, 96, 0.5);
+    }
+
+    .voted-under-eyebrow {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fca5a5;
+    }
+
+    .voted-under-name {
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
+      margin-top: 4px;
+    }
+
+    .media-box {
+      max-width: 860px;
+      width: 100%;
+      background: var(--surface);
+      border: 2px solid rgba(224, 82, 96, 0.5);
+      border-radius: 28px;
+      padding: 32px;
+      text-align: center;
+      animation: fadeZoomIn 0.5s ease forwards;
+    }
+
+    .media-box.win-box {
+      border-color: rgba(229, 184, 92, 0.65);
+    }
+
+    video {
+      width: 100%;
+      max-height: 440px;
+      border-radius: 18px;
+      background: #000;
+      margin-top: 16px;
+    }
+
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(229, 184, 92, 0.16);
+      color: var(--gold);
+      border: 1px solid rgba(229, 184, 92, 0.35);
+    }
+  </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+</head>
+<body>
+  <header class="tv-topbar">
+    <div>
+      <span class="eyebrow">Ombre al Tavolo · Regia TV</span>
+      <span style="margin-left:10px;font-size:13px;color:var(--muted);">Stanza: <strong class="mono" id="tv-room-code">TAVOLO1</strong></span>
+    </div>
+    <span class="badge" id="tv-mode-badge">Stand-by</span>
+  </header>
+
+  <main class="tv-stage" id="tv-stage"></main>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    var VIDEO_SOURCES = {
+      kill: 'video/uccisione.mp4',
+      win_fedeli: 'video/vittoria-fedeli.mp4',
+      win_traditori: 'video/vittoria-traditori.mp4',
+      win_cacciatore: 'video/vittoria-cacciatore.mp4'
+    };
+
+    var VICTORY_LABELS = {
+      win_fedeli: { title: 'Vittoria dei Fedeli', subtitle: 'La verità ha trionfato al tavolo.' },
+      win_traditori: { title: 'Vittoria dei Traditori', subtitle: 'Le ombre hanno avvolto il tavolo fino alla fine.' },
+      win_cacciatore: { title: 'Vittoria del Cacciatore', subtitle: 'Il cacciatore ha centrato il proprio obiettivo.' }
+    };
+
+    function readRoomCode() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('stanza')) return String(params.get('stanza')).trim().toUpperCase();
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (raw) {
+          var p = JSON.parse(raw);
+          if (p && p.roomCode) return String(p.roomCode).trim().toUpperCase();
+        }
+      } catch (_e) {}
+      return 'TAVOLO1';
+    }
+
+    function initDb() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    var db = initDb();
+    var roomCode = readRoomCode();
+    document.getElementById('tv-room-code').textContent = roomCode;
+
+    var tvState = {
+      tvMode: 'idle',
+      revealedVoteIndex: 0,
+      ovalVotes: [],
+      playerSelfies: {},
+      players: [],
+      tvKillTarget: '',
+      tvVideoPaused: false,
+      tvRevealTick: 0
+    };
+
+    function escapeHtml(v) {
+      return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getSelfie(vote) {
+      if (vote && vote.voterSelfie) return vote.voterSelfie;
+      var k = String((vote && vote.voterName) || '').trim().toLowerCase();
+      if (tvState.playerSelfies && tvState.playerSelfies[k]) return tvState.playerSelfies[k];
+      var found = (tvState.players || []).find(function (p) {
+        return String(p.name || '').trim().toLowerCase() === k;
+      });
+      return (found && (found.selfie || found.photo)) || '';
+    }
+
+    function syncTvVideoPlayback() {
+      var vid = document.querySelector('#tv-stage video');
+      if (!vid) return;
+      if (tvState.tvVideoPaused) {
+        if (!vid.paused) vid.pause();
+      } else {
+        var p = vid.play();
+        if (p && typeof p.catch === 'function') p.catch(function () {});
+      }
+    }
+
+    function applyData(data) {
+      if (!data || typeof data !== 'object') return;
+      tvState.tvMode = data.tvMode || 'idle';
+      tvState.revealedVoteIndex = Number(data.revealedVoteIndex || 0);
+      tvState.ovalVotes = Array.isArray(data.ovalVotes) ? data.ovalVotes : [];
+      tvState.playerSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
+      tvState.players = Array.isArray(data.players) ? data.players : [];
+      tvState.tvKillTarget = String(data.tvKillTarget || '');
+      tvState.tvVideoPaused = Boolean(data.tvVideoPaused);
+      tvState.tvRevealTick = Number(data.tvRevealTick || 0);
+      renderTv();
+      syncTvVideoPlayback();
+    }
+
+    function renderTv() {
+      var stage = document.getElementById('tv-stage');
+      var badge = document.getElementById('tv-mode-badge');
+      if (!stage) return;
+
+      var mode = tvState.tvMode || 'idle';
+
+      if (mode === 'votes') {
+        badge.textContent = 'Tavolo Ovale · Rivelazione Voti';
+        var votes = tvState.ovalVotes || [];
+        if (!votes.length) {
+          stage.innerHTML =
+            '<div class="idle-box">' +
+              '<span class="eyebrow">Tavolo Ovale</span>' +
+              '<div class="idle-title">Nessun voto registrato</div>' +
+              '<p class="idle-sub">In attesa che i giocatori esprimano il proprio voto.</p>' +
+            '</div>';
+          return;
+        }
+        var idx = Math.max(0, Math.min(votes.length - 1, tvState.revealedVoteIndex));
+        var v = votes[idx];
+        var selfie = getSelfie(v);
+        var initial = escapeHtml((v.voterName || 'G').slice(0, 1).toUpperCase());
+        var imgHtml = selfie ? '<img src="' + selfie + '" alt="' + escapeHtml(v.voterName) + '" />' : initial;
+
+        stage.innerHTML =
+          '<div class="vote-card" data-reveal-tick="' + tvState.tvRevealTick + '-' + idx + '">' +
+            '<span class="eyebrow">Voto ' + (idx + 1) + ' di ' + votes.length + (v.isRunoff ? ' · Ballottaggio' : '') + (v.isExtraMediatorVote ? ' · +1 Mediatore' : '') + '</span>' +
+            '<div class="selfie-frame">' + imgHtml + '</div>' +
+            '<div class="voter-label">' + escapeHtml(v.voterName) + '</div>' +
+            '<div class="voted-under-box">' +
+              '<div class="voted-under-eyebrow">Ha votato</div>' +
+              '<div class="voted-under-name">' + escapeHtml(v.targetName) + '</div>' +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
+      if (mode === 'kill') {
+        badge.textContent = 'Annuncio Uccisione';
+        var src = VIDEO_SOURCES.kill;
+        stage.innerHTML =
+          '<div class="media-box">' +
+            '<span class="eyebrow" style="color:var(--crimson);">Calano le Ombre</span>' +
+            '<div class="idle-title" style="font-size:36px;">' + (tvState.tvKillTarget ? ('Eliminato: ' + escapeHtml(tvState.tvKillTarget)) : 'Annuncio Uccisione') + '</div>' +
+            '<video controls autoplay playsinline src="' + escapeHtml(src) + '"></video>' +
+            '<p class="idle-sub" style="margin-top:12px;">Se il file <code>' + escapeHtml(src) + '</code> non è ancora presente nella cartella, inseriscilo lì per riprodurre il video.</p>' +
+          '</div>';
+        return;
+      }
+
+      if (VICTORY_LABELS[mode]) {
+        var info = VICTORY_LABELS[mode];
+        var winSrc = VIDEO_SOURCES[mode];
+        badge.textContent = info.title;
+        stage.innerHTML =
+          '<div class="media-box win-box">' +
+            '<span class="eyebrow">Verdetto Finale</span>' +
+            '<div class="idle-title" style="font-size:36px;">' + escapeHtml(info.title) + '</div>' +
+            '<p class="idle
