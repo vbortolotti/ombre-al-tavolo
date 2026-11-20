@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Giocatore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    // Configurazione tema scuro e colori per la pagina Giocatore
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+          },
+          colors: {
+            bgdark: '#0c0e14',
+            surface: '#151924',
+            surface2: '#1d2230',
+            gold: '#e5b85c',
+            crimson: '#e05260',
+            emerald: '#3ec98c',
+            indigo: '#7c8cff',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #0c0e14;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-bgdark text-gray-100 antialiased">
+  <div id="player-app" class="max-w-3xl mx-auto px-4 py-8 space-y-6"></div>
+
+  <script>
+    // Chiavi condivise con la schermata di accesso e la pagina Master
+    const ACCESS_STORAGE_KEY = 'ombre_accesso_tavolo_v1';
+    const PLAYER_STORAGE_KEY = 'ombre_giocatore_sessione_v1';
+    const MASTER_ROLES_STORAGE_KEY = 'ombre_master_assegnazione_ruoli_v1';
+
+    // Dettagli visuali dei ruoli assegnabili dal Master
+    const PLAYER_ROLE_DETAILS = {
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Puoi indagare sul ruolo segreto di un giocatore vivo durante la fase indicata dal Master.'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Puoi proteggere un giocatore dagli attacchi nel turno corrente.'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Puoi colpire un sospetto assumendoti il rischio del contraccolpo.'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Cittadini',
+        badge: 'bg-emerald/15 text-emerald border-emerald/40',
+        summary: 'Lasci una testimonianza sul ruolo di un giocatore se vieni eliminato.'
+      },
+      assassino: {
+        name: 'Assassino',
+        faction: 'Traditori',
+        badge: 'bg-crimson/15 text-crimson border-crimson/40',
+        summary: 'Agisci nell’ombra insieme ai Traditori per eliminare un bersaglio.'
+      },
+      sabotatore: {
+        name: 'Sabotatore',
+        faction: 'Traditori',
+        badge: 'bg-crimson/15 text-crimson border-crimson/40',
+        summary: 'Ostacoli o alteri le azioni avversarie nel turno.'
+      }
+    };
+
+    let activeMediaStream = null;
+
+    // Legge codice stanza e nome giocatore salvati nella pagina di accesso
+    function readPlayerAccessContext() {
+      try {
+        const raw = localStorage.getItem(ACCESS_STORAGE_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        const parsed = JSON.parse(raw);
+        return {
+          roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          playerName: String(parsed.playerName || '').trim() || 'Giocatore'
+        };
+      } catch (err) {
+        console.error('Errore lettura contesto accesso giocatore:', err);
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+      }
+    }
+
+    // Cerca un ruolo eventualmente già assegnato dal Master per questo giocatore
+    function readAssignedRoleFromMaster(playerName) {
+      try {
+        const raw = localStorage.getItem(MASTER_ROLES_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed.players)) return null;
+        const normalized = String(playerName || '').trim().toLowerCase();
+        const match = parsed.players.find(p => String(p.name || '').trim().toLowerCase() === normalized);
+        if (!match || !match.assignedRoleKey || !PLAYER_ROLE_DETAILS[match.assignedRoleKey]) {
+          return null;
+        }
+        return match.assignedRoleKey;
+      } catch (err) {
+        console.error('Errore lettura ruolo assegnato dal Master:', err);
+        return null;
+      }
+    }
+
+    // Crea lo stato iniziale della pagina Giocatore
+    function createInitialPlayerState() {
+      const ctx = readPlayerAccessContext();
+      return {
+        roomCode: ctx.roomCode,
+        playerName: ctx.playerName,
+        selfieDataUrl: null,
+        cameraActive: false,
+        boardUnlocked: false, // Prima sessione: chiede il selfie, poi apre la plancia
+        privateCardOpen: false,
+        assignedRoleKey: readAssignedRoleFromMaster(ctx.playerName),
+        banner: null
+      };
+    }
+
+    // Carica lo stato salvato in sicurezza tramite try/catch
+    function loadPlayerState() {
+      try {
+        const ctx = readPlayerAccessContext();
+        const base = createInitialPlayerState();
+        const raw = localStorage.getItem(PLAYER_STORAGE_KEY);
+        if (!raw) {
+          return {
+            ...base,
+            roomCode: ctx.roomCode,
+            playerName: ctx.playerName,
+            assignedRoleKey: readAssignedRoleFromMaster(ctx.playerName)
+          };
+        }
+        const parsed = JSON.parse(raw);
+        const name = ctx.playerName || String(parsed.playerName || 'Giocatore');
+        return {
+          ...base,
+          ...parsed,
+          roomCode: ctx.roomCode,
+          playerName: name,
+          selfieDataUrl: typeof parsed.selfieDataUrl === 'string' ? parsed.selfieDataUrl : null,
+          cameraActive: false,
+          boardUnlocked: Boolean(parsed.boardUnlocked && parsed.selfieDataUrl),
+          privateCardOpen: Boolean(parsed.privateCardOpen),
+          assignedRoleKey: parsed.assignedRoleKey || readAssignedRoleFromMaster(name)
+        };
+      } catch (err) {
+        console.error('Errore caricamento stato giocatore:', err);
+        return createInitialPlayerState();
+      }
+    }
+
+    let playerState = loadPlayerState();
+
+    // Salva lo stato del giocatore senza salvare lo stream camera attivo
+    function savePlayerState() {
+      try {
+        localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify({
+          roomCode: playerState.roomCode,
+          playerName: playerState.playerName,
+          selfieDataUrl: playerState.selfieDataUrl,
+          boardUnlocked: playerState.boardUnlocked,
+          privateCardOpen: playerState.privateCardOpen,
+          assignedRoleKey: playerState.assignedRoleKey,
+          banner: playerState.banner
+        }));
+      } catch (err) {
+        console.error('Errore salvataggio stato giocatore:', err);
+      }
+    }
+
+    // Ferma eventuali stream della fotocamera attivi
+    function stopCameraStream() {
+      if (activeMediaStream && typeof activeMediaStream.getTracks === 'function') {
+        try {
+          activeMediaStream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+          console.error('Errore chiusura fotocamera:', err);
+        }
+      }
+      activeMediaStream = null;
+      playerState.cameraActive = false;
+    }
+
+    // Imposta un messaggio di feedback per il giocatore
+    function setPlayerBanner(text, type = 'info') {
+      playerState.banner = { text, type };
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    // Avvia la fotocamera frontale per il selfie iniziale
+    async function startSelfieCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setPlayerBanner('Fotocamera non disponibile in questo browser: puoi caricare una foto dal dispositivo.', 'error');
+        return;
+      }
+
+      try {
+        stopCameraStream();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        });
+        activeMediaStream = stream;
+        playerState.cameraActive = true;
+        playerState.banner = null;
+        renderPlayerPage();
+
+        const videoEl = document.getElementById('player-camera-video');
+        if (videoEl) {
+          videoEl.srcObject = stream;
+          await videoEl.play().catch(() => {});
+        }
+      } catch (err) {
+        console.error('Errore accesso fotocamera:', err);
+        playerState.cameraActive = false;
+        setPlayerBanner('Permesso fotocamera negato o non disponibile: usa il pulsante "Carica Foto".', 'error');
+      }
+    }
+
+    // Scatta il selfie dal video attivo
+    function captureSelfieFrame() {
+      const videoEl = document.getElementById('player-camera-video');
+      if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) {
+        setPlayerBanner('Attendi che l’anteprima della fotocamera sia visibile prima di scattare.', 'error');
+        return;
+      }
+
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(videoEl.videoWidth, 640);
+        const ratio = canvas.width / videoEl.videoWidth;
+        canvas.height = Math.round(videoEl.videoHeight * ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        playerState.selfieDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        stopCameraStream();
+        playerState.banner = { text: 'Selfie acquisito! Ora puoi entrare nella tua plancia.', type: 'success' };
+        savePlayerState();
+        renderPlayerPage();
+      } catch (err) {
+        console.error('Errore cattura selfie:', err);
+        setPlayerBanner('Impossibile catturare il selfie. Prova a caricare una foto.', 'error');
+      }
+    }
+
+    // Carica un'immagine come selfie da file/galleria
+    function handleSelfieFileUpload(file) {
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('image/')) {
+        setPlayerBanner('Seleziona un file immagine valido per il selfie.', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const result = evt.target && evt.target.result;
+        if (typeof result === 'string') {
+          playerState.selfieDataUrl = result;
+          stopCameraStream();
+          playerState.banner = { text: 'Foto caricata! Ora puoi entrare nella tua plancia.', type: 'success' };
+          savePlayerState();
+          renderPlayerPage();
+        }
+      };
+      reader.onerror = function () {
+        setPlayerBanner('Errore durante il caricamento della foto.', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Conferma il selfie e reindirizza alla plancia del giocatore
+    function enterPlayerBoardWithSelfie() {
+      if (!playerState.selfieDataUrl) {
+        setPlayerBanner('Scatta o carica prima il tuo selfie per proseguire verso la plancia.', 'error');
+        return;
+      }
+      stopCameraStream();
+      playerState.boardUnlocked = true;
+      playerState.privateCardOpen = false;
+      playerState.banner = {
+        text: 'Benvenuto sulla plancia. La scheda privata resta bloccata finché il Master non assegna un ruolo.',
+        type: 'info'
+      };
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    // Riporta alla sessione selfie per rifare o cambiare foto
+    function returnToSelfieStep() {
+      stopCameraStream();
+      playerState.boardUnlocked = false;
+      playerState.privateCardOpen = false;
+      playerState.banner = null;
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    // Controlla/apre la scheda privata SOLO se il Master ha assegnato un ruolo
+    function togglePrivateCard() {
+      const roleKey = playerState.assignedRoleKey || readAssignedRoleFromMaster(playerState.playerName);
+      playerState.assignedRoleKey = roleKey;
+
+      if (!roleKey) {
+        playerState.privateCardOpen = false;
+        setPlayerBanner('Scheda privata bloccata: il Master non ti ha ancora assegnato un ruolo.', 'error');
+        return;
+      }
+
+      playerState.privateCardOpen = !playerState.privateCardOpen;
+      playerState.banner = null;
+      savePlayerState();
+      renderPlayerPage();
+    }
+
+    // Controlla se il Master ha assegnato un ruolo a questo giocatore
+    function refreshAssignedRoleFromMaster() {
+      const roleKey = readAssignedRoleFromMaster(playerState.playerName);
+      playerState.assignedRoleKey = roleKey;
+      if (roleKey) {
+        setPlayerBanner('Il Master ti ha assegnato un ruolo: ora puoi aprire la tua scheda privata.', 'success');
+      } else {
+        playerState.privateCardOpen = false;
+        setPlayerBanner('Nessun ruolo ancora assegnato dal Master: la scheda privata resta bloccata.', 'info');
+      }
+    }
+
+    // Naviga verso index.html quando non in anteprima isolata
+    function goToAccessPage() {
+      stopCameraStream();
+      const isIsolatedPreview =
+        window.location.protocol === 'blob:' ||
+        window.location.href === 'about:srcdoc' ||
+        window.location.href.startsWith('data:');
+
+      if (!isIsolatedPreview) {
+        try {
+          window.location.href = 'index.html';
+          return;
+        } catch (err) {
+          console.error('Errore ritorno a index.html:', err);
+        }
+      }
+
+      setPlayerBanner(
+        'Nell\'anteprima isolata non è possibile aprire index.html automaticamente: usa i file nella stessa cartella oppure apri index.html.',
+        'info'
+      );
+    }
+
+    // Escape HTML per rendere sicuro l'inserimento di testo
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Renderizza la pagina Giocatore (prima sessione selfie oppure plancia con scheda privata)
+    function renderPlayerPage() {
+      const container = document.getElementById('player-app');
+      if (!container) return;
+
+      try {
+        const syncId = 'SYNC-' + playerState.roomCode;
+        const banner = playerState.banner;
+        const bannerHtml = banner
+          ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
+              banner.type === 'success'
+                ? 'bg-emerald/15 border-emerald/40 text-emerald'
+                : banner.type === 'error'
+                ? 'bg-crimson/15 border-crimson/40 text-crimson'
+                : 'bg-indigo/15 border-indigo/40 text-indigo'
+            }">${escapeHtml(banner.text)}</div>`
+          : '';
+
+        if (!playerState.boardUnlocked) {
+          container.innerHTML = `
+            <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-emerald">Pagina Giocatore · Passo 1: Selfie</span>
+                <h1 class="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">Scatta il Tuo Selfie</h1>
+                <p class="text-xs text-gray-400 mt-1">
+                  Giocatore: <strong class="text-gray-200">${escapeHtml(playerState.playerName)}</strong> ·
+                  Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onclick="goToAccessPage()"
+                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Torna ad Accesso
+              </button>
+            </header>
+
+            ${bannerHtml}
+
+            <section class="rounded-2xl bg-surface border border-white/10 p-6 space-y-5">
+              <div class="flex flex-col items-center justify-center gap-4">
+                <div class="w-44 h-44 rounded-2xl bg-bgdark border border-white/15 overflow-hidden flex items-center justify-center">
+                  ${playerState.cameraActive
+                    ? `<video id="player-camera-video" autoplay playsinline muted class="w-full h-full object-cover"></video>`
+                    : playerState.selfieDataUrl
+                    ? `<img src="${playerState.selfieDataUrl}" alt="Selfie giocatore" class="w-full h-full object-cover" />`
+                    : `<span class="text-xs text-gray-400 text-center px-4">Nessun selfie acquisito</span>`
+                  }
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    type="button"
+                    onclick="startSelfieCamera()"
+                    class="px-4 py-2.5 rounded-xl bg-indigo text-white text-xs font-semibold hover:brightness-110 transition cursor-pointer"
+                  >
+                    Apri Fotocamera
+                  </button>
+
+                  ${playerState.cameraActive
+                    ? `<button
+                         type="button"
+                         onclick="captureSelfieFrame()"
+                         class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                       >
+                         Scatta Selfie
+                       </button>`
+                    : ''
+                  }
+
+                  <label class="px-4 py-2.5 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer">
+                    Carica Foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
+                      class="hidden"
+                      onchange="if (this.files && this.files[0]) handleSelfieFileUpload(this.files[0]);"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onclick="enterPlayerBoardWithSelfie()"
+                class="w-full py-3.5 rounded-xl bg-emerald text-bgdark font-bold text-sm hover:brightness-110 transition cursor-pointer"
+              >
+                Conferma Selfie e Vai alla Plancia
+              </button>
+            </section>
+          `;
+          return;
+        }
+
+        const roleKey = playerState.assignedRoleKey;
+        const hasAssignedRole = Boolean(roleKey && PLAYER_ROLE_DETAILS[roleKey]);
+        const roleDetails = hasAssignedRole ? PLAYER_ROLE_DETAILS[roleKey] : null;
+
+        container.innerHTML = `
+          <header class="rounded-2xl bg-surface border border-white/10 p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+              <div class="w-14 h-14 rounded-xl bg-bgdark border border-white/15 overflow-hidden shrink-0">
+                ${playerState.selfieDataUrl
+                  ? `<img src="${playerState.selfieDataUrl}" alt="Selfie di ${escapeHtml(playerState.playerName)}" class="w-full h-full object-cover" />`
+                  : ''
+                }
+              </div>
+              <div>
+                <span class="text-xs font-bold uppercase tracking-widest text-emerald">Plancia Giocatore</span>
+                <h1 class="font-serif text-2xl font-bold text-white">${escapeHtml(playerState.playerName)}</h1>
+                <p class="text-xs text-gray-400">
+                  Stanza: <strong class="text-gray-200">${escapeHtml(playerState.roomCode)}</strong> ·
+                  ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong>
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onclick="refreshAssignedRoleFromMaster()"
+                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Controlla Ruolo
+              </button>
+              <button
+                type="button"
+                onclick="returnToSelfieStep()"
+                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Cambia Selfie
+              </button>
+              <button
+                type="button"
+                onclick="goToAccessPage()"
+                class="px-3.5 py-2 rounded-xl bg-surface2 hover:bg-white/10 border border-white/15 text-xs font-semibold text-gray-200 transition cursor-pointer"
+              >
+                Esci
+              </button>
+            </div>
+          </header>
+
+          ${bannerHtml}
+
+          <section class="rounded-2xl bg-surface border border-white/10 p-6 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-gold">Scheda Privata</span>
+                <h2 class="font-serif text-xl font-bold text-white mt-0.5">Il Tuo Ruolo Segreto</h2>
+              </div>
+              <span class="text-xs font-semibold px-3 py-1 rounded-full border ${
+                hasAssignedRole
+                  ? 'bg-emerald/15 text-emerald border-emerald/40'
+                  : 'bg-crimson/15 text-crimson border-crimson/40'
+              }">
+                ${hasAssignedRole ? 'Ruolo Assegnato' : 'Bloccata · In Attesa del Master'}
+              </span>
+            </div>
+
+            ${!hasAssignedRole
+              ? `<div class="rounded-xl bg-bgdark border border-crimson/30 p-5 text-center space-y-2">
+                   <p class="text-sm font-semibold text-crimson">Scheda privata non apribile</p>
+                   <p class="text-xs text-gray-400">
+                     Potrai aprire la tua scheda privata solo dopo che il Master ti avrà assegnato un ruolo.
+                   </p>
+                   <button
+                     type="button"
+                     disabled
+                     class="mt-2 px-4 py-2.5 rounded-xl bg-surface2 border border-white/10 text-xs font-semibold text-gray-500 cursor-not-allowed"
+                   >
+                     Apri Scheda Privata (Bloccata)
+                   </button>
+                 </div>`
+              : `<div class="space-y-4">
+                   <button
+                     type="button"
+                     onclick="togglePrivateCard()"
+                     class="px-4 py-2.5 rounded-xl bg-gold text-bgdark text-xs font-bold hover:brightness-110 transition cursor-pointer"
+                   >
+                     ${playerState.privateCardOpen ? 'Nascondi Scheda Privata' : 'Apri Scheda Privata'}
+                   </button>
+
+                   ${playerState.privateCardOpen
+                     ? `<div class="rounded-xl bg-bgdark border border-white/15 p-5 space-y-2">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="font-serif text-xl font-bold text-white">${escapeHtml(roleDetails.name)}</span>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${roleDetails.badge}">
+                              ${escapeHtml(roleDetails.faction)}
+                            </span>
+                          </div>
+                          <p class="text-sm text-gray-300 leading-relaxed">${escapeHtml(roleDetails.summary)}</p>
+                        </div>`
+                     : `<div class="rounded-xl bg-bgdark border border-white/10 p-4 text-xs text-gray-400">
+                          Il Master ti ha assegnato un ruolo: clicca su "Apri Scheda Privata" quando nessuno guarda il tuo schermo.
+                        </div>`
+                   }
+                 </div>`
+            }
+          </section>
+        `;
+      } catch (err) {
+        console.error('Errore rendering pagina Giocatore:', err);
+        container.innerHTML = `
+          <div class="rounded-2xl bg-surface border border-crimson/40 p-6 text-sm text-crimson">
+            Si è verificato un errore durante il caricamento della pagina Giocatore.
+          </div>
+        `;
+      }
+    }
+
+    // Esposizione esplicita delle funzioni globali richiamate dai pulsanti
+    window.startSelfieCamera = startSelfieCamera;
+    window.captureSelfieFrame = captureSelfieFrame;
+    window.handleSelfieFileUpload = handleSelfieFileUpload;
+    window.enterPlayerBoardWithSelfie = enterPlayerBoardWithSelfie;
+    window.returnToSelfieStep = returnToSelfieStep;
+    window.togglePrivateCard = togglePrivateCard;
+    window.refreshAssignedRoleFromMaster = refreshAssignedRoleFromMaster;
+    window.goToAccessPage = goToAccessPage;
+
+    renderPlayerPage();
+  </script>
+</body>
+</html>
