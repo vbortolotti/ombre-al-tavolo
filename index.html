@@ -138,18 +138,34 @@
     }
 
     function updateRoomCode(value) {
-      const rawCode = String(value || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 16);
-      accessState.roomCode = rawCode;
+      const inp = document.getElementById('access-room-input');
+      const prevStart = inp ? inp.selectionStart : null;
+      const prevEnd = inp ? inp.selectionEnd : null;
+      const prevLen = String(value || '').length;
+
+      const cleaned = String(value || '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9_ -]/g, '')
+        .replace(/\s+/g, '')
+        .slice(0, 20);
+
+      accessState.roomCode = cleaned;
       accessState.banner = null;
       saveAccessState();
-      renderAccessPage();
 
-      const inp = document.getElementById('access-room-input');
-      if (inp && document.activeElement !== inp) {
-        inp.focus();
-      } else if (inp) {
-        const pos = inp.value.length;
-        inp.setSelectionRange(pos, pos);
+      if (inp && inp.value !== cleaned) {
+        inp.value = cleaned;
+        const delta = cleaned.length - prevLen;
+        const nextPos = prevStart != null ? Math.max(0, Math.min(cleaned.length, prevStart + delta)) : cleaned.length;
+        try {
+          inp.setSelectionRange(nextPos, nextPos);
+        } catch (_e) {}
+      }
+
+      const previewRoom = cleaned || 'TAVOLO1';
+      const syncLabel = document.getElementById('access-sync-id-label');
+      if (syncLabel) {
+        syncLabel.textContent = 'SYNC-' + previewRoom;
       }
     }
 
@@ -373,15 +389,20 @@
                 <input
                   id="access-room-input"
                   type="text"
-                  maxlength="16"
+                  maxlength="20"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
                   value="${escapeHtml(accessState.roomCode)}"
                   oninput="updateRoomCode(this.value)"
+                  onblur="updateRoomCode(this.value)"
                   placeholder="Es. TAVOLO1"
                   class="w-full rounded-xl bg-bgdark border border-white/15 px-4 py-3 text-sm font-mono uppercase text-white focus:outline-none focus:border-gold"
                 />
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-gray-400">
                   <span>
-                    ID Sync: <strong class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
+                    ID Sync: <strong id="access-sync-id-label" class="font-mono text-emerald">${escapeHtml(syncId)}</strong> ·
                     <span class="text-gray-300">${escapeHtml(accessState.syncStatus)}</span>
                   </span>
                   <button
