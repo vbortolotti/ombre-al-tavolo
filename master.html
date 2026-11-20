@@ -55,13 +55,7 @@
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      setDoc,
-      onSnapshot
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const ROLE_CATALOG = {
       assassino: {
@@ -150,7 +144,7 @@
     let masterChatTab = 'master';
     let selectedMasterPlayerFilter = 'ALL';
     let masterChatDraft = '';
-    let syncStatusLabel = 'Connessione cloud...';
+    let syncStatusLabel = 'Avvio...';
 
     function initFirestore() {
       try {
@@ -275,7 +269,10 @@
       }
 
       const ref = getRoomDocRef(cleanRoom);
-      if (!ref) return;
+      if (!ref) {
+        syncStatusLabel = 'Solo locale';
+        return;
+      }
       try {
         await setDoc(ref, {
           roomCode: cleanRoom,
@@ -331,6 +328,7 @@
       const ref = getRoomDocRef(masterState.roomCode);
       if (!ref) {
         syncStatusLabel = 'Solo locale';
+        renderMasterRolePage();
         return;
       }
 
@@ -440,7 +438,11 @@
       const customRaw = String(masterState.customSpeechText || '').trim();
       if (customRaw) {
         return customRaw
-          .split(/\n\s*\n/)
+          .split(/
+?
+\s*
+?
+/)
           .map(part => part.replace(/\{\{STANZA\}\}/gi, cleanRoom).trim())
           .filter(Boolean);
       }
@@ -473,7 +475,9 @@
     }
 
     function copyFullSpeech() {
-      const fullText = getSpeechParagraphs().join('\n\n');
+      const fullText = getSpeechParagraphs().join('
+
+');
       if (!fullText) {
         setMasterBanner('Nessun testo del discorso da copiare.', 'error');
         return;
@@ -1158,10 +1162,22 @@
       set: (v) => { selectedMasterPlayerFilter = v; }
     });
 
-    firestoreDb = initFirestore();
+    try {
+      firestoreDb = initFirestore();
+    } catch (err) {
+      console.error('Errore avvio Firestore in master.html:', err);
+      firestoreDb = null;
+    }
+
     renderMasterRolePage();
-    syncMasterRoomRecord();
-    subscribeToRoomUpdates();
+
+    if (firestoreDb) {
+      syncMasterRoomRecord().catch(err => console.error('Errore sync iniziale Master:', err));
+      subscribeToRoomUpdates();
+    } else {
+      syncStatusLabel = 'Solo locale';
+      renderMasterRolePage();
+    }
   </script>
 </body>
 </html>
