@@ -1732,4 +1732,34 @@
           '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);">' +
             '<input id="master-tv-kill-target" type="text" placeholder="Nome eliminato (opzionale)..." style="max-width:220px;padding:8px 10px;font-size:12px;" />' +
             '<button type="button" onclick="masterSetTvMode(\'intro\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:' + (tvMode === 'intro' ? '#e5b85c' : '#1d2230') + ';color:' + (tvMode === 'intro' ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">Ingresso + Sfilata</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'kill\')" style="padding:8px 11px;border-radius:
+            '<button type="button" onclick="masterSetTvMode(\'kill\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'exile\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Esilio</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_fedeli\')" style="padding:8px 11px;border-radius:9px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Fedeli</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_traditori\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Traditori</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_solitario\')" style="padding:8px 11px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Solitaria</button>' +
+            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video TV' : 'Pausa Video TV') + '</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by TV</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var wrap = document.createElement('div');
+      wrap.id = 'master-lightweight-tv-oval-panel';
+      wrap.style.cssText = 'max-width:1120px;margin:0 auto 12px;padding:0 16px;';
+      document.body.insertBefore(wrap, document.body.firstChild);
+      var code = getRoomCode();
+      renderMasterTvOvalRegia(loadLocal(code));
+      if (db) {
+        onSnapshot(doc(db, 'stanze', code), function (snap) {
+          if (snap.exists()) {
+            var d = snap.data() || {};
+            saveLocal(code, Object.assign({}, loadLocal(code), d));
+            renderMasterTvOvalRegia(d);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
