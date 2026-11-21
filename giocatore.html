@@ -1303,22 +1303,65 @@
       render();
     };
 
-    function syncPlayerVideoPlayback() {
+    var lastRenderedVideoSrc = '';
+
+    window.onPlayerTvVideoError = function (vidEl) {
+      if (vidEl) {
+        vidEl.style.display = 'none';
+      }
+      var fb = document.getElementById('player-tv-video-fallback');
+      if (fb) {
+        fb.style.display = 'block';
+      }
+    };
+
+    function syncPlayerVideoPlayback(expectedSrc) {
       var vid = document.getElementById('player-tv-broadcast-video');
-      if (!vid) return;
+      if (!vid) {
+        lastRenderedVideoSrc = '';
+        return;
+      }
+      var fb = document.getElementById('player-tv-video-fallback');
+      var targetSrc = expectedSrc || vid.getAttribute('src') || '';
+      if (targetSrc && targetSrc !== lastRenderedVideoSrc) {
+        vid.style.display = 'block';
+        if (fb) fb.style.display = 'none';
+        if (vid.getAttribute('src') !== targetSrc) {
+          vid.setAttribute('src', targetSrc);
+        }
+        try { vid.load(); } catch (_e) {}
+        lastRenderedVideoSrc = targetSrc;
+      }
       vid.muted = Boolean(state.tvMuted);
       if (state.tvVideoPaused) {
         try { vid.pause(); } catch (_e) {}
       } else {
-        try { vid.play().catch(function () {}); } catch (_e) {}
+        try {
+          var p = vid.play();
+          if (p && typeof p.catch === 'function') {
+            p.catch(function (_err) {
+              if (!vid.muted) {
+                vid.muted = true;
+                state.tvMuted = true;
+                try { vid.play().catch(function () {}); } catch (_e2) {}
+              }
+            });
+          }
+        } catch (_e) {}
       }
     }
 
     function renderTvBroadcastOverlay() {
       var mode = String(state.tvMode || 'idle');
       var scene = TV_VIDEO_SCENES[mode];
-      if (!scene) return '';
-      if (state.dismissedTvTick && state.dismissedTvTick === state.tvRevealTick) return '';
+      if (!scene) {
+        lastRenderedVideoSrc = '';
+        return '';
+      }
+      if (state.dismissedTvTick && state.dismissedTvTick === state.tvRevealTick) {
+        lastRenderedVideoSrc = '';
+        return '';
+      }
 
       var targetName = '';
       if (mode === 'kill' && state.tvKillTarget) targetName = state.tvKillTarget;
@@ -1353,10 +1396,11 @@
             '</div>' +
             targetCardHtml +
             '<div style="margin-top:14px;border-radius:12px;overflow:hidden;background:#05070b;border:1px solid rgba(255,255,255,0.12);position:relative;">' +
-              '<video id="player-tv-broadcast-video" src="' + escapeHtml(scene.src) + '" playsinline autoplay loop ' + (state.tvMuted ? 'muted ' : '') + 'controls style="width:100%;max-height:52vh;display:block;background:#000;" onerror="this.style.display=&#39;none&#39;;var fb=document.getElementById(&#39;player-tv-video-fallback&#39;);if(fb)fb.style.display=&#39;block&#39;;"></video>' +
+              '<video id="player-tv-broadcast-video" src="' + escapeHtml(scene.src) + '" preload="auto" playsinline autoplay loop ' + (state.tvMuted ? 'muted ' : '') + 'controls style="width:100%;max-height:52vh;display:block;background:#000;" onerror="onPlayerTvVideoError(this)"></video>' +
               '<div id="player-tv-video-fallback" style="display:none;padding:28px 18px;text-align:center;">' +
                 '<div style="font-size:16px;font-weight:800;color:' + scene.accent + ';">' + escapeHtml(scene.title) + '</div>' +
                 '<p class="subtext" style="margin-top:6px;">' + escapeHtml(scene.subtitle) + '</p>' +
+                '<p class="subtext" style="margin-top:6px;font-size:12px;">File atteso nella stessa cartella: <strong class="mono">' + escapeHtml(scene.src) + '</strong></p>' +
               '</div>' +
             '</div>' +
             (state.tvVideoPaused ? '<p class="subtext" style="color:var(--gold);margin-top:8px;">Video messo in pausa dal Master.</p>' : '') +
@@ -1443,7 +1487,8 @@
             '<button type="button" class="btn-gold" onclick="sendPlayerChat()">Invia</button>' +
           '</div>' +
         '</section>';
-      syncPlayerVideoPlayback();
+      var activeScene = TV_VIDEO_SCENES[String(state.tvMode || 'idle')];
+      syncPlayerVideoPlayback(activeScene ? activeScene.src : '');
     }
 
     try {
