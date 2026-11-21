@@ -318,10 +318,6 @@
         window.location.href = 'index.html';
       };
 
-      window.goToMaster = function () {
-        window.location.href = 'master.html';
-      };
-
       function escapeHtml(value) {
         return String(value == null ? '' : value)
           .replace(/&/g, '&amp;')
@@ -361,7 +357,6 @@
             '</div>' +
             '<div class="btn-row">' +
               '<button type="button" class="btn-gold" onclick="goBackToAccess()">Torna ad Accesso</button>' +
-              '<button type="button" class="btn-ghost" onclick="goToMaster()">Vai al Master</button>' +
             '</div>' +
           '</header>' +
           '<section class="card card-gold">' +
