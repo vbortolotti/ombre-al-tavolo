@@ -120,6 +120,37 @@
       ovalVotes: {}
     };
 
+    function resolvePlayerBoardUrl() {
+      var fromStorage = '';
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.playerBoardUrl === 'string' && parsed.playerBoardUrl.trim()) {
+            fromStorage = parsed.playerBoardUrl.trim();
+          }
+        }
+      } catch (_e) {}
+      if (fromStorage) return fromStorage;
+      var ref = document.referrer || '';
+      if (ref.indexOf('giocatore_3.html') !== -1) return 'giocatore_3.html';
+      if (ref.indexOf('giocatore.html') !== -1) return 'giocatore.html';
+      return 'giocatore_3.html';
+    }
+
+    function redirectPlayersWhenOvalClosed() {
+      if (!state.isMaster && !state.ovalActive) {
+        var targetUrl = resolvePlayerBoardUrl();
+        try {
+          window.location.replace(targetUrl);
+        } catch (_e) {
+          window.location.href = targetUrl;
+        }
+        return true;
+      }
+      return false;
+    }
+
     function nameKey(n) { return String(n || '').trim().toLowerCase(); }
     function getRoomRef() { return firestoreDb ? doc(firestoreDb, 'stanze', state.roomCode) : null; }
 
@@ -156,10 +187,7 @@
       });
       state.ovalVotes = cleanVotes;
 
-      if (!state.isMaster && !state.ovalActive) {
-        window.location.replace('giocatore_3.html');
-        return;
-      }
+      if (redirectPlayersWhenOvalClosed()) return;
       try { localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, data, { roomCode: state.roomCode }))); } catch (_e) {}
     }
 
@@ -234,7 +262,7 @@
     };
 
     window.returnToPlayerBoard = function () {
-      window.location.href = 'giocatore_3.html';
+      window.location.href = resolvePlayerBoardUrl();
     };
 
     function esc(s) {
