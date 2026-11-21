@@ -779,6 +779,67 @@
     }
 
     var state = loadState();
+    var missionSingleView = false;
+    var missionSingleIndex = 0;
+    var collapsedMissionPlayers = {};
+
+    window.masterConnectTv = function () {
+      var code = encodeURIComponent(state.roomCode || 'TAVOLO1');
+      var tvUrl = '';
+      try {
+        tvUrl = new URL('tv.html?stanza=' + code, window.location.href).href;
+      } catch (_e) {
+        tvUrl = 'tv.html?stanza=' + code;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tvUrl).catch(function () {});
+      }
+      state.banner = {
+        text: 'Link TV per la stanza ' + state.roomCode + ' pronto (copiato negli appunti): ' + tvUrl,
+        type: 'info'
+      };
+      try {
+        window.open(tvUrl, '_blank', 'noopener');
+      } catch (_e) {}
+      render();
+    };
+
+    window.masterClearChat = async function () {
+      var isTraitor = state.chatTab === 'traitors';
+      if (isTraitor) {
+        state.traitorChat = [];
+        await syncPatchToCloud({ traitorChat: [] });
+      } else {
+        state.masterChat = [];
+        await syncPatchToCloud({ masterChat: [] });
+      }
+      state.banner = {
+        text: isTraitor ? 'Chat Traditori svuotata.' : 'Chat Diretta svuotata.',
+        type: 'info'
+      };
+      render();
+    };
+
+    window.masterToggleMissionCard = function (pKey) {
+      var k = String(pKey || '');
+      collapsedMissionPlayers[k] = !collapsedMissionPlayers[k];
+      render();
+    };
+
+    window.masterToggleMissionViewMode = function () {
+      missionSingleView = !missionSingleView;
+      if (missionSingleIndex >= (state.players || []).length) {
+        missionSingleIndex = 0;
+      }
+      render();
+    };
+
+    window.masterStepMissionPlayer = function (delta) {
+      var len = (state.players || []).length;
+      if (!len) return;
+      missionSingleIndex = (missionSingleIndex + Number(delta || 0) + len) % len;
+      render();
+    };
 
     function persistLocal() {
       safeSetItem(MASTER_KEY, JSON.stringify({
@@ -1512,6 +1573,7 @@
               '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
               '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Apri Tavolo Ovale</a>' +
               '<a href="tv.html?stanza=' + encodeURIComponent(state.roomCode) + '" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(62,201,140,0.45);background:rgba(62,201,140,0.14);color:#3ec98c;font-weight:700;font-size:12px;text-decoration:none;">Apri Schermo TV</a>' +
+              '<button type="button" onclick="masterConnectTv()" style="padding:9px 13px;border-radius:10px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Collega alla TV</button>' +
             '</div>' +
           '</div>' +
           '<div class="subpanel">' +
@@ -1547,35 +1609,46 @@
     }
 
     function renderMissionsAndPointsSection() {
-      var cards = state.players.length
-        ? state.players.map(function (p) {
+      var totalPlayers = Array.isArray(state.players) ? state.players.length : 0;
+      if (totalPlayers > 0 && missionSingleIndex >= totalPlayers) {
+        missionSingleIndex = 0;
+      }
+      var visiblePlayers = totalPlayers
+        ? (missionSingleView ? [state.players[missionSingleIndex]] : state.players)
+        : [];
+
+      var cards = visiblePlayers.length
+        ? visiblePlayers.map(function (p) {
             var pKey = String(p.name || '').trim().toLowerCase();
             var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
             var pts = Number((state.playerPoints && state.playerPoints[pKey]) || 0);
             var mList = Array.isArray(state.missionAssignments[pKey]) ? state.missionAssignments[pKey] : [];
             var safeKey = pKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             var safeName = String(p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            var isCollapsed = Boolean(collapsedMissionPlayers[pKey]);
 
-            var mHtml = p.assignedRoleKey === 'martire'
-              ? '<div class="subtext">Il Martire non ha missioni standard: ottiene punti quando subisce missioni altrui.</div>'
-              : (mList.length
-                  ? '<div style="display:flex;flex-direction:column;gap:6px;">' + mList.map(function (m, sIdx) {
-                      var flag = m.masterApproved
-                        ? '<span style="color:#3ec98c;font-weight:700;">Approvata ✓</span>'
-                        : (m.playerClaimedDone
-                            ? '<span style="color:#e5b85c;font-weight:700;">Segnalata dal giocatore</span>'
-                            : '<span style="color:#9ca3af;">In corso</span>');
-                      return (
-                        '<div class="mission-chip">' +
-                          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
-                            '<strong>' + escapeHtml(m.id || ('M' + (sIdx + 1))) + ' · ' + escapeHtml(m.title) + '</strong>' +
-                            '<button type="button" class="btn-small" onclick="masterApproveMission(\'' + safeKey + '\', ' + sIdx + ')">' + (m.masterApproved ? 'Revoca' : 'Approva +1pt') + '</button>' +
-                          '</div>' +
-                          '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">' + escapeHtml(m.type) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + flag + '</div>' +
-                        '</div>'
-                      );
-                    }).join('') + '</div>'
-                  : '<div class="subtext">Nessuna missione pescata ancora.</div>');
+            var mHtml = isCollapsed
+              ? '<div class="subtext" style="margin-top:8px;">Scheda giocatore ridotta (' + mList.length + ' missioni). Clicca <strong>Espandi</strong> per aprirla.</div>'
+              : (p.assignedRoleKey === 'martire'
+                  ? '<div class="subtext">Il Martire non ha missioni standard: ottiene punti quando subisce missioni altrui.</div>'
+                  : (mList.length
+                      ? '<div style="display:flex;flex-direction:column;gap:6px;">' + mList.map(function (m, sIdx) {
+                          var flag = m.masterApproved
+                            ? '<span style="color:#3ec98c;font-weight:700;">Approvata ✓</span>'
+                            : (m.playerClaimedDone
+                                ? '<span style="color:#e5b85c;font-weight:700;">Segnalata dal giocatore</span>'
+                                : '<span style="color:#9ca3af;">In corso</span>');
+                          return (
+                            '<div class="mission-chip">' +
+                              '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
+                                '<strong>' + escapeHtml(m.id || ('M' + (sIdx + 1))) + ' · ' + escapeHtml(m.title) + '</strong>' +
+                                '<button type="button" class="btn-small" onclick="masterApproveMission(\'' + safeKey + '\', ' + sIdx + ')">' + (m.masterApproved ? 'Revoca' : 'Approva +1pt') + '</button>' +
+                              '</div>' +
+                              '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">' + escapeHtml(m.type) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + flag + '</div>' +
+                            '</div>'
+                          );
+                        }).join('') + '</div>'
+                      : '<div class="subtext">Nessuna missione pescata ancora.</div>'));
 
             return (
               '<div class="board-card">' +
@@ -1584,7 +1657,8 @@
                     '<div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div>' +
                     '<div class="player-sub">' + (r ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>' : 'Nessun ruolo') + '</div>' +
                   '</div>' +
-                  '<div style="display:flex;align-items:center;gap:6px;">' +
+                  '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">' +
+                    '<button type="button" class="btn-small" onclick="masterToggleMissionCard(\'' + safeKey + '\')">' + (isCollapsed ? 'Espandi' : 'Riduci') + '</button>' +
                     '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', -1)">-</button>' +
                     '<span class="pts-pill">' + pts + ' pt</span>' +
                     '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', 1)">+</button>' +
@@ -1596,13 +1670,25 @@
           }).join('')
         : '<p class="subtext">Nessun giocatore al tavolo.</p>';
 
+      var singleNavHtml = (missionSingleView && totalPlayers > 0)
+        ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:var(--bg);border:1px solid var(--border);">' +
+            '<button type="button" class="btn-ghost" onclick="masterStepMissionPlayer(-1)">← Giocatore Precedente</button>' +
+            '<span class="subtext" style="margin:0;">Giocatore <strong>' + (missionSingleIndex + 1) + '</strong> di <strong>' + totalPlayers + '</strong></span>' +
+            '<button type="button" class="btn-ghost" onclick="masterStepMissionPlayer(1)">Giocatore Successivo →</button>' +
+          '</div>'
+        : '';
+
       return (
         '<section class="card">' +
           '<div class="section-head">' +
             '<div><span class="eyebrow">Catalogo JSON · ' + escapeHtml(state.catalogSource) + '</span><h2>Missioni 3+2 & Punti Giocatori</h2></div>' +
-            '<button type="button" class="btn-gold" onclick="masterDrawAllMissions()">Pesca 5 Missioni (3+2)</button>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="' + (missionSingleView ? 'btn-indigo' : 'btn-ghost') + '" onclick="masterToggleMissionViewMode()">' + (missionSingleView ? 'Mostra Tutti i Giocatori' : '1 Giocatore alla Volta') + '</button>' +
+              '<button type="button" class="btn-gold" onclick="masterDrawAllMissions()">Pesca 5 Missioni (3+2)</button>' +
+            '</div>' +
           '</div>' +
-          '<div class="board-grid">' + cards + '</div>' +
+          singleNavHtml +
+          '<div class="board-grid" style="' + (missionSingleView ? 'grid-template-columns:minmax(0, 1fr);' : '') + '">' + cards + '</div>' +
         '</section>'
       );
     }
@@ -1642,6 +1728,7 @@
             '<div class="btn-row">' +
               '<button type="button" class="' + (!isTraitor ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetChatTab(\'master\')">Chat Diretta</button>' +
               '<button type="button" class="' + (isTraitor ? 'btn-crimson' : 'btn-ghost') + '" onclick="masterSetChatTab(\'traitors\')">Chat Traditori</button>' +
+              '<button type="button" class="btn-ghost" onclick="masterClearChat()">Pulisci Chat</button>' +
             '</div>' +
           '</div>' +
           (!isTraitor
