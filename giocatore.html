@@ -347,6 +347,8 @@
       tvRevealTick: 0,
       dismissedTvTick: 0,
       tvMuted: true,
+      ovalSessionActive: false,
+      ovalRedirectUrl: 'tavola-ovale.html',
       banner: null
     };
 
@@ -484,6 +486,24 @@
           state.dismissedTvTick = 0;
         }
         state.tvRevealTick = data.tvRevealTick;
+      }
+
+      var ovalObj = data.ovalSession && typeof data.ovalSession === 'object' ? data.ovalSession : null;
+      var isOvalOpen = Boolean(
+        data.ovalSessionActive === true ||
+        data.ovalTableOpen === true ||
+        (ovalObj && (ovalObj.active === true || ovalObj.isOpen === true || ovalObj.status === 'open'))
+      );
+      var targetOvalUrl = (ovalObj && ovalObj.redirectUrl) || data.ovalRedirectUrl || 'tavola-ovale.html';
+      state.ovalSessionActive = isOvalOpen;
+      state.ovalRedirectUrl = targetOvalUrl;
+
+      if (isOvalOpen && !window.__OMBRE_OVAL_REDIRECTING__) {
+        window.__OMBRE_OVAL_REDIRECTING__ = true;
+        saveLocal();
+        var sep = targetOvalUrl.indexOf('?') === -1 ? '?' : '&';
+        window.location.href = targetOvalUrl + sep + 'room=' + encodeURIComponent(state.roomCode) + '&player=' + encodeURIComponent(state.playerName);
+        return;
       }
 
       if (!state.hunterTargetName) {
@@ -777,6 +797,12 @@
 
     window.goToRoles = function () { window.location.href = 'ruoli.html'; };
     window.goToAccess = function () { window.location.href = 'index.html'; };
+    window.goToOvalTable = function () {
+      saveLocal();
+      var url = state.ovalRedirectUrl || 'tavola-ovale.html';
+      var sep = url.indexOf('?') === -1 ? '?' : '&';
+      window.location.href = url + sep + 'room=' + encodeURIComponent(state.roomCode) + '&player=' + encodeURIComponent(state.playerName);
+    };
 
     function escapeHtml(value) {
       return String(value == null ? '' : value)
@@ -982,6 +1008,9 @@
       if (idx < 0 || idx >= GAME_PHASES.length) idx = 0;
       var ph = GAME_PHASES[idx];
       var cycle = Number(state.cycleCount || 1);
+      var ovalBtn = (idx === 5 || state.ovalSessionActive)
+        ? '<button type="button" class="btn-gold" onclick="goToOvalTable()">Entra nella Tavola Ovale</button>'
+        : '';
       return (
         '<section class="card card-indigo" id="player-current-phase-banner">' +
           '<div class="header-row">' +
@@ -990,7 +1019,10 @@
               '<h2 style="margin-top:2px;">' + ph.step + '. ' + escapeHtml(ph.title) + '</h2>' +
               '<p class="subtext">' + escapeHtml(ph.tip) + '</p>' +
             '</div>' +
-            '<span class="badge badge-Indigo">Fase ' + ph.step + ' / ' + GAME_PHASES.length + '</span>' +
+            '<div class="btn-row">' +
+              ovalBtn +
+              '<span class="badge badge-Indigo">Fase ' + ph.step + ' / ' + GAME_PHASES.length + '</span>' +
+            '</div>' +
           '</div>' +
         '</section>'
       );
@@ -1409,6 +1441,13 @@
         '</section>';
       syncPlayerVideoPlayback();
     }
+
+    try {
+      var initialLocalRaw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+      if (initialLocalRaw) {
+        applyRoomSnapshot(JSON.parse(initialLocalRaw));
+      }
+    } catch (_e) {}
 
     render();
 
