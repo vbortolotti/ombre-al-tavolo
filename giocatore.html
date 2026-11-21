@@ -996,8 +996,8 @@
           }).join('');
           return (
             '<div class="ability-grid">' +
-              '<input type="text" value="' + escapeHtml(state.tripleNames[idx]) + '" oninput="setTripleField('name', ' + idx + ', this.value)" placeholder="Nome giocatore ' + (idx + 1) + '..." />' +
-              '<select onchange="setTripleField('role', ' + idx + ', this.value)">' + rOpts + '</select>' +
+              '<input type="text" value="' + escapeHtml(state.tripleNames[idx]) + '" oninput="setTripleField(\'name\', ' + idx + ', this.value)" placeholder="Nome giocatore ' + (idx + 1) + '..." />' +
+              '<select onchange="setTripleField(\'role\', ' + idx + ', this.value)">' + rOpts + '</select>' +
             '</div>'
           );
         }).join('');
@@ -1051,8 +1051,8 @@
             '<div class="answer-box answer-yes">' +
               '<div style="margin-bottom:8px;">L’Assassino ha indicato due bersagli: scegli chi eliminare:</div>' +
               '<div class="btn-row">' +
-                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget('' + safeA + '')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetA) + '</button>' +
-                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget('' + safeB + '')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetB) + '</button>' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + safeA + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetA) + '</button>' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + safeB + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetB) + '</button>' +
               '</div>' +
             '</div>';
         }
@@ -1071,23 +1071,23 @@
       if (roleKey === 'guardia') {
         var gButtons = state.players.map(function (p) {
           var safeN = escapeHtml(p.name).replace(/'/g, "\'");
-          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('guardia_scudo','' + safeN + '')">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'guardia_scudo\',\'' + safeN + '\')">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Guardia</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + gButtons + '</div></div>';
       }
 
       if (roleKey === 'investigatore') {
-        return '<div class="ability-box"><div class="header-row"><strong>Abilità Investigatore</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row"><button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('investigatore_missione','')">Ottieni Missione Assassini (Bassa Difficoltà)</button></div></div>';
+        return '<div class="ability-box"><div class="header-row"><strong>Abilità Investigatore</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row"><button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'investigatore_missione\',\'\')">Ottieni Missione Assassini (Bassa Difficoltà)</button></div></div>';
       }
 
       if (roleKey === 'martire') {
         var mRevealBtns = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
           var safeN = escapeHtml(p.name).replace(/'/g, "\'");
-          return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_rileva','' + safeN + '')">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
+          return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'martire_rileva\',\'' + safeN + '\')">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         var mShieldBtns = state.players.map(function (p) {
           var safeN = escapeHtml(p.name).replace(/'/g, "\'");
-          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_scudo','' + safeN + '')">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'martire_scudo\',\'' + safeN + '\')">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Martire</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + mRevealBtns + '</div><div class="btn-row">' + mShieldBtns + '</div></div>';
       }
@@ -1095,7 +1095,7 @@
       if (roleKey === 'sabotatore') {
         var sButtons = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
           var safeN = escapeHtml(p.name).replace(/'/g, "\'");
-          return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('sabotatore_annulla','' + safeN + '')">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
+          return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'sabotatore_annulla\',\'' + safeN + '\')">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Sabotatore</strong><span class="badge badge-Traditori">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + sButtons + '</div></div>';
       }
