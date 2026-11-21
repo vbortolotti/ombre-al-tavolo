@@ -789,14 +789,18 @@
           : 'Tavolo Ovale CHIUSO: i giocatori tornano alle rispettive schede.',
         type: isOpen ? 'success' : 'info'
       };
-      await pushRoomUpdate({
-        ovalActive: state.ovalActive,
-        ovalSessionActive: state.ovalActive,
-        ovalTableOpen: state.ovalActive,
-        ovalRedirectUrl: 'tavola-ovale.html',
-        phaseIndex: state.phaseIndex,
-        ovalRoundCount: state.ovalRoundCount
-      });
+      try {
+        await pushRoomUpdate({
+          ovalActive: state.ovalActive,
+          ovalSessionActive: state.ovalActive,
+          ovalTableOpen: state.ovalActive,
+          ovalRedirectUrl: 'tavola-ovale.html',
+          phaseIndex: state.phaseIndex,
+          ovalRoundCount: state.ovalRoundCount
+        });
+      } catch (_err) {
+        saveLocal();
+      }
       render();
     };
 
