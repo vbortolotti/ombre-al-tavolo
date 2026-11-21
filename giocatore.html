@@ -278,8 +278,8 @@
       if (typeof data.tvRevealTick === 'number') state.tvRevealTick = Number(data.tvRevealTick);
       if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat;
 
-      if (state.ovalActive && !isEliminated()) {
-        window.location.href = 'tavola-ovale.html?room=' + encodeURIComponent(state.roomCode) + '&player=' + encodeURIComponent(state.playerName);
+      if (state.ovalActive && !isEliminated() && window.location.pathname.indexOf('tavola-ovale.html') === -1) {
+        window.location.replace('tavola-ovale.html?room=' + encodeURIComponent(state.roomCode) + '&player=' + encodeURIComponent(state.playerName));
         return;
       }
 
