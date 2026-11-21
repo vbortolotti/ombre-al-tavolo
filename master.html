@@ -617,9 +617,7 @@
       try {
         if (typeof window.localStorage === 'undefined') return;
         window.localStorage.setItem(key, val);
-      } catch (_e) {
-        // Ignora
-      }
+      } catch (_e) {}
     }
 
     function initFirestore() {
@@ -1444,15 +1442,23 @@
     var selectedDeadReplayName = '';
     var selectedExileName = '';
 
-    function getRoomCode() {
+    function getAccessContext() {
       try {
         var raw = localStorage.getItem(ACCESS_KEY);
         if (raw) {
           var p = JSON.parse(raw);
-          if (p && p.roomCode) return String(p.roomCode).trim().toUpperCase();
+          return {
+            roomCode: p && p.roomCode ? String(p.roomCode).trim().toUpperCase() : 'TAVOLO1',
+            masterName: p && p.playerName ? String(p.playerName).trim() : 'Master',
+            selfieDataUrl: p && p.selfieDataUrl ? String(p.selfieDataUrl) : ''
+          };
         }
       } catch (_e) {}
-      return 'TAVOLO1';
+      return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
+    }
+
+    function getRoomCode() {
+      return getAccessContext().roomCode || 'TAVOLO1';
     }
 
     function loadLocal(code) {
@@ -1470,6 +1476,39 @@
       } catch (_e) {}
     }
 
+    function isValidPhoto(val) {
+      var s = String(val || '').trim();
+      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
+    }
+
+    function compressMasterSelfie(file, maxSize, quality) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var img = new Image();
+          img.onload = function () {
+            var ratio = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
+            var w = Math.max(1, Math.round((img.width || maxSize) * ratio));
+            var h = Math.max(1, Math.round((img.height || maxSize) * ratio));
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(String(ev.target.result || ''));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = String(ev.target.result || '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function persistRoom(patch) {
       var code = getRoomCode();
       var cur = loadLocal(code);
@@ -1482,6 +1521,56 @@
         } catch (_e) {}
       }
     }
+
+    window.masterHandleSelfieChange = async function (inputEl) {
+      var file = inputEl && inputEl.files && inputEl.files[0];
+      if (!file) return;
+      try {
+        var compressed = await compressMasterSelfie(file, 320, 0.72);
+        var code = getRoomCode();
+        var cur = loadLocal(code);
+        var ctx = getAccessContext();
+        var masterName = String(cur.masterName || ctx.masterName || 'Master').trim() || 'Master';
+        var nextSelfies = Object.assign({}, cur.playerSelfies || {});
+        nextSelfies[masterName.toLowerCase()] = compressed;
+
+        try {
+          var accRaw = localStorage.getItem(ACCESS_KEY);
+          var accObj = accRaw ? JSON.parse(accRaw) : {};
+          accObj.selfieDataUrl = compressed;
+          localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
+        } catch (_e) {}
+
+        await persistRoom({
+          masterName: masterName,
+          masterSelfie: compressed,
+          playerSelfies: nextSelfies
+        });
+      } catch (err) {
+        console.error('Errore salvataggio selfie Master:', err);
+      }
+    };
+
+    window.masterClearSelfie = async function () {
+      var code = getRoomCode();
+      var cur = loadLocal(code);
+      var ctx = getAccessContext();
+      var masterName = String(cur.masterName || ctx.masterName || 'Master').trim() || 'Master';
+      var nextSelfies = Object.assign({}, cur.playerSelfies || {});
+      delete nextSelfies[masterName.toLowerCase()];
+
+      try {
+        var accRaw = localStorage.getItem(ACCESS_KEY);
+        var accObj = accRaw ? JSON.parse(accRaw) : {};
+        accObj.selfieDataUrl = '';
+        localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
+      } catch (_e) {}
+
+      await persistRoom({
+        masterSelfie: '',
+        playerSelfies: nextSelfies
+      });
+    };
 
     function computeTiedTopTwo(votes) {
       if (!Array.isArray(votes) || !votes.length) return [];
@@ -1654,8 +1743,11 @@
     function renderMasterTvOvalRegia(data) {
       var host = document.getElementById('master-lightweight-tv-oval-panel');
       if (!host) return;
+      var ctx = getAccessContext();
       var code = getRoomCode();
       var room = data || loadLocal(code);
+      var masterName = String(room.masterName || ctx.masterName || 'Master');
+      var masterSelfie = isValidPhoto(room.masterSelfie) ? room.masterSelfie : (isValidPhoto(ctx.selfieDataUrl) ? ctx.selfieDataUrl : '');
       var players = Array.isArray(room.players) ? room.players : [];
       var deadPlayers = players.filter(function (p) { return p && p.isDead; });
       var votes = Array.isArray(room.ovalVotes) ? room.ovalVotes : [];
@@ -1664,6 +1756,10 @@
       var ovalActive = Boolean(room.ovalActive);
       var tvMode = room.tvMode || 'idle';
       var isPaused = Boolean(room.tvVideoPaused);
+
+      var masterAvatarHtml = masterSelfie
+        ? '<img src="' + masterSelfie + '" alt="Selfie Master" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid #e5b85c;display:block;" />'
+        : '<div style="width:48px;height:48px;border-radius:12px;background:#1d2230;border:1px solid rgba(229,184,92,0.45);color:#e5b85c;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;">' + masterName.slice(0, 1).toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
 
       var tallies = {};
       votes.forEach(function (v) {
@@ -1693,6 +1789,24 @@
 
       host.innerHTML =
         '<div style="border:1px solid rgba(229,184,92,0.42);border-radius:16px;padding:18px;background:#151924;display:flex;flex-direction:column;gap:14px;">' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+              masterAvatarHtml +
+              '<div>' +
+                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo su TV</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
+                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge della regia TV (eliminazione, esilio, vittoria e sfilata).</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+              '<label style="margin:0;padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">' +
+                (masterSelfie ? 'Cambia Selfie Master' : 'Scatta / Carica Selfie Master') +
+                '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="masterHandleSelfieChange(this)" />' +
+              '</label>' +
+              (masterSelfie
+                ? '<button type="button" onclick="masterClearSelfie()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Rimuovi</button>'
+                : '') +
+            '</div>' +
+          '</div>' +
           '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
             '<div>' +
               '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Regia Leggera Tavolo Ovale, Morti & TV · Stanza ' + code + '</div>' +
