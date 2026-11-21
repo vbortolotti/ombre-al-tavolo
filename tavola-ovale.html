@@ -121,21 +121,7 @@
     };
 
     function resolvePlayerBoardUrl() {
-      var fromStorage = '';
-      try {
-        var raw = localStorage.getItem(ACCESS_KEY);
-        if (raw) {
-          var parsed = JSON.parse(raw);
-          if (parsed && typeof parsed.playerBoardUrl === 'string' && parsed.playerBoardUrl.trim()) {
-            fromStorage = parsed.playerBoardUrl.trim();
-          }
-        }
-      } catch (_e) {}
-      if (fromStorage) return fromStorage;
-      var ref = document.referrer || '';
-      if (ref.indexOf('giocatore_3.html') !== -1) return 'giocatore_3.html';
-      if (ref.indexOf('giocatore.html') !== -1) return 'giocatore.html';
-      return 'giocatore_3.html';
+      return 'giocatore.html';
     }
 
     function redirectPlayersWhenOvalClosed() {
