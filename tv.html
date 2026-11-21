@@ -165,26 +165,177 @@
     }
 
     .media-box {
-      max-width: 860px;
+      max-width: 920px;
       width: 100%;
       background: var(--surface);
       border: 2px solid rgba(224, 82, 96, 0.5);
       border-radius: 28px;
-      padding: 32px;
+      padding: 28px;
       text-align: center;
       animation: fadeZoomIn 0.5s ease forwards;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
     }
 
     .media-box.win-box {
       border-color: rgba(229, 184, 92, 0.65);
     }
 
+    .media-box.intro-box {
+      border-color: rgba(229, 184, 92, 0.55);
+    }
+
+    .video-stage-wrap {
+      position: relative;
+      margin-top: 16px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--border);
+    }
+
     video {
       width: 100%;
-      max-height: 440px;
-      border-radius: 18px;
+      max-height: 460px;
+      display: block;
       background: #000;
-      margin-top: 16px;
+    }
+
+    .overlay-badges {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .face-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px 8px 8px;
+      border-radius: 999px;
+      background: rgba(10, 12, 20, 0.85);
+      border: 2px solid var(--gold);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    .face-chip.crimson-border {
+      border-color: var(--crimson);
+    }
+
+    .face-chip img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .face-chip-initial {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--gold);
+      font-weight: 900;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .face-chip-role {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      text-align: left;
+    }
+
+    .face-chip.crimson-border .face-chip-role {
+      color: #fca5a5;
+    }
+
+    .face-chip-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      text-align: left;
+    }
+
+    .parade-strip {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(12, 15, 24, 0.9);
+      border: 1px solid rgba(229, 184, 92, 0.35);
+    }
+
+    .parade-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .parade-card {
+      width: 118px;
+      padding: 10px;
+      border-radius: 16px;
+      background: var(--surface-2);
+      border: 2px solid rgba(229, 184, 92, 0.4);
+      opacity: 0.35;
+      transform: scale(0.95);
+      transition: all 0.35s ease;
+    }
+
+    .parade-card.active {
+      opacity: 1;
+      transform: scale(1.06);
+      border-color: var(--gold);
+      box-shadow: 0 0 24px rgba(229, 184, 92, 0.35);
+    }
+
+    .parade-card.shown {
+      opacity: 0.88;
+      transform: scale(1);
+    }
+
+    .parade-avatar {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 8px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gold);
+    }
+
+    .parade-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .parade-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .badge {
@@ -234,16 +385,18 @@
     var ROOM_PREFIX = 'ombre_stanza_sync_';
 
     var VIDEO_SOURCES = {
-      kill: 'video/uccisione.mp4',
+      intro: 'video/ingresso.mp4',
+      kill: 'video/eliminazione.mp4',
+      exile: 'video/esilio.mp4',
       win_fedeli: 'video/vittoria-fedeli.mp4',
       win_traditori: 'video/vittoria-traditori.mp4',
-      win_cacciatore: 'video/vittoria-cacciatore.mp4'
+      win_solitario: 'video/vittoria-solitario.mp4'
     };
 
     var VICTORY_LABELS = {
       win_fedeli: { title: 'Vittoria dei Fedeli', subtitle: 'La verità ha trionfato al tavolo.' },
       win_traditori: { title: 'Vittoria dei Traditori', subtitle: 'Le ombre hanno avvolto il tavolo fino alla fine.' },
-      win_cacciatore: { title: 'Vittoria del Cacciatore', subtitle: 'Il cacciatore ha centrato il proprio obiettivo.' }
+      win_solitario: { title: 'Vittoria Solitaria', subtitle: 'Il destino solitario ha prevalso su tutti.' }
     };
 
     function readRoomCode() {
@@ -279,10 +432,28 @@
       ovalVotes: [],
       playerSelfies: {},
       players: [],
+      masterName: 'Master',
+      masterSelfie: '',
       tvKillTarget: '',
+      tvExileTarget: '',
       tvVideoPaused: false,
       tvRevealTick: 0
     };
+
+    var paradeTimer = null;
+    var exileTimer = null;
+    var lastMediaKey = '';
+
+    function clearStageTimers() {
+      if (paradeTimer) {
+        clearInterval(paradeTimer);
+        paradeTimer = null;
+      }
+      if (exileTimer) {
+        clearTimeout(exileTimer);
+        exileTimer = null;
+      }
+    }
 
     function escapeHtml(v) {
       return String(v == null ? '' : v)
@@ -293,14 +464,43 @@
         .replace(/'/g, '&#39;');
     }
 
-    function getSelfie(vote) {
-      if (vote && vote.voterSelfie) return vote.voterSelfie;
-      var k = String((vote && vote.voterName) || '').trim().toLowerCase();
+    function findSelfieByName(name) {
+      var k = String(name || '').trim().toLowerCase();
+      if (!k) return '';
       if (tvState.playerSelfies && tvState.playerSelfies[k]) return tvState.playerSelfies[k];
       var found = (tvState.players || []).find(function (p) {
         return String(p.name || '').trim().toLowerCase() === k;
       });
       return (found && (found.selfie || found.photo)) || '';
+    }
+
+    function getSelfie(vote) {
+      if (vote && vote.voterSelfie) return vote.voterSelfie;
+      return findSelfieByName(vote && vote.voterName);
+    }
+
+    function renderAvatarContent(selfieUrl, name) {
+      var initial = escapeHtml((name || 'G').slice(0, 1).toUpperCase());
+      if (selfieUrl) {
+        return '<img src="' + selfieUrl + '" alt="' + escapeHtml(name) + '" />';
+      }
+      return initial;
+    }
+
+    function renderFaceChip(roleLabel, name, selfieUrl, isCrimson) {
+      var initial = escapeHtml((name || 'M').slice(0, 1).toUpperCase());
+      var avatar = selfieUrl
+        ? '<img src="' + selfieUrl + '" alt="' + escapeHtml(name) + '" />'
+        : '<div class="face-chip-initial">' + initial + '</div>';
+      return (
+        '<div class="face-chip ' + (isCrimson ? 'crimson-border' : '') + '">' +
+          avatar +
+          '<div>' +
+            '<div class="face-chip-role">' + escapeHtml(roleLabel) + '</div>' +
+            '<div class="face-chip-name">' + escapeHtml(name || '—') + '</div>' +
+          '</div>' +
+        '</div>'
+      );
     }
 
     function syncTvVideoPlayback() {
@@ -321,70 +521,36 @@
       tvState.ovalVotes = Array.isArray(data.ovalVotes) ? data.ovalVotes : [];
       tvState.playerSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
       tvState.players = Array.isArray(data.players) ? data.players : [];
+      tvState.masterName = String(data.masterName || 'Master');
+      tvState.masterSelfie = String(data.masterSelfie || findSelfieByName(tvState.masterName) || '');
       tvState.tvKillTarget = String(data.tvKillTarget || '');
+      tvState.tvExileTarget = String(data.tvExileTarget || data.tvKillTarget || '');
       tvState.tvVideoPaused = Boolean(data.tvVideoPaused);
       tvState.tvRevealTick = Number(data.tvRevealTick || 0);
       renderTv();
       syncTvVideoPlayback();
     }
 
-    function renderTv() {
+    function startParadeLoop() {
+      var cards = Array.from(document.querySelectorAll('#tv-stage .parade-card'));
+      if (!cards.length) return;
+      var active = 0;
+      function step() {
+        cards.forEach(function (c, i) {
+          c.classList.remove('active', 'shown');
+          if (i === active) c.classList.add('active');
+          else if (i < active) c.classList.add('shown');
+        });
+        active = (active + 1) % cards.length;
+      }
+      step();
+      paradeTimer = setInterval(step, 1400);
+    }
+
+    function renderExileDoorPhase(targetName, selfieUrl) {
       var stage = document.getElementById('tv-stage');
-      var badge = document.getElementById('tv-mode-badge');
       if (!stage) return;
-
-      var mode = tvState.tvMode || 'idle';
-
-      if (mode === 'votes') {
-        badge.textContent = 'Tavolo Ovale · Rivelazione Voti';
-        var votes = tvState.ovalVotes || [];
-        if (!votes.length) {
-          stage.innerHTML =
-            '<div class="idle-box">' +
-              '<span class="eyebrow">Tavolo Ovale</span>' +
-              '<div class="idle-title">Nessun voto registrato</div>' +
-              '<p class="idle-sub">In attesa che i giocatori esprimano il proprio voto.</p>' +
-            '</div>';
-          return;
-        }
-        var idx = Math.max(0, Math.min(votes.length - 1, tvState.revealedVoteIndex));
-        var v = votes[idx];
-        var selfie = getSelfie(v);
-        var initial = escapeHtml((v.voterName || 'G').slice(0, 1).toUpperCase());
-        var imgHtml = selfie ? '<img src="' + selfie + '" alt="' + escapeHtml(v.voterName) + '" />' : initial;
-
-        stage.innerHTML =
-          '<div class="vote-card" data-reveal-tick="' + tvState.tvRevealTick + '-' + idx + '">' +
-            '<span class="eyebrow">Voto ' + (idx + 1) + ' di ' + votes.length + (v.isRunoff ? ' · Ballottaggio' : '') + (v.isExtraMediatorVote ? ' · +1 Mediatore' : '') + '</span>' +
-            '<div class="selfie-frame">' + imgHtml + '</div>' +
-            '<div class="voter-label">' + escapeHtml(v.voterName) + '</div>' +
-            '<div class="voted-under-box">' +
-              '<div class="voted-under-eyebrow">Ha votato</div>' +
-              '<div class="voted-under-name">' + escapeHtml(v.targetName) + '</div>' +
-            '</div>' +
-          '</div>';
-        return;
-      }
-
-      if (mode === 'kill') {
-        badge.textContent = 'Annuncio Uccisione';
-        var src = VIDEO_SOURCES.kill;
-        stage.innerHTML =
-          '<div class="media-box">' +
-            '<span class="eyebrow" style="color:var(--crimson);">Calano le Ombre</span>' +
-            '<div class="idle-title" style="font-size:36px;">' + (tvState.tvKillTarget ? ('Eliminato: ' + escapeHtml(tvState.tvKillTarget)) : 'Annuncio Uccisione') + '</div>' +
-            '<video controls autoplay playsinline src="' + escapeHtml(src) + '"></video>' +
-            '<p class="idle-sub" style="margin-top:12px;">Se il file <code>' + escapeHtml(src) + '</code> non è ancora presente nella cartella, inseriscilo lì per riprodurre il video.</p>' +
-          '</div>';
-        return;
-      }
-
-      if (VICTORY_LABELS[mode]) {
-        var info = VICTORY_LABELS[mode];
-        var winSrc = VIDEO_SOURCES[mode];
-        badge.textContent = info.title;
-        stage.innerHTML =
-          '<div class="media-box win-box">' +
-            '<span class="eyebrow">Verdetto Finale</span>' +
-            '<div class="idle-title" style="font-size:36px;">' + escapeHtml(info.title) + '</div>' +
-            '<p class="idle
+      var src = VIDEO_SOURCES.exile;
+      stage.innerHTML =
+        '<div class="media-box">' +
+          '<span class="eyebrow" style="color:var(--crimson);">Esilio dal Tavolo O
