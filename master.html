@@ -390,6 +390,29 @@
       return !k || k === 'master' || k === nameKeyOf(state.masterName);
     }
 
+
+    function getActivePlayers() {
+      return (state.players || []).filter(function (p) {
+        return p && p.name && !isMasterAccountName(p.name) && !isPlayerEliminated(p.name);
+      });
+    }
+
+    function purgeEliminatedPlayerFromState(playerName) {
+      var k = nameKeyOf(playerName);
+      if (!k) return;
+      state.shieldedPlayers = (state.shieldedPlayers || []).filter(function (n) { return nameKeyOf(n) !== k; });
+      state.martyrShieldedPlayers = (state.martyrShieldedPlayers || []).filter(function (n) { return nameKeyOf(n) !== k; });
+      state.sabotagedPlayers = (state.sabotagedPlayers || []).filter(function (n) { return nameKeyOf(n) !== k; });
+      if (state.missionAssignments && state.missionAssignments[k]) {
+        state.missionAssignments[k] = (state.missionAssignments[k] || []).map(function (m) {
+          return Object.assign({}, m, { playerClaimedDone: false, masterApproved: false, done: false });
+        });
+      }
+      if (state.playerPoints && state.playerPoints[k] !== undefined) {
+        state.playerPoints[k] = 0;
+      }
+    }
+
     function isPlayerEliminated(name) {
       var k = nameKeyOf(name);
       if (!k) return false;
@@ -455,6 +478,15 @@
           return p && p.name && !isMasterAccountName(p.name) && p.isMaster !== true;
         });
       }
+
+      (state.eliminatedPlayers || []).forEach(function (elimName) {
+        purgeEliminatedPlayerFromState(elimName);
+      });
+      (state.players || []).forEach(function (p) {
+        if (isPlayerEliminated(p.name)) {
+          purgeEliminatedPlayerFromState(p.name);
+        }
+      });
 
       if (data.missionAssignments && typeof data.missionAssignments === 'object') {
         state.missionAssignments = Object.assign({}, data.missionAssignments);
@@ -649,6 +681,7 @@
         if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === k; })) {
           state.eliminatedPlayers.push(state.players[idx].name);
         }
+        purgeEliminatedPlayerFromState(state.players[idx].name);
       } else {
         state.eliminatedPlayers = state.eliminatedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
       }
@@ -793,6 +826,7 @@
         if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === killKey; })) {
           state.eliminatedPlayers.push(state.tvKillTarget);
         }
+        purgeEliminatedPlayerFromState(state.tvKillTarget);
       }
 
       if (cleanMode === 'exile' && state.tvExileTarget) {
@@ -806,6 +840,7 @@
         if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === exKey; })) {
           state.eliminatedPlayers.push(state.tvExileTarget);
         }
+        purgeEliminatedPlayerFromState(state.tvExileTarget);
       }
 
       state.banner = {
@@ -874,7 +909,7 @@
     };
 
     window.openOvalMonitor = function () {
-      window.open('tavolo-ovale.html?room=' + encodeURIComponent(state.roomCode) + '&master=1', '_blank');
+      window.location.href = 'tavolo-ovale.html?room=' + encodeURIComponent(state.roomCode) + '&player=' + encodeURIComponent(state.masterName || 'Master') + '&master=1';
     };
 
     window.goToRolesPage = function () { window.location.href = 'ruoli.html'; };
@@ -909,8 +944,8 @@
         '4. Chiusura Cerimonia'
       ];
       var activeRole = ROLE_DETAILS[state.ceremonyRoleKey] || ROLE_DETAILS.assassino;
-      var rolePlayers = state.players.filter(function (p) {
-        return p.assignedRoleKey === state.ceremonyRoleKey && !isPlayerEliminated(p.name);
+      var rolePlayers = getActivePlayers().filter(function (p) {
+        return p.assignedRoleKey === state.ceremonyRoleKey;
       });
       var stepBtns = steps.map(function (label, idx) {
         var cls = state.ceremonyStepIndex === idx ? 'btn-gold' : 'btn-ghost';
@@ -954,7 +989,7 @@
             var elim = isPlayerEliminated(p.name);
             var roleKey = p.assignedRoleKey && ROLE_DETAILS[p.assignedRoleKey] ? p.assignedRoleKey : '';
             var roleObj = roleKey ? ROLE_DETAILS[roleKey] : null;
-            var pts = state.playerPoints[k] !== undefined ? Number(state.playerPoints[k] || 0) : 0;
+var pts = elim ? 0 : (state.playerPoints[k] !== undefined ? Number(state.playerPoints[k] || 0) : 0);
             var safeName = escapeJsSingle(p.name);
 
             var roleSelectOpts = '<option value="">-- Nessun ruolo --</option>' + Object.keys(ROLE_DETAILS).map(function (rk) {
@@ -990,9 +1025,14 @@
                   '</div>' +
                 '</div>' +
                 '<div class="btn-row">' +
-                  '<select style="width:auto;min-width:190px;" onchange="assignRoleToPlayer(&#39;' + safeName + '&#39;, this.value)">' + roleSelectOpts + '</select>' +
-                  '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, 1)">+1 Pt</button>' +
-                  '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, -1)">-1 Pt</button>' +
+                  (elim
+                    ? '<span class="badge badge-Traditori">Fuori gioco · Nessuna azione</span>'
+                    : (
+                        '<select style="width:auto;min-width:190px;" onchange="assignRoleToPlayer(&#39;' + safeName + '&#39;, this.value)">' + roleSelectOpts + '</select>' +
+                        '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, 1)">+1 Pt</button>' +
+                        '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, -1)">-1 Pt</button>'
+                      )
+                  ) +
                   '<button type="button" class="' + (elim ? 'btn-emerald' : 'btn-crimson') + '" onclick="toggleEliminatePlayer(&#39;' + safeName + '&#39;)">' + (elim ? 'Riattiva' : 'Elimina') + '</button>' +
                   '<button type="button" class="btn-ghost" onclick="removePlayerFromRoom(&#39;' + safeName + '&#39;)">Rimuovi</button>' +
                 '</div>' +
@@ -1016,18 +1056,19 @@
     }
 
     function renderMissionsManagerSection() {
-      var selectedPlayer = state.players.find(function (p) {
+      var activePlayersList = getActivePlayers();
+      var selectedPlayer = activePlayersList.find(function (p) {
         return nameKeyOf(p.name) === nameKeyOf(state.selectedPlayerForMissions);
-      }) || state.players[0] || null;
+      }) || activePlayersList[0] || null;
 
-      var playerOpts = state.players.map(function (p) {
+      var playerOpts = activePlayersList.map(function (p) {
         var sel = selectedPlayer && nameKeyOf(p.name) === nameKeyOf(selectedPlayer.name) ? ' selected' : '';
         return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
       }).join('');
 
       var bodyHtml = '';
       if (!selectedPlayer) {
-        bodyHtml = '<p class="subtext" style="margin-top:10px;">Aggiungi o collega almeno un giocatore per gestire le 5 missioni.</p>';
+        bodyHtml = '<p class="subtext" style="margin-top:10px;">Nessun giocatore attivo disponibile (i giocatori eliminati o esiliati sono esclusi da missioni e conteggi).</p>';
       } else {
         var k = nameKeyOf(selectedPlayer.name);
         var rObj = selectedPlayer.assignedRoleKey ? ROLE_DETAILS[selectedPlayer.assignedRoleKey] : null;
@@ -1092,7 +1133,8 @@
         return '<button type="button" class="' + (state.phaseIndex === idx ? 'btn-indigo' : 'btn-ghost') + '" onclick="masterSetPhase(' + idx + ')">' + ph.step + '. ' + escapeHtml(ph.title) + '</button>';
       }).join('');
 
-      var targetOpts = state.players.map(function (p) {
+      var activeForTargets = getActivePlayers();
+      var targetOpts = activeForTargets.map(function (p) {
         return '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</option>';
       }).join('');
 
@@ -1145,7 +1187,7 @@
     }
 
     function renderChatSection() {
-      var targetOpts = '<option value="">Tutti i giocatori / Generale</option>' + state.players.map(function (p) {
+      var targetOpts = '<option value="">Tutti i giocatori attivi / Generale</option>' + getActivePlayers().map(function (p) {
         var sel = nameKeyOf(directTargetName) === nameKeyOf(p.name) ? ' selected' : '';
         return '<option value="' + escapeHtml(p.name) + '"' + sel + '>Diretto a ' + escapeHtml(p.name) + '</option>';
       }).join('');
