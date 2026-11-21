@@ -96,19 +96,18 @@
       padding: 32px 28px;
       text-align: center;
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
-      animation: fadeZoomIn 0.55s ease forwards;
+      animation: fadeZoomIn 0.45s ease forwards;
     }
 
     @keyframes fadeZoomIn {
-      0% { opacity: 0; transform: translateY(14px) scale(0.94); filter: blur(4px); }
-      65% { opacity: 1; filter: blur(0); }
-      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .selfie-frame {
       width: 230px;
       height: 230px;
-      margin: 18px auto 20px;
+      margin: 18px auto 16px;
       border-radius: 26px;
       overflow: hidden;
       border: 3px solid var(--gold);
@@ -119,17 +118,11 @@
       font-size: 74px;
       font-weight: 900;
       color: var(--gold);
-      animation: slowKenBurns 7s ease-in-out infinite alternate;
     }
 
     .selfie-frame.crimson-frame {
       border-color: var(--crimson);
       color: #fca5a5;
-    }
-
-    @keyframes slowKenBurns {
-      0% { transform: scale(1); }
-      100% { transform: scale(1.06); }
     }
 
     .selfie-frame img {
@@ -139,11 +132,19 @@
       display: block;
     }
 
-    .voter-label {
-      font-size: 24px;
+    .voter-sub {
+      font-size: 11px;
       font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .voter-label {
+      font-size: 28px;
+      font-weight: 900;
       color: #fff;
-      margin-bottom: 12px;
+      margin: 4px 0 14px;
     }
 
     .voted-under-box {
@@ -177,15 +178,11 @@
       border-radius: 28px;
       padding: 28px;
       text-align: center;
-      animation: fadeZoomIn 0.5s ease forwards;
+      animation: fadeZoomIn 0.45s ease forwards;
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
     }
 
-    .media-box.win-box {
-      border-color: rgba(229, 184, 92, 0.65);
-    }
-
-    .media-box.intro-box {
+    .media-box.win-box, .media-box.intro-box {
       border-color: rgba(229, 184, 92, 0.55);
     }
 
@@ -225,7 +222,6 @@
       border-radius: 999px;
       background: rgba(10, 12, 20, 0.85);
       border: 2px solid var(--gold);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
     }
 
     .face-chip.crimson-border {
@@ -295,21 +291,14 @@
       border-radius: 16px;
       background: var(--surface-2);
       border: 2px solid rgba(229, 184, 92, 0.4);
-      opacity: 0.35;
-      transform: scale(0.95);
-      transition: all 0.35s ease;
+      opacity: 0.4;
+      transition: all 0.3s ease;
     }
 
     .parade-card.active {
       opacity: 1;
-      transform: scale(1.06);
+      transform: scale(1.05);
       border-color: var(--gold);
-      box-shadow: 0 0 24px rgba(229, 184, 92, 0.35);
-    }
-
-    .parade-card.shown {
-      opacity: 0.88;
-      transform: scale(1);
     }
 
     .parade-avatar {
@@ -551,9 +540,7 @@
       var active = 0;
       function step() {
         cards.forEach(function (c, i) {
-          c.classList.remove('active', 'shown');
-          if (i === active) c.classList.add('active');
-          else if (i < active) c.classList.add('shown');
+          c.classList.toggle('active', i === active);
         });
         active = (active + 1) % cards.length;
       }
@@ -564,18 +551,16 @@
     function renderExileDoorPhase(targetName, selfieUrl) {
       var stage = document.getElementById('tv-stage');
       if (!stage) return;
-      var src = VIDEO_SOURCES.exile;
       stage.innerHTML =
         '<div class="media-box">' +
-          '<span class="eyebrow" style="color:var(--crimson);">Esilio dal Tavolo Ovale · Fase 2 / 2</span>' +
+          '<span class="eyebrow" style="color:var(--crimson);">Esilio dal Tavolo Ovale · Video</span>' +
           '<h2 style="margin:8px 0 0;font-size:32px;font-weight:900;color:#fff;">' + escapeHtml(targetName || 'Giocatore Esiliato') + '</h2>' +
-          '<p class="subtext" style="color:var(--muted);margin:6px 0 0;">Il giocatore viene allontanato dal tavolo.</p>' +
           '<div class="video-stage-wrap">' +
             '<div class="overlay-badges">' +
               renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
               renderFaceChip('Esiliato', targetName || 'Giocatore', selfieUrl, true) +
             '</div>' +
-            '<video src="' + escapeHtml(src) + '" autoplay playsinline controls></video>' +
+            '<video src="' + escapeHtml(VIDEO_SOURCES.exile) + '" autoplay playsinline controls></video>' +
           '</div>' +
         '</div>';
       syncTvVideoPlayback();
@@ -586,18 +571,19 @@
       if (!stage) return;
       stage.innerHTML =
         '<div class="vote-card" style="border-color:rgba(224,82,96,0.65);">' +
-          '<span class="eyebrow" style="color:#fca5a5;">Esilio dal Tavolo Ovale · Fase 1 / 2</span>' +
+          '<span class="eyebrow" style="color:#fca5a5;">Esilio dal Tavolo Ovale</span>' +
           '<div class="selfie-frame crimson-frame">' + renderAvatarContent(selfieUrl, targetName || 'E') + '</div>' +
+          '<div class="voter-sub">Giocatore esiliato</div>' +
           '<div class="voter-label">' + escapeHtml(targetName || 'Giocatore Esiliato') + '</div>' +
           '<div class="voted-under-box">' +
-            '<div class="voted-under-eyebrow">Sentenza del Tavolo</div>' +
+            '<div class="voted-under-eyebrow">Verdetto</div>' +
             '<div class="voted-under-name" style="font-size:26px;">ESILIATO DAL TAVOLO</div>' +
           '</div>' +
         '</div>';
 
       exileTimer = setTimeout(function () {
         renderExileDoorPhase(targetName, selfieUrl);
-      }, 2800);
+      }, 2400);
     }
 
     function renderIntroParade() {
@@ -605,19 +591,11 @@
       if (!stage) return;
       var roster = [];
       if (tvState.masterSelfie || tvState.masterName) {
-        roster.push({
-          name: tvState.masterName || 'Master',
-          roleTag: 'Master',
-          selfie: tvState.masterSelfie
-        });
+        roster.push({ name: tvState.masterName || 'Master', roleTag: 'Master', selfie: tvState.masterSelfie });
       }
       (tvState.players || []).forEach(function (p) {
         if (!p || !p.name) return;
-        roster.push({
-          name: p.name,
-          roleTag: 'Giocatore',
-          selfie: findSelfieByName(p.name)
-        });
+        roster.push({ name: p.name, roleTag: 'Giocatore', selfie: findSelfieByName(p.name) });
       });
 
       var cardsHtml = roster.length
@@ -630,7 +608,7 @@
               '</div>'
             );
           }).join('')
-        : '<p class="idle-sub" style="font-size:13px;">Nessun selfie caricato al momento nella stanza.</p>';
+        : '<p class="idle-sub" style="font-size:13px;">Nessun selfie caricato al momento.</p>';
 
       stage.innerHTML =
         '<div class="media-box intro-box">' +
@@ -665,8 +643,8 @@
 
       stage.innerHTML =
         '<div class="media-box">' +
-          '<span class="eyebrow" style="color:var(--crimson);">Colpo nell’Ombra · Eliminazione</span>' +
-          '<h2 style="margin:8px 0 0;font-size:34px;font-weight:900;color:#fff;">' + escapeHtml(target || 'Eliminazione al Tavolo') + '</h2>' +
+          '<span class="eyebrow" style="color:var(--crimson);">Eliminazione al Tavolo</span>' +
+          '<h2 style="margin:8px 0 0;font-size:34px;font-weight:900;color:#fff;">' + escapeHtml(target || 'Eliminazione') + '</h2>' +
           '<div class="video-stage-wrap">' +
             '<div class="overlay-badges">' +
               renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
@@ -709,7 +687,7 @@
           '<div class="idle-box">' +
             '<span class="eyebrow">Tavolo Ovale · Voti</span>' +
             '<h1 class="idle-title">In attesa dei voti</h1>' +
-            '<p class="idle-sub">I voti segreti verranno rivelati qui uno alla volta dal Master.</p>' +
+            '<p class="idle-sub">I voti verranno rivelati uno alla volta dal Master.</p>' +
           '</div>';
         return;
       }
@@ -722,11 +700,12 @@
 
       stage.innerHTML =
         '<div class="vote-card" key="' + idx + '-' + tvState.tvRevealTick + '">' +
-          '<span class="eyebrow">Voto Rivelato ' + (idx + 1) + ' di ' + votes.length + '</span>' +
+          '<span class="eyebrow">Voto ' + (idx + 1) + ' di ' + votes.length + '</span>' +
           '<div class="selfie-frame">' + renderAvatarContent(voterSelfie, voterName) + '</div>' +
+          '<div class="voter-sub">Ha votato</div>' +
           '<div class="voter-label">' + escapeHtml(voterName) + '</div>' +
           '<div class="voted-under-box">' +
-            '<div class="voted-under-eyebrow">Ha votato per eliminare</div>' +
+            '<div class="voted-under-eyebrow">Bersaglio votato</div>' +
             '<div class="voted-under-name">' + escapeHtml(targetName) + '</div>' +
           '</div>' +
         '</div>';
@@ -760,23 +739,14 @@
         clearStageTimers();
         lastMediaKey = mediaKey;
 
-        if (mode === 'intro') {
-          renderIntroParade();
-          return;
-        }
-        if (mode === 'kill') {
-          renderKillScene();
-          return;
-        }
+        if (mode === 'intro') { renderIntroParade(); return; }
+        if (mode === 'kill') { renderKillScene(); return; }
         if (mode === 'exile') {
           var exTarget = tvState.tvExileTarget || 'Giocatore Esiliato';
           renderExileSelfiePhase(exTarget, findSelfieByName(exTarget));
           return;
         }
-        if (mode.indexOf('win_') === 0) {
-          renderVictoryScene(mode);
-          return;
-        }
+        if (mode.indexOf('win_') === 0) { renderVictoryScene(mode); return; }
       }
 
       if (mode === 'votes') {
@@ -792,7 +762,7 @@
             '<div class="idle-box">' +
               '<span class="eyebrow">Schermo Principale · ' + escapeHtml(roomCode) + '</span>' +
               '<h1 class="idle-title">Ombre al Tavolo</h1>' +
-              '<p class="idle-sub">In attesa di un comando di regia dal Master.</p>' +
+              '<p class="idle-sub">In attesa di un comando dal Master.</p>' +
             '</div>';
         }
       }
@@ -800,11 +770,8 @@
 
     try {
       var localRaw = localStorage.getItem(ROOM_PREFIX + roomCode);
-      if (localRaw) {
-        applyData(JSON.parse(localRaw));
-      } else {
-        renderTv();
-      }
+      if (localRaw) applyData(JSON.parse(localRaw));
+      else renderTv();
     } catch (_e) {
       renderTv();
     }
