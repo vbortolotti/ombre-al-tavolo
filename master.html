@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Master: Cerimonia e Ruoli</title>
+  <title>Ombre al Tavolo — Master: Cerimonia, Ruoli, Missioni e Regia</title>
   <style>
     :root {
       --bg: #0c0e14;
@@ -31,9 +31,9 @@
     }
 
     .app-wrap {
-      max-width: 1120px;
+      max-width: 1160px;
       margin: 0 auto;
-      padding: 28px 16px 56px;
+      padding: 24px 16px 64px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -46,7 +46,7 @@
       padding: 20px;
     }
 
-    .card-gold { border-color: rgba(229, 184, 92, 0.35); }
+    .card-gold { border-color: rgba(229, 184, 92, 0.38); }
 
     .header-row {
       display: flex;
@@ -67,9 +67,10 @@
 
     h1 { margin: 4px 0 0; font-size: 26px; font-weight: 800; color: #ffffff; }
     h2 { margin: 0; font-size: 19px; font-weight: 700; color: #ffffff; }
+    h3 { margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; }
     .subtext { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--emerald); }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
     button {
       font-family: inherit;
@@ -80,7 +81,7 @@
     }
 
     button:hover:not(:disabled) { opacity: 0.92; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button:disabled { opacity: 0.42; cursor: not-allowed; }
 
     .btn-gold { background: var(--gold); color: #0c0e14; border: none; padding: 10px 14px; font-size: 12px; font-weight: 700; }
     .btn-emerald { background: var(--emerald); color: #0c0e14; border: none; padding: 10px 14px; font-size: 12px; font-weight: 700; }
@@ -88,7 +89,7 @@
     .btn-indigo { background: var(--indigo); color: #ffffff; border: none; padding: 10px 14px; font-size: 12px; }
     .btn-crimson { background: var(--crimson); color: #ffffff; border: none; padding: 8px 12px; font-size: 12px; }
     .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 10px 14px; font-size: 12px; }
-    .btn-small { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 6px 12px; font-size: 12px; }
+    .btn-small { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 6px 11px; font-size: 12px; }
     .btn-remove:hover { background: rgba(224, 82, 96, 0.18); color: var(--crimson); border-color: rgba(224, 82, 96, 0.45); }
 
     .banner { border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; border: 1px solid transparent; }
@@ -141,7 +142,7 @@
     textarea:focus, input[type="text"]:focus, select:focus { outline: none; border-color: var(--gold); }
     .custom-speech-box { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
     .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
-    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 12px; }
 
     .role-box {
       background: var(--bg);
@@ -170,8 +171,9 @@
     .player-row { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .player-name { font-size: 14px; font-weight: 700; color: #ffffff; }
     .player-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-    .board-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .board-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .mission-chip { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: 12px; }
     .chat-box { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; padding-right: 4px; }
     .msg-card { border-radius: 10px; padding: 10px 12px; border: 1px solid var(--border); background: var(--bg); }
     .msg-card.from-master { background: var(--surface-2); border-color: rgba(229, 184, 92, 0.35); margin-left: 18px; }
@@ -180,6 +182,8 @@
     .msg-body { margin: 0; font-size: 13px; color: #e5e7eb; }
     .chat-form { display: flex; gap: 8px; }
     .footer-action { display: flex; justify-content: flex-end; }
+    .subpanel { padding: 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+    .pts-pill { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(62, 201, 140, 0.14); color: var(--emerald); border: 1px solid rgba(62, 201, 140, 0.35); }
   </style>
 
   <script>
@@ -210,16 +214,361 @@
     var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
     var MASTER_KEY = 'ombre_master_assegnazione_ruoli_v1';
     var ROOM_PREFIX = 'ombre_stanza_sync_';
+    var CATALOG_URL = 'catalogo_missioni_ombre_al_tavolo.json';
+
+    var FALLBACK_CATALOG = [
+      {
+            "id": "CN-01",
+            "faction": "Traditori",
+            "title": "Abbraccio al Volo",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Abbraccia un altro giocatore (o dagli una pacca amichevole sulla spalla) durante una pausa o un cambio turno."
+      },
+      {
+            "id": "CN-02",
+            "faction": "Fedeli",
+            "title": "Cinque al Tavolo",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Batti il cinque a un giocatore dopo una battuta, un tiro o una mossa riuscita."
+      },
+      {
+            "id": "CN-03",
+            "faction": "Traditori",
+            "title": "Il Prestito Leggero",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Chiedi in prestito un oggetto innocuo (es. una penna, un fazzolettino, un dado) e restituiscilo entro pochi minuti."
+      },
+      {
+            "id": "CN-04",
+            "faction": "Fedeli",
+            "title": "Stretta d'Intesa",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Stringi la mano a un giocatore dicendo qualcosa di cordiale o incoraggiante."
+      },
+      {
+            "id": "CN-05",
+            "faction": "Traditori",
+            "title": "Passaggio Discreto",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Fai passare un oggetto di uso comune (es. un bicchiere, un tovagliolo, un mazzo) a un giocatore senza attirare l'attenzione sul gesto."
+      },
+      {
+            "id": "CN-06",
+            "faction": "Traditori",
+            "title": "Gomito sul Tavolo",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Appoggia l'avambraccio o il gomito vicino a quello di un altro giocatore durante una discussione per almeno 15 secondi."
+      },
+      {
+            "id": "CN-07",
+            "faction": "Neutro",
+            "title": "Scambio di Posto",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Scambia temporaneamente posto o sedia con un altro giocatore per un giro o una mano."
+      },
+      {
+            "id": "CN-08",
+            "faction": "Traditori",
+            "title": "Colpetto di Avviso",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Dai un leggero tocco sul braccio o sul tavolo a un giocatore proprio mentre sta per parlare o agire."
+      },
+      {
+            "id": "CN-09",
+            "faction": "Neutro",
+            "title": "Catena di Contatto",
+            "difficulty": "Difficile",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Entro lo stesso giro, tocca amichevolmente (spalla, mano o braccio) tre giocatori diversi senza sembrare insistente."
+      },
+      {
+            "id": "CN-10",
+            "faction": "Fedeli",
+            "title": "Appoggio Ombra",
+            "difficulty": "Difficile",
+            "repeatable": false,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "Resta a contatto leggero (es. gomito a gomito o spalla a spalla) con un giocatore mentre accusa qualcun altro al tavolo."
+      },
+      {
+            "id": "CN-11",
+            "faction": "Neutro",
+            "title": "stretta di mano",
+            "difficulty": "Difficile",
+            "repeatable": true,
+            "type": "Contatto",
+            "active": true,
+            "points": 1,
+            "description": "stringi la mano a due giocatori insieme"
+      },
+      {
+            "id": "VB-01",
+            "faction": "Traditori",
+            "title": "La Kamchatka Chiama",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Inserisci in modo naturale in una frase l'espressione \"andiamo a conquistare la Kamchatka\" (o la parola \"Kamchatka\")."
+      },
+      {
+            "id": "VB-02",
+            "faction": "Fedeli",
+            "title": "Domanda da Giornalista",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Fai una domanda diretta a un giocatore iniziando con \"Secondo te, perché...\"."
+      },
+      {
+            "id": "VB-03",
+            "faction": "Fedeli",
+            "title": "Complimento di Passaggio",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Fai un complimento sincero o leggero a un giocatore (es. sull'ironia, sullo stile o su una giocata)."
+      },
+      {
+            "id": "VB-04",
+            "faction": "Fedeli",
+            "title": "Ripetizione a Specchio",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Ripeti esattamente l'ultima parola o breve espressione usata da un altro giocatore confermandola."
+      },
+      {
+            "id": "VB-05",
+            "faction": "Traditori",
+            "title": "Parola d'Ordine Nascosta",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Fai pronunciare a un giocatore una parola comune scelta da te (tra \"mistero\", \"destinazione\", \"ovvio\",\"supernetural\") durante il discorso."
+      },
+      {
+            "id": "VB-06",
+            "faction": "Traditori",
+            "title": "L'Avvocato del Diavolo",
+            "difficulty": "Media",
+            "repeatable": true,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Difendi a parole una tesi o una persona che nessuno stava difendendo in quel momento che non centra nel gioco."
+      },
+      {
+            "id": "VB-07",
+            "faction": "Fedeli",
+            "title": "Doppia Citazione",
+            "difficulty": "Media",
+            "repeatable": true,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "In un singolo intervento, fai dire a due giocatori diversi una citazione a film o serier tv"
+      },
+      {
+            "id": "VB-08",
+            "faction": "Neutro",
+            "title": "Cambio di Binario",
+            "difficulty": "Media",
+            "repeatable": true,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Cambia il discorso in un'altra direzione senza che nessun'altro se ne accorga"
+      },
+      {
+            "id": "VB-09",
+            "faction": "Neutro",
+            "title": "c'era una volta",
+            "difficulty": "Difficile",
+            "repeatable": true,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Fai dire a un giocatore una filastrocca o un pezzo di fiaba"
+      },
+      {
+            "id": "VB-10",
+            "faction": "Fedeli",
+            "title": "Coro Involontario",
+            "difficulty": "Difficile",
+            "repeatable": false,
+            "type": "Verbale",
+            "active": true,
+            "points": 1,
+            "description": "Fai dire \"sì\" o \"esatto\" o \"ok\" a tre giocatori diversi nell'arco di due minuti."
+      },
+      {
+            "id": "RZ-01",
+            "faction": "Neutro",
+            "title": "Il Dolce Circola",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Fatti passare uno snack, un dolce o qualcosa da mangiare/bere da un altro giocatore."
+      },
+      {
+            "id": "RZ-02",
+            "faction": "Fedeli",
+            "title": "Giro di Calici",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Offriti di riempire i bicchieri o i calici ad almeno la metà dei giocatori al tavolo."
+      },
+      {
+            "id": "RZ-03",
+            "faction": "Neutro",
+            "title": "Risata Contagiosa",
+            "difficulty": "Facile",
+            "repeatable": true,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Fai ridere o sorridere apertamente la metà del party con una battuta o un'osservazione."
+      },
+      {
+            "id": "RZ-04",
+            "faction": "Neutro",
+            "title": "Conferma a Cenni",
+            "difficulty": "Facile",
+            "repeatable": false,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Ottieni un cenno d'intesa con la testa (sì o no) da un giocatore dopo averlo guardato."
+      },
+      {
+            "id": "RZ-05",
+            "faction": "Traditori",
+            "title": "Il Brindisi Silenzioso",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Fai alzare o avvicinare il bicchiere a un altro giocatore per un brindisi senza dire \"cin cin\" o \"brindisi\"."
+      },
+      {
+            "id": "RZ-06",
+            "faction": "Fedeli",
+            "title": "scusi i piatti sono li dietro",
+            "difficulty": "Media",
+            "repeatable": true,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "fai alzare almeno due persone in un unico passaggio"
+      },
+      {
+            "id": "RZ-07",
+            "faction": "Traditori",
+            "title": "Passami Quello",
+            "difficulty": "Media",
+            "repeatable": false,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Fatti porgere o spostare da un giocatore un oggetto che è più vicino a lui che a te."
+      },
+      {
+            "id": "RZ-08",
+            "faction": "Neutro",
+            "title": "imitatore",
+            "difficulty": "Difficile",
+            "repeatable": true,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "fai si che un altro giocatore ripeta una tua azione senza dirgli di rifarla"
+      },
+      {
+            "id": "RZ-09",
+            "faction": "Traditori",
+            "title": "reazione opposta",
+            "difficulty": "Difficile",
+            "repeatable": false,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "fai si che due giocatori dicano due cose opposte (non serve che lo dicano subito lo possono dire anche durante il corso della serata)"
+      },
+      {
+            "id": "RZ-10",
+            "faction": "Neutro",
+            "title": "Doppio Servizio",
+            "difficulty": "Difficile",
+            "repeatable": true,
+            "type": "Reazione",
+            "active": true,
+            "points": 1,
+            "description": "Fatti passare qualcosa da un giocatore tramite un altro giocatore se nel passaggio vi è un'altra persona allora puoi prendere un punto extra"
+      }
+];
 
     var ROLE_CATALOG = {
-      assassino: { name: 'Assassino', faction: 'Traditori', summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
-      sabotatore: { name: 'Sabotatore', faction: 'Traditori', summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
-      traditore_segreto: { name: 'Traditore Segreto', faction: 'Traditori', summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).' },
-      investigatore: { name: 'Investigatore', faction: 'Fedeli', summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      guardia: { name: 'Guardia', faction: 'Fedeli', summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      martire: { name: 'Martire', faction: 'Fedeli', summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.' },
-      mediatore: { name: 'Mediatore', faction: 'Fedeli', summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      cacciatore: { name: 'Cacciatore', faction: 'Neutro', summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).' }
+      assassino: { name: 'Assassino', faction: 'Traditori', mainType: 'Contatto', summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
+      sabotatore: { name: 'Sabotatore', faction: 'Traditori', mainType: 'Contatto', summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
+      traditore_segreto: { name: 'Traditore Segreto', faction: 'Traditori', mainType: 'Contatto', summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).' },
+      investigatore: { name: 'Investigatore', faction: 'Fedeli', mainType: 'Verbale', summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).' },
+      guardia: { name: 'Guardia', faction: 'Fedeli', mainType: 'Verbale', summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).' },
+      martire: { name: 'Martire', faction: 'Fedeli', mainType: 'Verbale', summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.' },
+      mediatore: { name: 'Mediatore', faction: 'Fedeli', mainType: 'Verbale', summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).' },
+      cacciatore: { name: 'Cacciatore', faction: 'Neutro', mainType: 'Reazione', summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).' }
     };
 
     var SPEECH_TEMPLATES = {
@@ -252,13 +601,14 @@
         if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
         var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
         return getFirestore(app);
-      } catch (_e) {
-        return null;
-      }
+      } catch (_e) { return null; }
     }
 
     var firestoreDb = initFirestore();
     var unsubscribeRoom = null;
+    var chatDraft = '';
+    var selectedDeadReplayName = '';
+    var selectedExileName = '';
 
     function getRoomDocRef(roomCode) {
       if (!firestoreDb) return null;
@@ -275,17 +625,23 @@
         .replace(/'/g, '&#39;');
     }
 
+    function isValidPhoto(val) {
+      var s = String(val || '').trim();
+      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
+    }
+
     function readAccess() {
       try {
         var raw = safeGetItem(ACCESS_KEY);
-        if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master' };
+        if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
         var parsed = JSON.parse(raw);
         return {
           roomCode: String(parsed && parsed.roomCode ? parsed.roomCode : 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
-          masterName: String(parsed && parsed.playerName ? parsed.playerName : 'Master').trim() || 'Master'
+          masterName: String(parsed && parsed.playerName ? parsed.playerName : 'Master').trim() || 'Master',
+          selfieDataUrl: parsed && isValidPhoto(parsed.selfieDataUrl) ? String(parsed.selfieDataUrl) : ''
         };
       } catch (_e) {
-        return { roomCode: 'TAVOLO1', masterName: 'Master' };
+        return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
       }
     }
 
@@ -329,9 +685,14 @@
       var base = {
         roomCode: ctx.roomCode,
         masterName: ctx.masterName,
+        masterSelfie: ctx.selfieDataUrl,
         syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Locale',
         roleCounts: createDefaultCounts(),
         players: [],
+        playerPoints: {},
+        missionAssignments: {},
+        catalog: FALLBACK_CATALOG.slice(),
+        catalogSource: 'Catalogo integrato (31 missioni)',
         speechTone: 'suspense',
         customSpeechText: '',
         activeParagraphIndex: 0,
@@ -341,7 +702,18 @@
         chatTab: 'master',
         playerFilter: 'ALL',
         masterChat: [],
-        traitorChat: []
+        traitorChat: [],
+        ovalActive: false,
+        ovalRunoffActive: false,
+        ovalRunoffCandidates: [],
+        ovalVotes: [],
+        revealedVoteIndex: 0,
+        tvMode: 'idle',
+        tvKillTarget: '',
+        tvExileTarget: '',
+        tvVideoPaused: false,
+        tvRevealTick: 0,
+        playerSelfies: ctx.selfieDataUrl ? { [ctx.masterName.toLowerCase()]: ctx.selfieDataUrl } : {}
       };
 
       try {
@@ -373,10 +745,32 @@
         var roomRaw = safeGetItem(ROOM_PREFIX + base.roomCode);
         if (roomRaw) {
           var roomParsed = JSON.parse(roomRaw);
-          if (roomParsed && Array.isArray(roomParsed.masterChat)) base.masterChat = roomParsed.masterChat;
-          if (roomParsed && Array.isArray(roomParsed.traitorChat)) base.traitorChat = roomParsed.traitorChat;
-          if (roomParsed && Array.isArray(roomParsed.players) && base.players.length === 0) {
-            base.players = normalizePlayerList(roomParsed.players);
+          if (roomParsed && typeof roomParsed === 'object') {
+            if (Array.isArray(roomParsed.masterChat)) base.masterChat = roomParsed.masterChat;
+            if (Array.isArray(roomParsed.traitorChat)) base.traitorChat = roomParsed.traitorChat;
+            if (Array.isArray(roomParsed.players) && base.players.length === 0) {
+              base.players = normalizePlayerList(roomParsed.players);
+            }
+            if (roomParsed.playerPoints && typeof roomParsed.playerPoints === 'object') {
+              base.playerPoints = Object.assign({}, roomParsed.playerPoints);
+            }
+            if (roomParsed.missionAssignments && typeof roomParsed.missionAssignments === 'object') {
+              base.missionAssignments = Object.assign({}, roomParsed.missionAssignments);
+            }
+            if (typeof roomParsed.ovalActive === 'boolean') base.ovalActive = roomParsed.ovalActive;
+            if (typeof roomParsed.ovalRunoffActive === 'boolean') base.ovalRunoffActive = roomParsed.ovalRunoffActive;
+            if (Array.isArray(roomParsed.ovalRunoffCandidates)) base.ovalRunoffCandidates = roomParsed.ovalRunoffCandidates;
+            if (Array.isArray(roomParsed.ovalVotes)) base.ovalVotes = roomParsed.ovalVotes;
+            if (typeof roomParsed.revealedVoteIndex === 'number') base.revealedVoteIndex = roomParsed.revealedVoteIndex;
+            if (typeof roomParsed.tvMode === 'string') base.tvMode = roomParsed.tvMode;
+            if (typeof roomParsed.tvKillTarget === 'string') base.tvKillTarget = roomParsed.tvKillTarget;
+            if (typeof roomParsed.tvExileTarget === 'string') base.tvExileTarget = roomParsed.tvExileTarget;
+            if (typeof roomParsed.tvVideoPaused === 'boolean') base.tvVideoPaused = roomParsed.tvVideoPaused;
+            if (typeof roomParsed.tvRevealTick === 'number') base.tvRevealTick = roomParsed.tvRevealTick;
+            if (roomParsed.masterSelfie && isValidPhoto(roomParsed.masterSelfie)) base.masterSelfie = roomParsed.masterSelfie;
+            if (roomParsed.playerSelfies && typeof roomParsed.playerSelfies === 'object') {
+              base.playerSelfies = Object.assign({}, base.playerSelfies, roomParsed.playerSelfies);
+            }
           }
         }
       } catch (_e) {}
@@ -385,7 +779,6 @@
     }
 
     var state = loadState();
-    var chatDraft = '';
 
     function persistLocal() {
       safeSetItem(MASTER_KEY, JSON.stringify({
@@ -409,15 +802,30 @@
       safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, existingRoom, {
         roomCode: state.roomCode,
         masterName: state.masterName,
+        masterSelfie: state.masterSelfie,
         players: state.players,
         roleCounts: state.roleCounts,
+        playerPoints: state.playerPoints,
+        missionAssignments: state.missionAssignments,
         masterChat: state.masterChat,
         traitorChat: state.traitorChat,
+        ovalActive: state.ovalActive,
+        ovalRunoffActive: state.ovalRunoffActive,
+        ovalRunoffCandidates: state.ovalRunoffCandidates,
+        ovalVotes: state.ovalVotes,
+        revealedVoteIndex: state.revealedVoteIndex,
+        tvMode: state.tvMode,
+        tvKillTarget: state.tvKillTarget,
+        tvExileTarget: state.tvExileTarget,
+        tvVideoPaused: state.tvVideoPaused,
+        tvRevealTick: state.tvRevealTick,
+        playerSelfies: state.playerSelfies,
         updatedAt: Date.now()
       })));
     }
 
     async function syncPatchToCloud(patch) {
+      Object.assign(state, patch || {});
       persistLocal();
       var ref = getRoomDocRef(state.roomCode);
       if (!ref) return;
@@ -433,46 +841,16 @@
       }
     }
 
-    async function subscribeToRoomCloud() {
-      if (typeof unsubscribeRoom === 'function') {
-        unsubscribeRoom();
-        unsubscribeRoom = null;
-      }
-      var ref = getRoomDocRef(state.roomCode);
-      if (!ref) {
-        state.syncStatus = 'Solo locale';
-        return;
-      }
-      try {
-        var snap = await getDoc(ref);
-        if (snap.exists()) {
-          applyCloudRoomData(snap.data() || {});
-        } else {
-          await syncPatchToCloud({
-            players: state.players,
-            roleCounts: state.roleCounts,
-            masterChat: state.masterChat,
-            traitorChat: state.traitorChat
-          });
-        }
-      } catch (_e) {}
-
-      unsubscribeRoom = onSnapshot(ref, function (snap) {
-        state.syncStatus = 'Cloud Firestore attivo';
-        if (snap.exists()) {
-          applyCloudRoomData(snap.data() || {});
-        }
-        render();
-      }, function () {
-        state.syncStatus = 'Locale';
-        render();
-      });
-    }
-
     function applyCloudRoomData(data) {
       if (!data || typeof data !== 'object') return;
       if (data.masterName && (!state.masterName || state.masterName === 'Master')) {
         state.masterName = String(data.masterName);
+      }
+      if (data.masterSelfie && isValidPhoto(data.masterSelfie)) {
+        state.masterSelfie = String(data.masterSelfie);
+      }
+      if (data.playerSelfies && typeof data.playerSelfies === 'object') {
+        state.playerSelfies = Object.assign({}, state.playerSelfies, data.playerSelfies);
       }
       if (Array.isArray(data.players)) {
         var cloudPlayers = normalizePlayerList(data.players);
@@ -492,10 +870,180 @@
           state.assignmentCompleted = true;
         }
       }
+      if (data.playerPoints && typeof data.playerPoints === 'object') {
+        state.playerPoints = Object.assign({}, data.playerPoints);
+      }
+      if (data.missionAssignments && typeof data.missionAssignments === 'object') {
+        state.missionAssignments = Object.assign({}, data.missionAssignments);
+      }
       if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat;
       if (Array.isArray(data.traitorChat)) state.traitorChat = data.traitorChat;
+      if (typeof data.ovalActive === 'boolean') state.ovalActive = data.ovalActive;
+      if (typeof data.ovalRunoffActive === 'boolean') state.ovalRunoffActive = data.ovalRunoffActive;
+      if (Array.isArray(data.ovalRunoffCandidates)) state.ovalRunoffCandidates = data.ovalRunoffCandidates;
+      if (Array.isArray(data.ovalVotes)) state.ovalVotes = data.ovalVotes;
+      if (typeof data.revealedVoteIndex === 'number') state.revealedVoteIndex = data.revealedVoteIndex;
+      if (typeof data.tvMode === 'string') state.tvMode = data.tvMode;
+      if (typeof data.tvKillTarget === 'string') state.tvKillTarget = data.tvKillTarget;
+      if (typeof data.tvExileTarget === 'string') state.tvExileTarget = data.tvExileTarget;
+      if (typeof data.tvVideoPaused === 'boolean') state.tvVideoPaused = data.tvVideoPaused;
+      if (typeof data.tvRevealTick === 'number') state.tvRevealTick = data.tvRevealTick;
       persistLocal();
     }
+
+    async function subscribeToRoomCloud() {
+      if (typeof unsubscribeRoom === 'function') {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+      var ref = getRoomDocRef(state.roomCode);
+      if (!ref) {
+        state.syncStatus = 'Solo locale';
+        return;
+      }
+      try {
+        var snap = await getDoc(ref);
+        if (snap.exists()) {
+          applyCloudRoomData(snap.data() || {});
+          render();
+        } else {
+          await syncPatchToCloud({
+            players: state.players,
+            roleCounts: state.roleCounts,
+            playerPoints: state.playerPoints,
+            missionAssignments: state.missionAssignments,
+            masterChat: state.masterChat,
+            traitorChat: state.traitorChat
+          });
+        }
+      } catch (_e) {}
+
+      unsubscribeRoom = onSnapshot(ref, function (snap) {
+        state.syncStatus = 'Cloud Firestore attivo';
+        if (snap.exists()) {
+          applyCloudRoomData(snap.data() || {});
+        }
+        render();
+      }, function () {
+        state.syncStatus = 'Locale';
+        render();
+      });
+    }
+
+    async function loadCatalogJson() {
+      try {
+        var res = await fetch(CATALOG_URL, { cache: 'no-store' });
+        if (!res.ok) return;
+        var jsonData = await res.json();
+        if (Array.isArray(jsonData) && jsonData.length) {
+          state.catalog = jsonData.filter(function (m) { return m && m.active !== false; });
+          state.catalogSource = CATALOG_URL + ' (' + state.catalog.length + ' missioni)';
+          render();
+        }
+      } catch (_e) {}
+    }
+
+    function pickRandom(list, count, usedIds) {
+      var pool = list.filter(function (item) {
+        return item && item.id && !usedIds[item.id];
+      });
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+      }
+      var chosen = pool.slice(0, count);
+      chosen.forEach(function (c) { usedIds[c.id] = true; });
+      return chosen;
+    }
+
+    function drawFiveMissionsForRole(roleKey) {
+      var role = ROLE_CATALOG[roleKey] || { faction: 'Fedeli', mainType: 'Verbale' };
+      var activeCat = state.catalog.filter(function (m) { return m && m.active !== false; });
+      var byFaction = activeCat.filter(function (m) { return String(m.faction || '').toLowerCase() === String(role.faction || '').toLowerCase(); });
+      var mainTypePool = byFaction.filter(function (m) { return String(m.type || '').toLowerCase() === String(role.mainType || '').toLowerCase(); });
+      var otherPool = byFaction.filter(function (m) { return String(m.type || '').toLowerCase() !== String(role.mainType || '').toLowerCase(); });
+      var fallbackPool = activeCat.filter(function (m) { return String(m.faction || '').toLowerCase() !== String(role.faction || '').toLowerCase(); });
+
+      var used = {};
+      var selected = [];
+      selected = selected.concat(pickRandom(mainTypePool, 3, used));
+      selected = selected.concat(pickRandom(otherPool, 2, used));
+      if (selected.length < 5) {
+        selected = selected.concat(pickRandom(byFaction, 5 - selected.length, used));
+      }
+      if (selected.length < 5) {
+        selected = selected.concat(pickRandom(fallbackPool, 5 - selected.length, used));
+      }
+
+      return selected.slice(0, 5).map(function (m, idx) {
+        return {
+          slot: idx + 1,
+          id: m.id,
+          title: m.title,
+          type: m.type || 'Missione',
+          faction: m.faction || role.faction,
+          difficulty: m.difficulty || 'Media',
+          repeatable: Boolean(m.repeatable),
+          points: Number(m.points || 1),
+          desc: m.description || '',
+          playerClaimedDone: false,
+          masterApproved: false
+        };
+      });
+    }
+
+    window.masterDrawAllMissions = async function () {
+      if (!state.players.length) {
+        return setBanner('Aggiungi prima almeno un giocatore al tavolo.', 'error');
+      }
+      var nextAssignments = Object.assign({}, state.missionAssignments || {});
+      state.players.forEach(function (p) {
+        var pKey = String(p.name || '').trim().toLowerCase();
+        if (!pKey) return;
+        if (p.assignedRoleKey === 'martire') {
+          nextAssignments[pKey] = [];
+        } else {
+          nextAssignments[pKey] = drawFiveMissionsForRole(p.assignedRoleKey || 'investigatore');
+        }
+      });
+      state.missionAssignments = nextAssignments;
+      state.banner = { text: 'Pesca 3+2 completata per i giocatori attivi.', type: 'success' };
+      await syncPatchToCloud({ missionAssignments: state.missionAssignments });
+      render();
+    };
+
+    window.masterApproveMission = async function (playerKey, slotIdx) {
+      var k = String(playerKey || '').trim().toLowerCase();
+      var list = Array.isArray(state.missionAssignments[k]) ? state.missionAssignments[k].slice() : [];
+      var item = list[slotIdx];
+      if (!item) return;
+      var wasApproved = Boolean(item.masterApproved);
+      var ptsDelta = Number(item.points || 1);
+      item.masterApproved = !wasApproved;
+      if (!wasApproved) item.playerClaimedDone = true;
+      list[slotIdx] = item;
+      state.missionAssignments = Object.assign({}, state.missionAssignments, { [k]: list });
+
+      var curPts = Number(state.playerPoints[k] || 0);
+      var nextPts = Math.max(0, curPts + (wasApproved ? -ptsDelta : ptsDelta));
+      state.playerPoints = Object.assign({}, state.playerPoints, { [k]: nextPts });
+
+      await syncPatchToCloud({
+        missionAssignments: state.missionAssignments,
+        playerPoints: state.playerPoints
+      });
+      render();
+    };
+
+    window.masterAdjustPoints = async function (playerName, delta) {
+      var k = String(playerName || '').trim().toLowerCase();
+      if (!k) return;
+      var cur = Number(state.playerPoints[k] || 0);
+      var next = Math.max(0, cur + Number(delta || 0));
+      state.playerPoints = Object.assign({}, state.playerPoints, { [k]: next });
+      await syncPatchToCloud({ playerPoints: state.playerPoints });
+      render();
+    };
 
     function setBanner(text, type) {
       state.banner = { text: text, type: type || 'info' };
@@ -608,12 +1156,20 @@
         var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
       }
       var chosen = pool.slice(0, state.players.length);
+      var nextAssignments = {};
       state.players = state.players.map(function (p, idx) {
-        return Object.assign({}, p, { boardUnlocked: true, assignedRoleKey: chosen[idx] });
+        var rKey = chosen[idx];
+        var pKey = p.name.trim().toLowerCase();
+        nextAssignments[pKey] = rKey === 'martire' ? [] : drawFiveMissionsForRole(rKey);
+        return Object.assign({}, p, { boardUnlocked: true, assignedRoleKey: rKey });
       });
+      state.missionAssignments = nextAssignments;
       state.assignmentCompleted = true;
-      state.banner = { text: 'Ruoli assegnati e sincronizzati sulla stanza ' + state.roomCode + '.', type: 'success' };
-      await syncPatchToCloud({ players: state.players });
+      state.banner = { text: 'Ruoli e missioni 3+2 assegnati sulla stanza ' + state.roomCode + '.', type: 'success' };
+      await syncPatchToCloud({
+        players: state.players,
+        missionAssignments: state.missionAssignments
+      });
       render();
     };
 
@@ -621,10 +1177,14 @@
       state.players = state.players.map(function (p) {
         return Object.assign({}, p, { boardUnlocked: false, assignedRoleKey: null });
       });
+      state.missionAssignments = {};
       state.assignmentCompleted = false;
       state.boardOpened = false;
-      state.banner = { text: 'Ruoli azzerati.', type: 'info' };
-      await syncPatchToCloud({ players: state.players });
+      state.banner = { text: 'Ruoli e missioni azzerati.', type: 'info' };
+      await syncPatchToCloud({
+        players: state.players,
+        missionAssignments: state.missionAssignments
+      });
       render();
     };
 
@@ -671,11 +1231,380 @@
       render();
     };
 
+    function compressMasterSelfie(file, maxSize, quality) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var img = new Image();
+          img.onload = function () {
+            var ratio = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
+            var w = Math.max(1, Math.round((img.width || maxSize) * ratio));
+            var h = Math.max(1, Math.round((img.height || maxSize) * ratio));
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return resolve(String(ev.target.result || ''));
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = String(ev.target.result || '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    window.masterHandleSelfieChange = async function (inputEl) {
+      var file = inputEl && inputEl.files && inputEl.files[0];
+      if (!file) return;
+      var compressed = await compressMasterSelfie(file, 320, 0.72);
+      var mKey = (state.masterName || 'Master').trim().toLowerCase();
+      var nextSelfies = Object.assign({}, state.playerSelfies || {});
+      nextSelfies[mKey] = compressed;
+      state.masterSelfie = compressed;
+      state.playerSelfies = nextSelfies;
+      try {
+        var accRaw = safeGetItem(ACCESS_KEY);
+        var accObj = accRaw ? JSON.parse(accRaw) : {};
+        accObj.selfieDataUrl = compressed;
+        safeSetItem(ACCESS_KEY, JSON.stringify(accObj));
+      } catch (_e) {}
+      await syncPatchToCloud({ masterName: state.masterName || 'Master', masterSelfie: compressed, playerSelfies: nextSelfies });
+      render();
+    };
+
+    window.masterClearSelfie = async function () {
+      var mKey = (state.masterName || 'Master').trim().toLowerCase();
+      var nextSelfies = Object.assign({}, state.playerSelfies || {});
+      delete nextSelfies[mKey];
+      state.masterSelfie = '';
+      state.playerSelfies = nextSelfies;
+      try {
+        var accRaw = safeGetItem(ACCESS_KEY);
+        var accObj = accRaw ? JSON.parse(accRaw) : {};
+        accObj.selfieDataUrl = '';
+        safeSetItem(ACCESS_KEY, JSON.stringify(accObj));
+      } catch (_e) {}
+      await syncPatchToCloud({ masterSelfie: '', playerSelfies: nextSelfies });
+      render();
+    };
+
+    function computeTiedTopTwo(votes) {
+      if (!Array.isArray(votes) || !votes.length) return [];
+      var counts = {};
+      votes.forEach(function (v) {
+        var t = String((v && v.targetName) || '').trim();
+        if (t) counts[t] = (counts[t] || 0) + 1;
+      });
+      var entries = Object.keys(counts).map(function (k) { return { name: k, count: counts[k] }; });
+      entries.sort(function (a, b) { return b.count - a.count; });
+      if (entries.length < 2) return [];
+      var topVal = entries[0].count;
+      var tied = entries.filter(function (e) { return e.count === topVal; });
+      if (tied.length >= 2) return [tied[0].name, tied[1].name];
+      var secondVal = entries[1].count;
+      var seconds = entries.filter(function (e) { return e.count === secondVal; });
+      if (seconds.length === 1) return [entries[0].name, seconds[0].name];
+      return [];
+    }
+
+    window.masterToggleOvalSession = async function (open) {
+      await syncPatchToCloud({
+        ovalActive: Boolean(open),
+        chatDisabled: Boolean(open),
+        ovalVotes: open ? [] : (state.ovalVotes || []),
+        revealedVoteIndex: 0,
+        ovalRunoffActive: false,
+        ovalRunoffCandidates: []
+      });
+      render();
+    };
+
+    window.masterStartRunoff = async function () {
+      var tied = computeTiedTopTwo(state.ovalVotes || []);
+      if (tied.length !== 2) return;
+      await syncPatchToCloud({
+        ovalActive: true,
+        ovalRunoffActive: true,
+        ovalRunoffCandidates: tied,
+        ovalVotes: [],
+        revealedVoteIndex: 0,
+        tvMode: 'votes',
+        tvRevealTick: Date.now()
+      });
+      render();
+    };
+
+    window.masterClearRunoff = async function () {
+      await syncPatchToCloud({ ovalRunoffActive: false, ovalRunoffCandidates: [] });
+      render();
+    };
+
+    window.masterResetOvalVotes = async function () {
+      await syncPatchToCloud({
+        ovalVotes: [],
+        revealedVoteIndex: 0,
+        ovalRunoffActive: false,
+        ovalRunoffCandidates: []
+      });
+      render();
+    };
+
+    window.masterRevealNextVote = async function () {
+      var total = Array.isArray(state.ovalVotes) ? state.ovalVotes.length : 0;
+      if (!total) return;
+      var currentIdx = Number(state.revealedVoteIndex || 0);
+      var nextIdx = state.tvMode === 'votes' ? Math.min(total - 1, currentIdx + 1) : 0;
+      await syncPatchToCloud({
+        tvMode: 'votes',
+        revealedVoteIndex: nextIdx,
+        tvRevealTick: Date.now()
+      });
+      render();
+    };
+
+    window.masterRevealPrevVote = async function () {
+      var total = Array.isArray(state.ovalVotes) ? state.ovalVotes.length : 0;
+      if (!total) return;
+      var currentIdx = Number(state.revealedVoteIndex || 0);
+      await syncPatchToCloud({
+        tvMode: 'votes',
+        revealedVoteIndex: Math.max(0, currentIdx - 1),
+        tvRevealTick: Date.now()
+      });
+      render();
+    };
+
+    window.masterToggleTvVideoPlay = async function () {
+      await syncPatchToCloud({ tvVideoPaused: !Boolean(state.tvVideoPaused) });
+      render();
+    };
+
+    window.masterTogglePlayerDead = async function (playerName) {
+      var targetKey = String(playerName || '').trim().toLowerCase();
+      var foundName = '';
+      var nextPlayers = (state.players || []).map(function (p) {
+        if (String(p.name || '').trim().toLowerCase() === targetKey) {
+          foundName = p.name;
+          return Object.assign({}, p, { isDead: !Boolean(p.isDead) });
+        }
+        return p;
+      });
+      if (foundName && !selectedDeadReplayName) selectedDeadReplayName = foundName;
+      await syncPatchToCloud({ players: nextPlayers });
+      render();
+    };
+
+    window.masterSetDeadReplayTarget = function (name) { selectedDeadReplayName = String(name || ''); };
+
+    window.masterReplayKillForDead = async function () {
+      var sel = document.getElementById('master-dead-replay-select');
+      var target = String((sel ? sel.value : selectedDeadReplayName) || '').trim();
+      var deadList = (state.players || []).filter(function (p) { return p && p.isDead; });
+      if (!target && deadList.length) target = deadList[deadList.length - 1].name;
+      var patch = { tvMode: 'kill', tvVideoPaused: false, tvRevealTick: Date.now() };
+      if (target) patch.tvKillTarget = target;
+      await syncPatchToCloud(patch);
+      render();
+    };
+
+    window.masterSetExileTarget = function (name) { selectedExileName = String(name || ''); };
+
+    window.masterTriggerExile = async function () {
+      var sel = document.getElementById('master-exile-select');
+      var target = String((sel ? sel.value : selectedExileName) || '').trim();
+      await syncPatchToCloud({
+        tvMode: 'exile',
+        tvExileTarget: target,
+        tvVideoPaused: false,
+        tvRevealTick: Date.now()
+      });
+      render();
+    };
+
+    window.masterSetTvMode = async function (mode) {
+      var targetInput = document.getElementById('master-tv-kill-target');
+      var killTarget = targetInput ? String(targetInput.value || '').trim() : '';
+      var patch = { tvMode: mode, tvVideoPaused: false, tvRevealTick: Date.now() };
+      if (killTarget) patch.tvKillTarget = killTarget;
+      if (mode === 'votes') patch.revealedVoteIndex = 0;
+      await syncPatchToCloud(patch);
+      render();
+    };
+
     function formatClock(ts) {
       try {
         if (!ts) return '';
         return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
       } catch (_e) { return ''; }
+    }
+
+    function renderTvOvalRegiaSection() {
+      var masterName = String(state.masterName || 'Master');
+      var masterSelfie = isValidPhoto(state.masterSelfie) ? state.masterSelfie : '';
+      var players = Array.isArray(state.players) ? state.players : [];
+      var deadPlayers = players.filter(function (p) { return p && p.isDead; });
+      var votes = Array.isArray(state.ovalVotes) ? state.ovalVotes : [];
+      var idx = Number(state.revealedVoteIndex || 0);
+      var tied = computeTiedTopTwo(votes);
+      var ovalActive = Boolean(state.ovalActive);
+      var tvMode = state.tvMode || 'idle';
+      var isPaused = Boolean(state.tvVideoPaused);
+
+      var masterAvatarHtml = masterSelfie
+        ? '<img src="' + masterSelfie + '" alt="Selfie Master" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid #e5b85c;display:block;" />'
+        : '<div style="width:48px;height:48px;border-radius:12px;background:#1d2230;border:1px solid rgba(229,184,92,0.45);color:#e5b85c;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;">' + escapeHtml(masterName.slice(0, 1).toUpperCase()) + '</div>';
+
+      var tallies = {};
+      votes.forEach(function (v) {
+        var t = String((v && v.targetName) || '').trim();
+        if (t) tallies[t] = (tallies[t] || 0) + 1;
+      });
+      var tallyStr = Object.keys(tallies).length
+        ? Object.keys(tallies).map(function (k) { return escapeHtml(k) + ': ' + tallies[k]; }).join(' · ')
+        : 'Nessun voto registrato';
+
+      var deadOptions = deadPlayers.map(function (p) {
+        var sel = p.name === selectedDeadReplayName ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + ' (Morto)</option>';
+      }).join('');
+
+      var allPlayerOptions = players.map(function (p) {
+        var sel = p.name === selectedExileName ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
+      }).join('');
+
+      var deadTogglesHtml = players.length
+        ? players.map(function (p) {
+            var dead = Boolean(p.isDead);
+            var safeName = String(p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return '<button type="button" onclick="masterTogglePlayerDead(\'' + safeName + '\')" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (dead ? 'rgba(224,82,96,0.55)' : 'rgba(255,255,255,0.14)') + ';background:' + (dead ? 'rgba(224,82,96,0.2)' : '#1d2230') + ';color:' + (dead ? '#fca5a5' : '#f3f4f6') + ';font-size:11px;font-weight:700;cursor:pointer;">' + (dead ? '☠ ' : '○ ') + escapeHtml(p.name) + '</button>';
+          }).join('')
+        : '<span style="font-size:12px;color:#9ca3af;">Nessun giocatore al tavolo.</span>';
+
+      return (
+        '<section class="card card-gold" style="display:flex;flex-direction:column;gap:14px;">' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="display:flex;align-items:center;gap:12px;">' +
+              masterAvatarHtml +
+              '<div>' +
+                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo su TV</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
+                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge della regia TV e nella sfilata iniziale.</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+              '<label style="margin:0;padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">' +
+                (masterSelfie ? 'Cambia Selfie Master' : 'Scatta / Carica Selfie Master') +
+                '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="masterHandleSelfieChange(this)" />' +
+              '</label>' +
+              (masterSelfie ? '<button type="button" onclick="masterClearSelfie()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Rimuovi</button>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Regia Tavolo Ovale, Rivelazione Voti & Esilio · Stanza ' + escapeHtml(state.roomCode) + '</div>' +
+              '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Tavolo Ovale: ' + (ovalActive ? '<span style="color:#3ec98c;">APERTO</span>' : '<span style="color:#9ca3af;">CHIUSO</span>') + ' · Voto ' + (votes.length ? (Math.min(votes.length, idx + 1) + ' / ' + votes.length) : '0 / 0') + '</h2>' +
+              '<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Conteggio: ' + tallyStr + (tied.length === 2 ? ' · <strong style="color:#e5b85c;">Parità: ' + escapeHtml(tied[0]) + ' e ' + escapeHtml(tied[1]) + '</strong>' : '') + '</p>' +
+            '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+              '<button type="button" onclick="masterToggleOvalSession(true)" style="padding:9px 13px;border-radius:10px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Apri Tavolo Ovale</button>' +
+              '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
+              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Apri Tavolo Ovale</a>' +
+              '<a href="tv.html?stanza=' + encodeURIComponent(state.roomCode) + '" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(62,201,140,0.45);background:rgba(62,201,140,0.14);color:#3ec98c;font-weight:700;font-size:12px;text-decoration:none;">Apri Schermo TV</a>' +
+            '</div>' +
+          '</div>' +
+          '<div class="subpanel">' +
+            '<div style="font-size:12px;font-weight:700;color:#e5b85c;">Morti, Eliminazione & Esilio dal Tavolo (Controllo Master)</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + deadTogglesHtml + '</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+              '<select id="master-dead-replay-select" onchange="masterSetDeadReplayTarget(this.value)" style="max-width:250px;padding:8px 10px;font-size:12px;"><option value="">Ultimo morto automatico</option>' + deadOptions + '</select>' +
+              '<button type="button" onclick="masterReplayKillForDead()" style="padding:8px 12px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
+              '<select id="master-exile-select" onchange="masterSetExileTarget(this.value)" style="max-width:240px;padding:8px 10px;font-size:12px;"><option value="">Seleziona esiliato...</option>' + allPlayerOptions + '</select>' +
+              '<button type="button" onclick="masterTriggerExile()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:rgba(229,184,92,0.16);color:#e5b85c;font-weight:700;font-size:12px;cursor:pointer;">Esilia dal Tavolo (Selfie + Video)</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+            '<button type="button" onclick="masterRevealPrevVote()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Voto Precedente</button>' +
+            '<button type="button" onclick="masterRevealNextVote()" style="padding:8px 12px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Rivela Prossimo Voto su TV</button>' +
+            '<button type="button" onclick="masterStartRunoff()" ' + (tied.length === 2 ? '' : 'disabled ') + 'style="padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Ballottaggio (Parità)</button>' +
+            '<button type="button" onclick="masterClearRunoff()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Annulla Ballottaggio</button>' +
+            '<button type="button" onclick="masterResetOvalVotes()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(224,82,96,0.45);background:rgba(224,82,96,0.14);color:#e05260;font-weight:700;font-size:12px;cursor:pointer;">Azzera Voti</button>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">' +
+            '<input id="master-tv-kill-target" type="text" placeholder="Nome eliminato (opzionale)..." style="max-width:220px;padding:8px 10px;font-size:12px;" />' +
+            '<button type="button" onclick="masterSetTvMode(\'intro\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:' + (tvMode === 'intro' ? '#e5b85c' : '#1d2230') + ';color:' + (tvMode === 'intro' ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">Ingresso + Sfilata</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'kill\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'exile\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Esilio</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_fedeli\')" style="padding:8px 11px;border-radius:9px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Fedeli</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_traditori\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Traditori</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'win_solitario\')" style="padding:8px 11px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Solitaria</button>' +
+            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video TV' : 'Pausa Video TV') + '</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by TV</button>' +
+          '</div>' +
+        '</section>'
+      );
+    }
+
+    function renderMissionsAndPointsSection() {
+      var cards = state.players.length
+        ? state.players.map(function (p) {
+            var pKey = String(p.name || '').trim().toLowerCase();
+            var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
+            var pts = Number((state.playerPoints && state.playerPoints[pKey]) || 0);
+            var mList = Array.isArray(state.missionAssignments[pKey]) ? state.missionAssignments[pKey] : [];
+            var safeKey = pKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            var safeName = String(p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+            var mHtml = p.assignedRoleKey === 'martire'
+              ? '<div class="subtext">Il Martire non ha missioni standard: ottiene punti quando subisce missioni altrui.</div>'
+              : (mList.length
+                  ? '<div style="display:flex;flex-direction:column;gap:6px;">' + mList.map(function (m, sIdx) {
+                      var flag = m.masterApproved
+                        ? '<span style="color:#3ec98c;font-weight:700;">Approvata ✓</span>'
+                        : (m.playerClaimedDone
+                            ? '<span style="color:#e5b85c;font-weight:700;">Segnalata dal giocatore</span>'
+                            : '<span style="color:#9ca3af;">In corso</span>');
+                      return (
+                        '<div class="mission-chip">' +
+                          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
+                            '<strong>' + escapeHtml(m.id || ('M' + (sIdx + 1))) + ' · ' + escapeHtml(m.title) + '</strong>' +
+                            '<button type="button" class="btn-small" onclick="masterApproveMission(\'' + safeKey + '\', ' + sIdx + ')">' + (m.masterApproved ? 'Revoca' : 'Approva +1pt') + '</button>' +
+                          '</div>' +
+                          '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">' + escapeHtml(m.type) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + flag + '</div>' +
+                        '</div>'
+                      );
+                    }).join('') + '</div>'
+                  : '<div class="subtext">Nessuna missione pescata ancora.</div>');
+
+            return (
+              '<div class="board-card">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+                  '<div>' +
+                    '<div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div>' +
+                    '<div class="player-sub">' + (r ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>' : 'Nessun ruolo') + '</div>' +
+                  '</div>' +
+                  '<div style="display:flex;align-items:center;gap:6px;">' +
+                    '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', -1)">-</button>' +
+                    '<span class="pts-pill">' + pts + ' pt</span>' +
+                    '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', 1)">+</button>' +
+                  '</div>' +
+                '</div>' +
+                mHtml +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun giocatore al tavolo.</p>';
+
+      return (
+        '<section class="card">' +
+          '<div class="section-head">' +
+            '<div><span class="eyebrow">Catalogo JSON · ' + escapeHtml(state.catalogSource) + '</span><h2>Missioni 3+2 & Punti Giocatori</h2></div>' +
+            '<button type="button" class="btn-gold" onclick="masterDrawAllMissions()">Pesca 5 Missioni (3+2)</button>' +
+          '</div>' +
+          '<div class="board-grid">' + cards + '</div>' +
+        '</section>'
+      );
     }
 
     function renderChatSection() {
@@ -737,18 +1666,6 @@
       var bannerHtml = state.banner ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>' : '';
 
       if (state.boardOpened) {
-        var boardCards = state.players.length
-          ? state.players.map(function (p) {
-              var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
-              return (
-                '<div class="board-card">' +
-                  '<div><div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div><div class="player-sub">' + (p.boardUnlocked ? 'Attivo' : 'In attesa') + '</div></div>' +
-                  (r ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>' : '<span class="player-sub">Nessun ruolo</span>') +
-                '</div>'
-              );
-            }).join('')
-          : '<p class="subtext">Nessun giocatore al tavolo.</p>';
-
         root.innerHTML =
           '<header class="card header-row">' +
             '<div><span class="eyebrow">Plancia Master · ' + escapeHtml(state.syncStatus) + '</span><h1>Tavolo di ' + escapeHtml(state.roomCode) + '</h1><p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p></div>' +
@@ -759,7 +1676,8 @@
             '</div>' +
           '</header>' +
           bannerHtml +
-          '<section class="card"><div class="section-head"><h2>Giocatori al Tavolo (' + state.players.length + ')</h2><span class="mono">Sessione Attiva</span></div><div class="board-grid">' + boardCards + '</div></section>' +
+          renderTvOvalRegiaSection() +
+          renderMissionsAndPointsSection() +
           renderChatSection();
         return;
       }
@@ -788,10 +1706,11 @@
       var playersHtml = state.players.length
         ? state.players.map(function (p) {
             var role = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
+            var safeId = String(p.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             return (
               '<div class="player-row">' +
                 '<div><div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div><div class="player-sub">' + (role ? '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.name) + ' (' + escapeHtml(role.faction) + ')</span>' : 'In attesa di ruolo') + '</div></div>' +
-                '<button type="button" class="btn-small btn-remove" onclick="masterRemovePlayer(\'' + escapeHtml(p.id) + '\')">Rimuovi</button>' +
+                '<button type="button" class="btn-small btn-remove" onclick="masterRemovePlayer(\'' + safeId + '\')">Rimuovi</button>' +
               '</div>'
             );
           }).join('')
@@ -819,415 +1738,13 @@
           '<section class="card"><div class="section-head"><h2>1. Ruoli</h2><span class="subtext">Totale: <strong style="color:var(--gold);">' + totalRoles + '</strong></span></div><div class="roles-grid">' + roleCardsHtml + '</div></section>' +
           '<section class="card"><div class="section-head"><h2>2. Giocatori (' + state.players.length + ')</h2></div><form class="add-form" onsubmit="event.preventDefault(); var inp = document.getElementById(\'master-player-input\'); masterAddPlayer(inp.value); inp.value = \'\';"><input id="master-player-input" type="text" maxlength="24" placeholder="Nome giocatore..." /><button type="submit" class="btn-indigo">Aggiungi</button></form><div class="player-list">' + playersHtml + '</div></section>' +
         '</div>' +
+        renderTvOvalRegiaSection() +
         '<div class="footer-action"><button type="button" class="btn-emerald-lg" onclick="masterOpenBoard()">Completa e Vai alla Plancia Master</button></div>';
     }
 
     render();
+    loadCatalogJson();
     subscribeToRoomCloud();
-  </script>
-
-  <script type="module">
-    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore,
-      doc,
-      setDoc,
-      onSnapshot
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    var ROOM_PREFIX = 'ombre_stanza_sync_';
-    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-
-    function getDb() {
-      try {
-        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
-        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
-        return getFirestore(app);
-      } catch (_e) { return null; }
-    }
-
-    var db = getDb();
-    var selectedDeadReplayName = '';
-    var selectedExileName = '';
-
-    function getAccessContext() {
-      try {
-        var raw = localStorage.getItem(ACCESS_KEY);
-        if (raw) {
-          var p = JSON.parse(raw);
-          return {
-            roomCode: p && p.roomCode ? String(p.roomCode).trim().toUpperCase() : 'TAVOLO1',
-            masterName: p && p.playerName ? String(p.playerName).trim() : 'Master',
-            selfieDataUrl: p && p.selfieDataUrl ? String(p.selfieDataUrl) : ''
-          };
-        }
-      } catch (_e) {}
-      return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
-    }
-
-    function getRoomCode() { return getAccessContext().roomCode || 'TAVOLO1'; }
-
-    function loadLocal(code) {
-      try {
-        var raw = localStorage.getItem(ROOM_PREFIX + code);
-        return raw ? JSON.parse(raw) : {};
-      } catch (_e) { return {}; }
-    }
-
-    function saveLocal(code, data) {
-      try { localStorage.setItem(ROOM_PREFIX + code, JSON.stringify(data)); } catch (_e) {}
-    }
-
-    function isValidPhoto(val) {
-      var s = String(val || '').trim();
-      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
-    }
-
-    function compressMasterSelfie(file, maxSize, quality) {
-      return new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-          var img = new Image();
-          img.onload = function () {
-            var ratio = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
-            var w = Math.max(1, Math.round((img.width || maxSize) * ratio));
-            var h = Math.max(1, Math.round((img.height || maxSize) * ratio));
-            var canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            var ctx = canvas.getContext('2d');
-            if (!ctx) return resolve(String(ev.target.result || ''));
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-          img.onerror = reject;
-          img.src = String(ev.target.result || '');
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function persistPatch(patch) {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var next = Object.assign({}, cur, patch, { roomCode: code, updatedAt: Date.now() });
-      saveLocal(code, next);
-      renderMasterTvOvalRegia(next);
-      if (db) {
-        try {
-          await setDoc(doc(db, 'stanze', code), Object.assign({ roomCode: code, updatedAt: Date.now() }, patch), { merge: true });
-        } catch (_e) {}
-      }
-    }
-
-    window.masterHandleSelfieChange = async function (inputEl) {
-      var file = inputEl && inputEl.files && inputEl.files[0];
-      if (!file) return;
-      var compressed = await compressMasterSelfie(file, 320, 0.72);
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var ctx = getAccessContext();
-      var masterName = String(cur.masterName || ctx.masterName || 'Master').trim() || 'Master';
-      var nextSelfies = Object.assign({}, cur.playerSelfies || {});
-      nextSelfies[masterName.toLowerCase()] = compressed;
-      try {
-        var accRaw = localStorage.getItem(ACCESS_KEY);
-        var accObj = accRaw ? JSON.parse(accRaw) : {};
-        accObj.selfieDataUrl = compressed;
-        localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
-      } catch (_e) {}
-      await persistPatch({ masterName: masterName, masterSelfie: compressed, playerSelfies: nextSelfies });
-    };
-
-    window.masterClearSelfie = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var ctx = getAccessContext();
-      var masterName = String(cur.masterName || ctx.masterName || 'Master').trim() || 'Master';
-      var nextSelfies = Object.assign({}, cur.playerSelfies || {});
-      delete nextSelfies[masterName.toLowerCase()];
-      try {
-        var accRaw = localStorage.getItem(ACCESS_KEY);
-        var accObj = accRaw ? JSON.parse(accRaw) : {};
-        accObj.selfieDataUrl = '';
-        localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
-      } catch (_e) {}
-      await persistPatch({ masterSelfie: '', playerSelfies: nextSelfies });
-    };
-
-    function computeTiedTopTwo(votes) {
-      if (!Array.isArray(votes) || !votes.length) return [];
-      var counts = {};
-      votes.forEach(function (v) {
-        var t = String((v && v.targetName) || '').trim();
-        if (t) counts[t] = (counts[t] || 0) + 1;
-      });
-      var entries = Object.keys(counts).map(function (k) { return { name: k, count: counts[k] }; });
-      entries.sort(function (a, b) { return b.count - a.count; });
-      if (entries.length < 2) return [];
-      var topVal = entries[0].count;
-      var tied = entries.filter(function (e) { return e.count === topVal; });
-      if (tied.length >= 2) return [tied[0].name, tied[1].name];
-      var secondVal = entries[1].count;
-      var seconds = entries.filter(function (e) { return e.count === secondVal; });
-      if (seconds.length === 1) return [entries[0].name, seconds[0].name];
-      return [];
-    }
-
-    window.masterToggleOvalSession = async function (open) {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      await persistPatch({
-        ovalActive: Boolean(open),
-        chatDisabled: Boolean(open),
-        ovalVotes: open ? [] : (cur.ovalVotes || []),
-        revealedVoteIndex: 0,
-        ovalRunoffActive: false,
-        ovalRunoffCandidates: []
-      });
-    };
-
-    window.masterStartRunoff = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var tied = computeTiedTopTwo(cur.ovalVotes || []);
-      if (tied.length !== 2) return;
-      await persistPatch({
-        ovalActive: true,
-        ovalRunoffActive: true,
-        ovalRunoffCandidates: tied,
-        ovalVotes: [],
-        revealedVoteIndex: 0,
-        tvMode: 'votes',
-        tvRevealTick: Date.now()
-      });
-    };
-
-    window.masterClearRunoff = async function () {
-      await persistPatch({ ovalRunoffActive: false, ovalRunoffCandidates: [] });
-    };
-
-    window.masterResetOvalVotes = async function () {
-      await persistPatch({
-        ovalVotes: [],
-        revealedVoteIndex: 0,
-        ovalRunoffActive: false,
-        ovalRunoffCandidates: []
-      });
-    };
-
-    window.masterRevealNextVote = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var total = Array.isArray(cur.ovalVotes) ? cur.ovalVotes.length : 0;
-      if (!total) return;
-      var currentIdx = Number(cur.revealedVoteIndex || 0);
-      var nextIdx = cur.tvMode === 'votes' ? Math.min(total - 1, currentIdx + 1) : 0;
-      await persistPatch({
-        tvMode: 'votes',
-        revealedVoteIndex: nextIdx,
-        tvRevealTick: Date.now()
-      });
-    };
-
-    window.masterRevealPrevVote = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var total = Array.isArray(cur.ovalVotes) ? cur.ovalVotes.length : 0;
-      if (!total) return;
-      var currentIdx = Number(cur.revealedVoteIndex || 0);
-      await persistPatch({
-        tvMode: 'votes',
-        revealedVoteIndex: Math.max(0, currentIdx - 1),
-        tvRevealTick: Date.now()
-      });
-    };
-
-    window.masterToggleTvVideoPlay = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      await persistPatch({ tvVideoPaused: !Boolean(cur.tvVideoPaused) });
-    };
-
-    window.masterTogglePlayerDead = async function (playerName) {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var players = Array.isArray(cur.players) ? cur.players.slice() : [];
-      var targetKey = String(playerName || '').trim().toLowerCase();
-      var foundName = '';
-      players = players.map(function (p) {
-        if (String(p.name || '').trim().toLowerCase() === targetKey) {
-          foundName = p.name;
-          return Object.assign({}, p, { isDead: !Boolean(p.isDead) });
-        }
-        return p;
-      });
-      if (foundName && !selectedDeadReplayName) selectedDeadReplayName = foundName;
-      await persistPatch({ players: players });
-    };
-
-    window.masterSetDeadReplayTarget = function (name) { selectedDeadReplayName = String(name || ''); };
-
-    window.masterReplayKillForDead = async function () {
-      var sel = document.getElementById('master-dead-replay-select');
-      var target = String((sel ? sel.value : selectedDeadReplayName) || '').trim();
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var deadList = (Array.isArray(cur.players) ? cur.players : []).filter(function (p) { return p && p.isDead; });
-      if (!target && deadList.length) target = deadList[deadList.length - 1].name;
-      var patch = { tvMode: 'kill', tvVideoPaused: false, tvRevealTick: Date.now() };
-      if (target) patch.tvKillTarget = target;
-      await persistPatch(patch);
-    };
-
-    window.masterSetExileTarget = function (name) { selectedExileName = String(name || ''); };
-
-    window.masterTriggerExile = async function () {
-      var sel = document.getElementById('master-exile-select');
-      var target = String((sel ? sel.value : selectedExileName) || '').trim();
-      await persistPatch({
-        tvMode: 'exile',
-        tvExileTarget: target,
-        tvVideoPaused: false,
-        tvRevealTick: Date.now()
-      });
-    };
-
-    window.masterSetTvMode = async function (mode) {
-      var targetInput = document.getElementById('master-tv-kill-target');
-      var killTarget = targetInput ? String(targetInput.value || '').trim() : '';
-      var patch = { tvMode: mode, tvVideoPaused: false, tvRevealTick: Date.now() };
-      if (killTarget) patch.tvKillTarget = killTarget;
-      if (mode === 'votes') patch.revealedVoteIndex = 0;
-      await persistPatch(patch);
-    };
-
-    function renderMasterTvOvalRegia(data) {
-      var host = document.getElementById('master-lightweight-tv-oval-panel');
-      if (!host) return;
-      var ctx = getAccessContext();
-      var code = getRoomCode();
-      var room = data || loadLocal(code);
-      var masterName = String(room.masterName || ctx.masterName || 'Master');
-      var masterSelfie = isValidPhoto(room.masterSelfie) ? room.masterSelfie : (isValidPhoto(ctx.selfieDataUrl) ? ctx.selfieDataUrl : '');
-      var players = Array.isArray(room.players) ? room.players : [];
-      var deadPlayers = players.filter(function (p) { return p && p.isDead; });
-      var votes = Array.isArray(room.ovalVotes) ? room.ovalVotes : [];
-      var idx = Number(room.revealedVoteIndex || 0);
-      var tied = computeTiedTopTwo(votes);
-      var ovalActive = Boolean(room.ovalActive);
-      var tvMode = room.tvMode || 'idle';
-      var isPaused = Boolean(room.tvVideoPaused);
-
-      var masterAvatarHtml = masterSelfie
-        ? '<img src="' + masterSelfie + '" alt="Selfie Master" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid #e5b85c;display:block;" />'
-        : '<div style="width:48px;height:48px;border-radius:12px;background:#1d2230;border:1px solid rgba(229,184,92,0.45);color:#e5b85c;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;">' + masterName.slice(0, 1).toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
-
-      var tallies = {};
-      votes.forEach(function (v) {
-        var t = String((v && v.targetName) || '').trim();
-        if (t) tallies[t] = (tallies[t] || 0) + 1;
-      });
-      var tallyStr = Object.keys(tallies).length
-        ? Object.keys(tallies).map(function (k) { return k + ': ' + tallies[k]; }).join(' · ')
-        : 'Nessun voto registrato';
-
-      var deadOptions = deadPlayers.map(function (p) {
-        var sel = p.name === selectedDeadReplayName ? ' selected' : '';
-        return '<option value="' + p.name.replace(/"/g, '&quot;') + '"' + sel + '>' + p.name + ' (Morto)</option>';
-      }).join('');
-
-      var allPlayerOptions = players.map(function (p) {
-        var sel = p.name === selectedExileName ? ' selected' : '';
-        return '<option value="' + p.name.replace(/"/g, '&quot;') + '"' + sel + '>' + p.name + '</option>';
-      }).join('');
-
-      var deadTogglesHtml = players.length
-        ? players.map(function (p) {
-            var dead = Boolean(p.isDead);
-            return '<button type="button" onclick="masterTogglePlayerDead(\'' + p.name.replace(/'/g, "\\'") + '\')" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (dead ? 'rgba(224,82,96,0.55)' : 'rgba(255,255,255,0.14)') + ';background:' + (dead ? 'rgba(224,82,96,0.2)' : '#1d2230') + ';color:' + (dead ? '#fca5a5' : '#f3f4f6') + ';font-size:11px;font-weight:700;cursor:pointer;">' + (dead ? '☠ ' : '○ ') + p.name + '</button>';
-          }).join('')
-        : '<span style="font-size:12px;color:#9ca3af;">Nessun giocatore al tavolo.</span>';
-
-      host.innerHTML =
-        '<div style="border:1px solid rgba(229,184,92,0.42);border-radius:16px;padding:18px;background:#151924;display:flex;flex-direction:column;gap:14px;">' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);">' +
-            '<div style="display:flex;align-items:center;gap:12px;">' +
-              masterAvatarHtml +
-              '<div>' +
-                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo su TV</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
-                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge della regia TV e nella sfilata iniziale.</div>' +
-              '</div>' +
-            '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-              '<label style="margin:0;padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">' +
-                (masterSelfie ? 'Cambia Selfie Master' : 'Scatta / Carica Selfie Master') +
-                '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="masterHandleSelfieChange(this)" />' +
-              '</label>' +
-              (masterSelfie ? '<button type="button" onclick="masterClearSelfie()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Rimuovi</button>' : '') +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Regia Tavolo Ovale, Rivelazione Voti & Esilio · Stanza ' + code + '</div>' +
-              '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Tavolo Ovale: ' + (ovalActive ? '<span style="color:#3ec98c;">APERTO (Discussione & Voto liberi)</span>' : '<span style="color:#9ca3af;">CHIUSO</span>') + ' · Voto ' + (votes.length ? (Math.min(votes.length, idx + 1) + ' / ' + votes.length) : '0 / 0') + '</h2>' +
-              '<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Conteggio: ' + tallyStr + (tied.length === 2 ? ' · <strong style="color:#e5b85c;">Parità: ' + tied[0] + ' e ' + tied[1] + '</strong>' : '') + '</p>' +
-            '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              '<button type="button" onclick="masterToggleOvalSession(true)" style="padding:9px 13px;border-radius:10px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Apri Tavolo Ovale</button>' +
-              '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
-              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Apri Tavolo Ovale</a>' +
-              '<a href="tv.html?stanza=' + encodeURIComponent(code) + '" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(62,201,140,0.45);background:rgba(62,201,140,0.14);color:#3ec98c;font-weight:700;font-size:12px;text-decoration:none;">Apri Schermo TV</a>' +
-            '</div>' +
-          '</div>' +
-          '<div style="padding:12px;border-radius:12px;background:#0c0e14;border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:10px;">' +
-            '<div style="font-size:12px;font-weight:700;color:#e5b85c;">Morti, Eliminazione & Esilio dal Tavolo (Controllo Master)</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + deadTogglesHtml + '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-              '<select id="master-dead-replay-select" onchange="masterSetDeadReplayTarget(this.value)" style="max-width:250px;padding:8px 10px;font-size:12px;"><option value="">Ultimo morto automatico</option>' + deadOptions + '</select>' +
-              '<button type="button" onclick="masterReplayKillForDead()" style="padding:8px 12px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
-              '<select id="master-exile-select" onchange="masterSetExileTarget(this.value)" style="max-width:240px;padding:8px 10px;font-size:12px;"><option value="">Seleziona esiliato...</option>' + allPlayerOptions + '</select>' +
-              '<button type="button" onclick="masterTriggerExile()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:rgba(229,184,92,0.16);color:#e5b85c;font-weight:700;font-size:12px;cursor:pointer;">Esilia dal Tavolo (Selfie + Video)</button>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-            '<button type="button" onclick="masterRevealPrevVote()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Voto Precedente</button>' +
-            '<button type="button" onclick="masterRevealNextVote()" style="padding:8px 12px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Rivela Prossimo Voto su TV</button>' +
-            '<button type="button" onclick="masterStartRunoff()" ' + (tied.length === 2 ? '' : 'disabled ') + 'style="padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Ballottaggio (Parità)</button>' +
-            '<button type="button" onclick="masterClearRunoff()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Annulla Ballottaggio</button>' +
-            '<button type="button" onclick="masterResetOvalVotes()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(224,82,96,0.45);background:rgba(224,82,96,0.14);color:#e05260;font-weight:700;font-size:12px;cursor:pointer;">Azzera Voti</button>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);">' +
-            '<input id="master-tv-kill-target" type="text" placeholder="Nome eliminato (opzionale)..." style="max-width:220px;padding:8px 10px;font-size:12px;" />' +
-            '<button type="button" onclick="masterSetTvMode(\'intro\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:' + (tvMode === 'intro' ? '#e5b85c' : '#1d2230') + ';color:' + (tvMode === 'intro' ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">Ingresso + Sfilata</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'kill\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'exile\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Esilio</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_fedeli\')" style="padding:8px 11px;border-radius:9px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Fedeli</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_traditori\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Traditori</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_solitario\')" style="padding:8px 11px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Solitaria</button>' +
-            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video TV' : 'Pausa Video TV') + '</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by TV</button>' +
-          '</div>' +
-        '</div>';
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-      var wrap = document.createElement('div');
-      wrap.id = 'master-lightweight-tv-oval-panel';
-      wrap.style.cssText = 'max-width:1120px;margin:0 auto 12px;padding:0 16px;';
-      document.body.insertBefore(wrap, document.body.firstChild);
-      var code = getRoomCode();
-      renderMasterTvOvalRegia(loadLocal(code));
-      if (db) {
-        onSnapshot(doc(db, 'stanze', code), function (snap) {
-          if (snap.exists()) {
-            var d = snap.data() || {};
-            saveLocal(code, Object.assign({}, loadLocal(code), d));
-            renderMasterTvOvalRegia(d);
-          }
-        });
-      }
-    });
   </script>
 </body>
 </html>
