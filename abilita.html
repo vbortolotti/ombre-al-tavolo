@@ -55,6 +55,7 @@
       color: var(--gold);
     }
     h1 { margin: 4px 0 0; font-size: 24px; color: #fff; }
+    h2 { margin: 0; font-size: 20px; color: #fff; }
     .subtext { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
     .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
     .btn {
@@ -66,6 +67,9 @@
       font-weight: 700;
       font-size: 12px;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
     }
     .btn-gold {
       background: var(--gold);
@@ -88,93 +92,238 @@
       color: var(--gold);
       background: rgba(229,184,92,0.12);
     }
+    .badge-emerald {
+      color: var(--emerald);
+      background: rgba(62,201,140,0.14);
+      border-color: rgba(62,201,140,0.35);
+    }
+    .badge-indigo {
+      color: var(--indigo);
+      background: rgba(124,140,255,0.14);
+      border-color: rgba(124,140,255,0.35);
+    }
   </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
 </head>
 <body>
   <div id="ability-page-root" class="wrap"></div>
 
-  <script>
-    (function () {
-      var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-      var ROOM_PREFIX = 'ombre_stanza_sync_';
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      var ROLE_INFO = {
-        assassino: { name: 'Assassino', faction: 'Traditori', desc: 'Spende 1 punto missione confermato per colpire un bersaglio non protetto (o indicare 2 bersagli se c’è il Traditore Segreto). Richiede un giro di Tavolo Ovale per riattivarsi.' },
-        sabotatore: { name: 'Sabotatore', faction: 'Traditori', desc: 'Spende 1 punto missione per sabotare silenziosamente un bersaglio: il bersaglio spende comunque il punto ma l’effetto viene annullato.' },
-        traditore_segreto: { name: 'Traditore Segreto', faction: 'Traditori', desc: 'Conosce gli altri Traditori e, quando l’Assassino sceglie 2 persone, decide chi eliminare.' },
-        investigatore: { name: 'Investigatore', faction: 'Fedeli', desc: 'Riceve missioni più accessibili e può spendere 1 punto missione per ottenere una missione degli Assassini a bassa difficoltà.' },
-        guardia: { name: 'Guardia', faction: 'Fedeli', desc: 'Spende 1 punto missione per assegnare uno Scudo Protettivo valido per 1 notte.' },
-        martire: { name: 'Martire', faction: 'Fedeli', desc: 'Non ha missioni standard; ottiene punti subendo missioni altrui e può rilevare un ruolo o assegnare uno Scudo persistente fino a colpo di Assassino o Sabotatore.' },
-        mediatore: { name: 'Mediatore', faction: 'Fedeli', desc: 'Ha un voto extra (+1) al Tavolo Ovale.' },
-        cacciatore: { name: 'Cacciatore', faction: 'Neutro', desc: 'Con 1 punto missione può chiedere "giocatore X è ruolo Y?" con risposta Sì/No; con 0 punti può indicare i ruoli di 3 giocatori (3 giusti = vince subito, errore = eliminato).' }
-      };
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
 
-      function readAccess() {
-        try {
-          var raw = localStorage.getItem(ACCESS_KEY);
-          var p = raw ? JSON.parse(raw) : {};
-          return {
-            roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
-            playerName: String(p.playerName || 'Giocatore').trim() || 'Giocatore'
-          };
-        } catch (_e) {
-          return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
-        }
+    var GAME_PHASES = [
+      { step: 1, title: 'Cerimonia dei Ruoli' },
+      { step: 2, title: 'Interludio Ludico' },
+      { step: 3, title: 'Notte (Primo Assassinio)' },
+      { step: 4, title: 'Risveglio' },
+      { step: 5, title: 'Interludio Ludico' },
+      { step: 6, title: 'Tavolo Ovale' },
+      { step: 7, title: 'Notte (Assassino)' }
+    ];
+
+    var ROLE_INFO = {
+      assassino: {
+        name: 'Assassino',
+        faction: 'Traditori',
+        desc: 'Spende 1 punto missione confermato per colpire un bersaglio non protetto (o indicare 2 bersagli se c’è il Traditore Segreto). Richiede un giro di Tavolo Ovale per riattivarsi.'
+      },
+      sabotatore: {
+        name: 'Sabotatore',
+        faction: 'Traditori',
+        desc: 'Spende 1 punto missione per sabotare silenziosamente un bersaglio: il bersaglio spende comunque il punto ma l’effetto viene annullato.'
+      },
+      traditore_segreto: {
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        desc: 'Conosce gli altri Traditori e, quando l’Assassino sceglie 2 persone, decide chi eliminare.'
+      },
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        desc: 'Riceve missioni più accessibili e può spendere 1 punto missione per ottenere una missione degli Assassini a bassa difficoltà.'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Fedeli',
+        desc: 'Spende 1 punto missione per assegnare uno Scudo Protettivo valido per 1 notte.'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Fedeli',
+        desc: 'Non ha missioni standard; ottiene punti subendo missioni altrui e può rilevare un ruolo o assegnare uno Scudo persistente fino a colpo di Assassino o Sabotatore.'
+      },
+      mediatore: {
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        desc: 'Ha un voto extra (+1) al Tavolo Ovale.'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        desc: 'Con 1 punto missione può chiedere "giocatore X è ruolo Y?" con risposta Sì/No; con 0 punti può indicare i ruoli di 3 giocatori (3 giusti = vince subito, errore = eliminato).'
       }
+    };
 
-      function readRoom(code) {
-        try {
-          var raw = localStorage.getItem(ROOM_PREFIX + code);
-          return raw ? JSON.parse(raw) : {};
-        } catch (_e) {
-          return {};
-        }
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function readAccess() {
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        var p = raw ? JSON.parse(raw) : {};
+        return {
+          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          playerName: String(p.playerName || 'Giocatore').trim() || 'Giocatore'
+        };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
       }
+    }
 
-      function render() {
-        var host = document.getElementById('ability-page-root');
-        if (!host) return;
-        var acc = readAccess();
-        var room = readRoom(acc.roomCode);
-        var players = Array.isArray(room.players) ? room.players : [];
-        var me = players.find(function (p) {
-          return String(p && p.name || '').trim().toLowerCase() === acc.playerName.toLowerCase();
-        });
-        var roleKey = me && me.assignedRoleKey ? me.assignedRoleKey : null;
-        var role = roleKey && ROLE_INFO[roleKey] ? ROLE_INFO[roleKey] : null;
-        var ptsMap = room.playerPoints && typeof room.playerPoints === 'object' ? room.playerPoints : {};
-        var pts = Number(ptsMap[acc.playerName.toLowerCase()] || 0);
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (_e) {
+        return null;
+      }
+    }
 
-        var bodyHtml = role
-          ? '<div class="role-box">' +
-              '<div class="top-bar">' +
-                '<div><span class="eyebrow">Ruolo Attivo</span><h2 style="margin:4px 0 0;color:#fff;">' + role.name + '</h2></div>' +
-                '<span class="badge">' + role.faction + ' · Punti: ' + pts + '</span>' +
+    var db = initFirestore();
+    var acc = readAccess();
+    var roomState = {
+      players: [],
+      playerPoints: {},
+      phaseIndex: 0,
+      cycleCount: 1,
+      syncLabel: db ? 'Firestore' : 'Locale'
+    };
+
+    function readLocalRoom(code) {
+      try {
+        var raw = localStorage.getItem(ROOM_PREFIX + code);
+        return raw ? JSON.parse(raw) : {};
+      } catch (_e) {
+        return {};
+      }
+    }
+
+    function applyRoomData(data) {
+      if (!data || typeof data !== 'object') return;
+      if (Array.isArray(data.players)) roomState.players = data.players;
+      if (data.playerPoints && typeof data.playerPoints === 'object') {
+        roomState.playerPoints = Object.assign({}, data.playerPoints);
+      }
+      if (typeof data.phaseIndex === 'number') {
+        roomState.phaseIndex = Math.max(0, Math.min(GAME_PHASES.length - 1, Number(data.phaseIndex)));
+      }
+      if (typeof data.cycleCount === 'number') {
+        roomState.cycleCount = Math.max(1, Number(data.cycleCount));
+      }
+      try {
+        localStorage.setItem(ROOM_PREFIX + acc.roomCode, JSON.stringify(Object.assign({}, readLocalRoom(acc.roomCode), {
+          players: roomState.players,
+          playerPoints: roomState.playerPoints,
+          phaseIndex: roomState.phaseIndex,
+          cycleCount: roomState.cycleCount,
+          updatedAt: Date.now()
+        })));
+      } catch (_e) {}
+    }
+
+    function render() {
+      var host = document.getElementById('ability-page-root');
+      if (!host) return;
+      acc = readAccess();
+      var pKey = acc.playerName.toLowerCase();
+
+      var me = roomState.players.find(function (p) {
+        return String(p && p.name || '').trim().toLowerCase() === pKey;
+      });
+      var roleKey = me && me.assignedRoleKey ? me.assignedRoleKey : null;
+      var role = roleKey && ROLE_INFO[roleKey] ? ROLE_INFO[roleKey] : null;
+      var pts = Number(roomState.playerPoints[pKey] || 0);
+      var ph = GAME_PHASES[roomState.phaseIndex] || GAME_PHASES[0];
+
+      var bodyHtml = role
+        ? '<div class="role-box">' +
+            '<div class="top-bar">' +
+              '<div><span class="eyebrow">Ruolo Attivo</span><h2>' + escapeHtml(role.name) + '</h2></div>' +
+              '<div class="btn-row">' +
+                '<span class="badge">' + escapeHtml(role.faction) + '</span>' +
+                '<span class="badge badge-emerald">Punti: ' + pts + '</span>' +
               '</div>' +
-              '<p class="subtext" style="color:#e5e7eb;margin-top:10px;">' + role.desc + '</p>' +
-              '<p class="subtext" style="margin-top:10px;">Per attivare i pulsanti interattivi e spendere punti, usa la tua Scheda Giocatore.</p>' +
-            '</div>'
-          : '<div class="role-box"><p class="subtext" style="margin:0;">Nessun ruolo assegnato al momento nella stanza <strong>' + acc.roomCode + '</strong>. Attendi che il Master assegni i ruoli.</p></div>';
-
-        host.innerHTML =
-          '<header class="card top-bar">' +
-            '<div>' +
-              '<span class="eyebrow">Riepilogo Abilità · Stanza ' + acc.roomCode + '</span>' +
-              '<h1>Scheda Abilità di ' + acc.playerName + '</h1>' +
             '</div>' +
-            '<div class="btn-row">' +
-              '<button type="button" class="btn btn-gold" onclick=\"window.location.href='giocatore.html'\">Torna alla Scheda Giocatore</button>' +
-              '<button type="button" class="btn" onclick=\"window.location.href='ruoli.html'\">Tutti i Ruoli</button>' +
-            '</div>' +
-          '</header>' +
-          '<section class="card">' +
-            '<span class="eyebrow">Dettaglio Potere</span>' +
-            bodyHtml +
-          '</section>';
-      }
+            '<p class="subtext" style="color:#e5e7eb;margin-top:10px;">' + escapeHtml(role.desc) + '</p>' +
+            '<p class="subtext" style="margin-top:10px;">Per attivare i pulsanti interattivi e spendere punti, usa la tua Scheda Giocatore.</p>' +
+          '</div>'
+        : '<div class="role-box"><p class="subtext" style="margin:0;">Nessun ruolo assegnato al momento nella stanza <strong>' + escapeHtml(acc.roomCode) + '</strong>. Attendi che il Master assegni i ruoli.</p></div>';
 
-      render();
-    })();
+      host.innerHTML =
+        '<header class="card top-bar">' +
+          '<div>' +
+            '<span class="eyebrow">Riepilogo Abilità · Stanza ' + escapeHtml(acc.roomCode) + ' · ' + escapeHtml(roomState.syncLabel) + '</span>' +
+            '<h1>Scheda Abilità di ' + escapeHtml(acc.playerName) + '</h1>' +
+            '<p class="subtext">Fase ' + ph.step + '/' + GAME_PHASES.length + ': <strong>' + escapeHtml(ph.title) + '</strong> · Ciclo #' + roomState.cycleCount + '</p>' +
+          '</div>' +
+          '<div class="btn-row">' +
+            '<a class="btn btn-gold" href="giocatore.html">Torna alla Scheda Giocatore</a>' +
+            '<a class="btn" href="ruoli.html">Tutti i Ruoli</a>' +
+          '</div>' +
+        '</header>' +
+        '<section class="card">' +
+          '<span class="eyebrow">Dettaglio Potere</span>' +
+          bodyHtml +
+        '</section>';
+    }
+
+    applyRoomData(readLocalRoom(acc.roomCode));
+    render();
+
+    if (db) {
+      var ref = doc(db, 'stanze', acc.roomCode);
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) {
+          applyRoomData(snap.data() || {});
+          render();
+        }
+      }).catch(function () {});
+
+      onSnapshot(ref, function (snap) {
+        roomState.syncLabel = 'Firestore attivo';
+        if (snap.exists()) {
+          applyRoomData(snap.data() || {});
+          render();
+        }
+      });
+    }
   </script>
 </body>
 </html>
