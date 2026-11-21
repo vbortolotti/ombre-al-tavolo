@@ -813,6 +813,10 @@
         .replace(/'/g, '&#39;');
     }
 
+    function escapeJsSingle(value) {
+      return escapeHtml(value).replace(/\\/g, '\\\\').replace(/'/g, '&#39;');
+    }
+
     var ASSASSIN_LOW_DIFF_MISSIONS = [
       'Sussurro Semplice (Molto semplice) — Fai una domanda innocua a un giocatore non Traditore e ringrazialo sorridendo.',
       'Cenno al Tavolo (Molto semplice) — Fai un cenno d’intesa o un saluto discreto a un altro giocatore durante il giro.',
@@ -1099,8 +1103,8 @@
       if (roleKey === 'traditore_segreto') {
         var pairBox = '';
         if (state.pendingAssassinPair && state.pendingAssassinPair.targetA && state.pendingAssassinPair.targetB) {
-          var safeA = escapeHtml(state.pendingAssassinPair.targetA).replace(/'/g, "\'");
-          var safeB = escapeHtml(state.pendingAssassinPair.targetB).replace(/'/g, "\'");
+          var safeA = escapeJsSingle(state.pendingAssassinPair.targetA);
+          var safeB = escapeJsSingle(state.pendingAssassinPair.targetB);
           pairBox =
             '<div class="answer-box answer-yes">' +
               '<div style="margin-bottom:8px;">L’Assassino ha indicato due bersagli: scegli chi eliminare:</div>' +
@@ -1124,7 +1128,7 @@
 
       if (roleKey === 'guardia') {
         var gButtons = state.players.map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          var safeN = escapeJsSingle(p.name);
           return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(&#39;guardia_scudo&#39;,&#39;' + safeN + '&#39;)">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Guardia</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + gButtons + '</div></div>';
@@ -1136,11 +1140,11 @@
 
       if (roleKey === 'martire') {
         var mRevealBtns = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          var safeN = escapeJsSingle(p.name);
           return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(&#39;martire_rileva&#39;,&#39;' + safeN + '&#39;)">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         var mShieldBtns = state.players.map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          var safeN = escapeJsSingle(p.name);
           return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(&#39;martire_scudo&#39;,&#39;' + safeN + '&#39;)">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Martire</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + mRevealBtns + '</div><div class="btn-row">' + mShieldBtns + '</div></div>';
@@ -1148,7 +1152,7 @@
 
       if (roleKey === 'sabotatore') {
         var sButtons = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          var safeN = escapeJsSingle(p.name);
           return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(&#39;sabotatore_annulla&#39;,&#39;' + safeN + '&#39;)">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         return '<div class="ability-box"><div class="header-row"><strong>Abilità Sabotatore</strong><span class="badge badge-Traditori">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + sButtons + '</div></div>';
@@ -1159,7 +1163,7 @@
 
     function renderAvatarHtml() {
       if (isValidAvatarSrc(state.selfieDataUrl)) {
-        return '<img src="' + state.selfieDataUrl + '" alt="Selfie di ' + escapeHtml(state.playerName) + '" class="avatar" />';
+        return '<img src="' + escapeHtml(state.selfieDataUrl) + '" alt="Selfie di ' + escapeHtml(state.playerName) + '" class="avatar" />';
       }
       return '<div class="avatar">' + escapeHtml(state.playerName.slice(0, 1).toUpperCase() || 'G') + '</div>';
     }
@@ -1327,7 +1331,7 @@
       var targetCardHtml = targetName
         ? '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);margin-top:8px;">' +
             (targetAvatar
-              ? '<img src="' + targetAvatar + '" alt="' + escapeHtml(targetName) + '" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid ' + scene.accent + ';" />'
+              ? '<img src="' + escapeHtml(targetAvatar) + '" alt="' + escapeHtml(targetName) + '" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid ' + scene.accent + ';" />'
               : '<div style="width:48px;height:48px;border-radius:12px;background:#1d2230;color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;">' + escapeHtml(targetName.slice(0, 1).toUpperCase()) + '</div>') +
             '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Protagonista Scena</div><div style="font-size:18px;font-weight:800;color:#fff;">' + escapeHtml(targetName) + '</div></div>' +
           '</div>'
@@ -1349,7 +1353,7 @@
             '</div>' +
             targetCardHtml +
             '<div style="margin-top:14px;border-radius:12px;overflow:hidden;background:#05070b;border:1px solid rgba(255,255,255,0.12);position:relative;">' +
-              '<video id="player-tv-broadcast-video" src="' + escapeHtml(scene.src) + '" playsinline autoplay loop ' + (state.tvMuted ? 'muted ' : '') + 'controls style="width:100%;max-height:52vh;display:block;background:#000;" onerror="this.style.display='none';var fb=document.getElementById('player-tv-video-fallback');if(fb)fb.style.display='block';"></video>' +
+              '<video id="player-tv-broadcast-video" src="' + escapeHtml(scene.src) + '" playsinline autoplay loop ' + (state.tvMuted ? 'muted ' : '') + 'controls style="width:100%;max-height:52vh;display:block;background:#000;" onerror="this.style.display=&#39;none&#39;;var fb=document.getElementById(&#39;player-tv-video-fallback&#39;);if(fb)fb.style.display=&#39;block&#39;;"></video>' +
               '<div id="player-tv-video-fallback" style="display:none;padding:28px 18px;text-align:center;">' +
                 '<div style="font-size:16px;font-weight:800;color:' + scene.accent + ';">' + escapeHtml(scene.title) + '</div>' +
                 '<p class="subtext" style="margin-top:6px;">' + escapeHtml(scene.subtitle) + '</p>' +
@@ -1435,7 +1439,7 @@
           '<h2>Notifiche e Chat con il Master</h2>' +
           '<div class="chat-box">' + msgsHtml + '</div>' +
           '<div class="chat-form">' +
-            '<input id="player-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="updateChatDraft(this.value)" onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();sendPlayerChat();}"" placeholder="Scrivi al Master..." />' +
+            '<input id="player-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="updateChatDraft(this.value)" onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();sendPlayerChat();}" placeholder="Scrivi al Master..." />' +
             '<button type="button" class="btn-gold" onclick="sendPlayerChat()">Invia</button>' +
           '</div>' +
         '</section>';
