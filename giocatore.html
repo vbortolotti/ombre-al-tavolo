@@ -490,6 +490,7 @@
 
       var ovalObj = data.ovalSession && typeof data.ovalSession === 'object' ? data.ovalSession : null;
       var isOvalOpen = Boolean(
+        data.ovalActive === true ||
         data.ovalSessionActive === true ||
         data.ovalTableOpen === true ||
         (ovalObj && (ovalObj.active === true || ovalObj.isOpen === true || ovalObj.status === 'open'))
@@ -497,6 +498,10 @@
       var targetOvalUrl = (ovalObj && ovalObj.redirectUrl) || data.ovalRedirectUrl || 'tavola-ovale.html';
       state.ovalSessionActive = isOvalOpen;
       state.ovalRedirectUrl = targetOvalUrl;
+
+      if (!isOvalOpen) {
+        window.__OMBRE_OVAL_REDIRECTING__ = false;
+      }
 
       if (isOvalOpen && !window.__OMBRE_OVAL_REDIRECTING__) {
         window.__OMBRE_OVAL_REDIRECTING__ = true;
@@ -538,6 +543,12 @@
         if (nameKey) cur.missionAssignments[nameKey] = state.missions;
         cur.playerPoints = Object.assign({}, cur.playerPoints || {}, state.playerPoints || {});
         cur.masterChat = state.masterChat;
+        cur.tvMode = state.tvMode;
+        cur.tvKillTarget = state.tvKillTarget;
+        cur.tvExileTarget = state.tvExileTarget;
+        cur.tvVideoPaused = state.tvVideoPaused;
+        cur.tvRevealTick = state.tvRevealTick;
+        cur.ovalActive = state.ovalSessionActive;
         cur.updatedAt = Date.now();
         localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(cur));
       } catch (_e) {}
