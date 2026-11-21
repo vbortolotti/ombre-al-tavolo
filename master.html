@@ -693,13 +693,17 @@
           var existing = out[seen[key] - 1];
           if (p && p.boardUnlocked) existing.boardUnlocked = true;
           if (roleKey) existing.assignedRoleKey = roleKey;
+          if (p && p.isDead) existing.isDead = true;
+          if (p && (p.selfie || p.photo)) existing.selfie = p.selfie || p.photo;
           return;
         }
         out.push({
           id: String(p && p.id ? p.id : ('p_' + idx + '_' + key)),
           name: name,
           boardUnlocked: Boolean(p && p.boardUnlocked),
-          assignedRoleKey: roleKey
+          assignedRoleKey: roleKey,
+          isDead: Boolean(p && p.isDead),
+          selfie: (p && (p.selfie || p.photo)) || ''
         });
         seen[key] = out.length;
       });
@@ -755,9 +759,7 @@
             }
           }
         }
-      } catch (_e) {
-        // Usa stato di base
-      }
+      } catch (_e) {}
 
       try {
         var roomRaw = safeGetItem(ROOM_PREFIX + base.roomCode);
@@ -773,9 +775,7 @@
             base.players = normalizePlayerList(roomParsed.players);
           }
         }
-      } catch (_e) {
-        // Ignora
-      }
+      } catch (_e) {}
 
       return base;
     }
@@ -796,7 +796,13 @@
         boardOpened: state.boardOpened
       }));
 
-      safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify({
+      var existingRoom = {};
+      try {
+        var raw = safeGetItem(ROOM_PREFIX + state.roomCode);
+        if (raw) existingRoom = JSON.parse(raw) || {};
+      } catch (_e) {}
+
+      safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, existingRoom, {
         roomCode: state.roomCode,
         masterName: state.masterName,
         players: state.players,
@@ -804,7 +810,7 @@
         masterChat: state.masterChat,
         traitorChat: state.traitorChat,
         updatedAt: Date.now()
-      }));
+      })));
     }
 
     async function syncRoomToCloud(extraFields) {
@@ -893,7 +899,9 @@
             id: cp.id,
             name: cp.name,
             boardUnlocked: Boolean(cp.boardUnlocked || (prev && prev.boardUnlocked)),
-            assignedRoleKey: cp.assignedRoleKey || (prev ? prev.assignedRoleKey : null)
+            assignedRoleKey: cp.assignedRoleKey || (prev ? prev.assignedRoleKey : null),
+            isDead: Boolean(cp.isDead !== undefined ? cp.isDead : (prev && prev.isDead)),
+            selfie: cp.selfie || (prev ? prev.selfie : '')
           };
         });
         var anyAssigned = state.players.some(function (p) { return Boolean(p.assignedRoleKey); });
@@ -1003,7 +1011,9 @@
         id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name: clean,
         boardUnlocked: false,
-        assignedRoleKey: null
+        assignedRoleKey: null,
+        isDead: false,
+        selfie: ''
       });
       state.assignmentCompleted = false;
       state.banner = null;
@@ -1049,7 +1059,9 @@
           id: p.id,
           name: p.name,
           boardUnlocked: true,
-          assignedRoleKey: chosen[idx]
+          assignedRoleKey: chosen[idx],
+          isDead: Boolean(p.isDead),
+          selfie: p.selfie || ''
         };
       });
       state.assignmentCompleted = true;
@@ -1067,7 +1079,9 @@
           id: p.id,
           name: p.name,
           boardUnlocked: false,
-          assignedRoleKey: null
+          assignedRoleKey: null,
+          isDead: false,
+          selfie: p.selfie || ''
         };
       });
       state.assignmentCompleted = false;
@@ -1240,7 +1254,7 @@
               return (
                 '<div class="board-card">' +
                   '<div>' +
-                    '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
+                    '<div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div>' +
                     '<div class="player-sub">' + (p.boardUnlocked ? 'Plancia attiva' : 'In attesa sulla stanza') + '</div>' +
                   '</div>' +
                   (r
@@ -1321,7 +1335,7 @@
             return (
               '<div class="player-row">' +
                 '<div>' +
-                  '<div class="player-name">' + escapeHtml(p.name) + '</div>' +
+                  '<div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div>' +
                   '<div class="player-sub">' +
                     (role
                       ? '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.name) + ' (' + escapeHtml(role.faction) + ')</span>'
@@ -1427,6 +1441,8 @@
     }
 
     var db = getDb();
+    var selectedDeadReplayName = '';
+    var selectedExileName = '';
 
     function getRoomCode() {
       try {
@@ -1554,66 +1570,4 @@
       var currentIdx = Number(cur.revealedVoteIndex || 0);
       await persistRoom({
         tvMode: 'votes',
-        revealedVoteIndex: Math.max(0, currentIdx - 1),
-        tvRevealTick: Number(cur.tvRevealTick || 0) + 1
-      });
-    };
-
-    window.masterToggleTvVideoPlay = async function () {
-      var code = getRoomCode();
-      var cur = loadLocal(code);
-      var nextPaused = !Boolean(cur.tvVideoPaused);
-      await persistRoom({
-        tvVideoPaused: nextPaused
-      });
-    };
-
-    window.masterSetTvMode = async function (mode) {
-      var targetInput = document.getElementById('master-tv-kill-target');
-      var killTarget = targetInput ? String(targetInput.value || '').trim() : '';
-      var patch = { tvMode: mode, tvVideoPaused: false };
-      if (killTarget) patch.tvKillTarget = killTarget;
-      if (mode === 'votes') {
-        patch.revealedVoteIndex = 0;
-        patch.tvRevealTick = Date.now();
-      }
-      await persistRoom(patch);
-    };
-
-    function renderMasterTvOvalRegia(data) {
-      var host = document.getElementById('master-lightweight-tv-oval-panel');
-      if (!host) return;
-      var code = getRoomCode();
-      var room = data || loadLocal(code);
-      var votes = Array.isArray(room.ovalVotes) ? room.ovalVotes : [];
-      var idx = Number(room.revealedVoteIndex || 0);
-      var tied = computeTiedTopTwo(votes);
-      var ovalActive = Boolean(room.ovalActive);
-      var tvMode = room.tvMode || 'idle';
-      var isPaused = Boolean(room.tvVideoPaused);
-
-      var tallies = {};
-      votes.forEach(function (v) {
-        var t = String((v && v.targetName) || '').trim();
-        if (t) tallies[t] = (tallies[t] || 0) + 1;
-      });
-      var tallyStr = Object.keys(tallies).length
-        ? Object.keys(tallies).map(function (k) { return k + ': ' + tallies[k]; }).join(' · ')
-        : 'Nessun voto registrato';
-
-      host.innerHTML =
-        '<div style="border:1px solid rgba(229,184,92,0.42);border-radius:16px;padding:18px;background:#151924;display:flex;flex-direction:column;gap:14px;">' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Regia Leggera Tavolo Ovale & TV · Stanza ' + code + '</div>' +
-              '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Stato Tavolo Ovale: ' + (ovalActive ? '<span style="color:#3ec98c;">APERTO (Chat disabilitata)</span>' : '<span style="color:#9ca3af;">CHIUSO</span>') + ' · Voto ' + (votes.length ? (Math.min(votes.length, idx + 1) + ' / ' + votes.length) : '0 / 0') + '</h2>' +
-              '<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Conteggio: ' + tallyStr + (tied.length === 2 ? ' · <strong style="color:#e5b85c;">Parità rilevata su: ' + tied[0] + ' e ' + tied[1] + '</strong>' : '') + '</p>' +
-            '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              '<button type="button" onclick="masterToggleOvalSession(true)" style="padding:9px 13px;border-radius:10px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Avvia Tavolo Ovale</button>' +
-              '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
-              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Apri Tavolo Ovale</a>' +
-              '<a href="tv.html?stanza=' + encodeURIComponent(code) + '" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(62,201,140,0.45);background:rgba(62,201,140,0.14);color:#3ec98c;font-weight:700;font-size:12px;text-decoration:none;">Apri Schermo TV</a>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;
+        revealedVoteIndex:
