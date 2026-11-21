@@ -122,6 +122,11 @@
       animation: slowKenBurns 7s ease-in-out infinite alternate;
     }
 
+    .selfie-frame.crimson-frame {
+      border-color: var(--crimson);
+      color: #fca5a5;
+    }
+
     @keyframes slowKenBurns {
       0% { transform: scale(1); }
       100% { transform: scale(1.06); }
@@ -464,24 +469,32 @@
         .replace(/'/g, '&#39;');
     }
 
+    function isValidPhotoSrc(v) {
+      var s = String(v || '').trim();
+      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s) || /^\.?\//i.test(s);
+    }
+
     function findSelfieByName(name) {
       var k = String(name || '').trim().toLowerCase();
       if (!k) return '';
-      if (tvState.playerSelfies && tvState.playerSelfies[k]) return tvState.playerSelfies[k];
+      if (tvState.playerSelfies && isValidPhotoSrc(tvState.playerSelfies[k])) {
+        return tvState.playerSelfies[k];
+      }
       var found = (tvState.players || []).find(function (p) {
         return String(p.name || '').trim().toLowerCase() === k;
       });
-      return (found && (found.selfie || found.photo)) || '';
+      var raw = found && (found.selfie || found.selfieDataUrl || found.photo);
+      return isValidPhotoSrc(raw) ? raw : '';
     }
 
     function getSelfie(vote) {
-      if (vote && vote.voterSelfie) return vote.voterSelfie;
+      if (vote && isValidPhotoSrc(vote.voterSelfie)) return vote.voterSelfie;
       return findSelfieByName(vote && vote.voterName);
     }
 
     function renderAvatarContent(selfieUrl, name) {
       var initial = escapeHtml((name || 'G').slice(0, 1).toUpperCase());
-      if (selfieUrl) {
+      if (isValidPhotoSrc(selfieUrl)) {
         return '<img src="' + selfieUrl + '" alt="' + escapeHtml(name) + '" />';
       }
       return initial;
@@ -489,7 +502,7 @@
 
     function renderFaceChip(roleLabel, name, selfieUrl, isCrimson) {
       var initial = escapeHtml((name || 'M').slice(0, 1).toUpperCase());
-      var avatar = selfieUrl
+      var avatar = isValidPhotoSrc(selfieUrl)
         ? '<img src="' + selfieUrl + '" alt="' + escapeHtml(name) + '" />'
         : '<div class="face-chip-initial">' + initial + '</div>';
       return (
@@ -522,7 +535,8 @@
       tvState.playerSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
       tvState.players = Array.isArray(data.players) ? data.players : [];
       tvState.masterName = String(data.masterName || 'Master');
-      tvState.masterSelfie = String(data.masterSelfie || findSelfieByName(tvState.masterName) || '');
+      var rawMasterSelfie = data.masterSelfie || findSelfieByName(tvState.masterName) || '';
+      tvState.masterSelfie = isValidPhotoSrc(rawMasterSelfie) ? rawMasterSelfie : '';
       tvState.tvKillTarget = String(data.tvKillTarget || '');
       tvState.tvExileTarget = String(data.tvExileTarget || data.tvKillTarget || '');
       tvState.tvVideoPaused = Boolean(data.tvVideoPaused);
@@ -553,4 +567,258 @@
       var src = VIDEO_SOURCES.exile;
       stage.innerHTML =
         '<div class="media-box">' +
-          '<span class="eyebrow" style="color:var(--crimson);">Esilio dal Tavolo O
+          '<span class="eyebrow" style="color:var(--crimson);">Esilio dal Tavolo Ovale · Fase 2 / 2</span>' +
+          '<h2 style="margin:8px 0 0;font-size:32px;font-weight:900;color:#fff;">' + escapeHtml(targetName || 'Giocatore Esiliato') + '</h2>' +
+          '<p class="subtext" style="color:var(--muted);margin:6px 0 0;">Il giocatore viene allontanato dal tavolo.</p>' +
+          '<div class="video-stage-wrap">' +
+            '<div class="overlay-badges">' +
+              renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
+              renderFaceChip('Esiliato', targetName || 'Giocatore', selfieUrl, true) +
+            '</div>' +
+            '<video src="' + escapeHtml(src) + '" autoplay playsinline controls></video>' +
+          '</div>' +
+        '</div>';
+      syncTvVideoPlayback();
+    }
+
+    function renderExileSelfiePhase(targetName, selfieUrl) {
+      var stage = document.getElementById('tv-stage');
+      if (!stage) return;
+      stage.innerHTML =
+        '<div class="vote-card" style="border-color:rgba(224,82,96,0.65);">' +
+          '<span class="eyebrow" style="color:#fca5a5;">Esilio dal Tavolo Ovale · Fase 1 / 2</span>' +
+          '<div class="selfie-frame crimson-frame">' + renderAvatarContent(selfieUrl, targetName || 'E') + '</div>' +
+          '<div class="voter-label">' + escapeHtml(targetName || 'Giocatore Esiliato') + '</div>' +
+          '<div class="voted-under-box">' +
+            '<div class="voted-under-eyebrow">Sentenza del Tavolo</div>' +
+            '<div class="voted-under-name" style="font-size:26px;">ESILIATO DAL TAVOLO</div>' +
+          '</div>' +
+        '</div>';
+
+      exileTimer = setTimeout(function () {
+        renderExileDoorPhase(targetName, selfieUrl);
+      }, 2800);
+    }
+
+    function renderIntroParade() {
+      var stage = document.getElementById('tv-stage');
+      if (!stage) return;
+      var roster = [];
+      if (tvState.masterSelfie || tvState.masterName) {
+        roster.push({
+          name: tvState.masterName || 'Master',
+          roleTag: 'Master',
+          selfie: tvState.masterSelfie
+        });
+      }
+      (tvState.players || []).forEach(function (p) {
+        if (!p || !p.name) return;
+        roster.push({
+          name: p.name,
+          roleTag: 'Giocatore',
+          selfie: findSelfieByName(p.name)
+        });
+      });
+
+      var cardsHtml = roster.length
+        ? roster.map(function (item) {
+            return (
+              '<div class="parade-card">' +
+                '<div class="parade-avatar">' + renderAvatarContent(item.selfie, item.name) + '</div>' +
+                '<div class="parade-name">' + escapeHtml(item.name) + '</div>' +
+                '<div style="font-size:10px;color:var(--gold);margin-top:2px;font-weight:700;">' + escapeHtml(item.roleTag) + '</div>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="idle-sub" style="font-size:13px;">Nessun selfie caricato al momento nella stanza.</p>';
+
+      stage.innerHTML =
+        '<div class="media-box intro-box">' +
+          '<span class="eyebrow">Apertura della Serata · Sfilata al Tavolo</span>' +
+          '<h2 style="margin:8px 0 0;font-size:32px;font-weight:900;color:#fff;">Ombre al Tavolo — ' + escapeHtml(roomCode) + '</h2>' +
+          '<div class="video-stage-wrap">' +
+            '<div class="overlay-badges">' +
+              renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
+              '<span class="badge">Stanza ' + escapeHtml(roomCode) + '</span>' +
+            '</div>' +
+            '<video src="' + escapeHtml(VIDEO_SOURCES.intro) + '" autoplay playsinline controls></video>' +
+          '</div>' +
+          '<div class="parade-strip">' +
+            '<span class="eyebrow">Volti del Tavolo</span>' +
+            '<div class="parade-grid">' + cardsHtml + '</div>' +
+          '</div>' +
+        '</div>';
+
+      startParadeLoop();
+      syncTvVideoPlayback();
+    }
+
+    function renderKillScene() {
+      var stage = document.getElementById('tv-stage');
+      if (!stage) return;
+      var target = tvState.tvKillTarget;
+      if (!target) {
+        var deadList = (tvState.players || []).filter(function (p) { return p && p.isDead; });
+        if (deadList.length) target = deadList[deadList.length - 1].name;
+      }
+      var targetSelfie = findSelfieByName(target);
+
+      stage.innerHTML =
+        '<div class="media-box">' +
+          '<span class="eyebrow" style="color:var(--crimson);">Colpo nell’Ombra · Eliminazione</span>' +
+          '<h2 style="margin:8px 0 0;font-size:34px;font-weight:900;color:#fff;">' + escapeHtml(target || 'Eliminazione al Tavolo') + '</h2>' +
+          '<div class="video-stage-wrap">' +
+            '<div class="overlay-badges">' +
+              renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
+              (target ? renderFaceChip('Eliminato', target, targetSelfie, true) : '') +
+            '</div>' +
+            '<video src="' + escapeHtml(VIDEO_SOURCES.kill) + '" autoplay playsinline controls></video>' +
+          '</div>' +
+        '</div>';
+      syncTvVideoPlayback();
+    }
+
+    function renderVictoryScene(mode) {
+      var stage = document.getElementById('tv-stage');
+      if (!stage) return;
+      var info = VICTORY_LABELS[mode] || { title: 'Fine della Partita', subtitle: 'Il destino del tavolo è compiuto.' };
+      var src = VIDEO_SOURCES[mode] || VIDEO_SOURCES.win_fedeli;
+
+      stage.innerHTML =
+        '<div class="media-box win-box">' +
+          '<span class="eyebrow">Verdetto Finale</span>' +
+          '<h2 style="margin:8px 0 0;font-size:36px;font-weight:900;color:#fff;">' + escapeHtml(info.title) + '</h2>' +
+          '<p class="idle-sub" style="margin-top:6px;font-size:14px;">' + escapeHtml(info.subtitle) + '</p>' +
+          '<div class="video-stage-wrap">' +
+            '<div class="overlay-badges">' +
+              renderFaceChip('Master', tvState.masterName, tvState.masterSelfie, false) +
+              '<span class="badge">' + escapeHtml(info.title) + '</span>' +
+            '</div>' +
+            '<video src="' + escapeHtml(src) + '" autoplay playsinline controls></video>' +
+          '</div>' +
+        '</div>';
+      syncTvVideoPlayback();
+    }
+
+    function renderVotesScene() {
+      var stage = document.getElementById('tv-stage');
+      if (!stage) return;
+      var votes = tvState.ovalVotes || [];
+      if (!votes.length) {
+        stage.innerHTML =
+          '<div class="idle-box">' +
+            '<span class="eyebrow">Tavolo Ovale · Voti</span>' +
+            '<h1 class="idle-title">In attesa dei voti</h1>' +
+            '<p class="idle-sub">I voti segreti verranno rivelati qui uno alla volta dal Master.</p>' +
+          '</div>';
+        return;
+      }
+
+      var idx = Math.max(0, Math.min(votes.length - 1, tvState.revealedVoteIndex));
+      var vote = votes[idx] || {};
+      var voterName = String(vote.voterName || 'Giocatore');
+      var targetName = String(vote.targetName || '—');
+      var voterSelfie = getSelfie(vote);
+
+      stage.innerHTML =
+        '<div class="vote-card" key="' + idx + '-' + tvState.tvRevealTick + '">' +
+          '<span class="eyebrow">Voto Rivelato ' + (idx + 1) + ' di ' + votes.length + '</span>' +
+          '<div class="selfie-frame">' + renderAvatarContent(voterSelfie, voterName) + '</div>' +
+          '<div class="voter-label">' + escapeHtml(voterName) + '</div>' +
+          '<div class="voted-under-box">' +
+            '<div class="voted-under-eyebrow">Ha votato per eliminare</div>' +
+            '<div class="voted-under-name">' + escapeHtml(targetName) + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function updateBadge(mode) {
+      var badge = document.getElementById('tv-mode-badge');
+      if (!badge) return;
+      var map = {
+        idle: 'Stand-by',
+        votes: 'Rivelazione Voti',
+        intro: 'Ingresso + Sfilata',
+        kill: 'Video Eliminazione',
+        exile: 'Video Esilio',
+        win_fedeli: 'Vittoria Fedeli',
+        win_traditori: 'Vittoria Traditori',
+        win_solitario: 'Vittoria Solitaria'
+      };
+      badge.textContent = map[mode] || mode;
+    }
+
+    function renderTv() {
+      var mode = tvState.tvMode || 'idle';
+      updateBadge(mode);
+
+      var mediaKey = (mode === 'intro' || mode === 'kill' || mode === 'exile' || mode.indexOf('win_') === 0)
+        ? (mode + '|' + tvState.tvRevealTick + '|' + tvState.tvKillTarget + '|' + tvState.tvExileTarget)
+        : ('non-media|' + mode + '|' + tvState.revealedVoteIndex + '|' + tvState.tvRevealTick);
+
+      if (mediaKey !== lastMediaKey) {
+        clearStageTimers();
+        lastMediaKey = mediaKey;
+
+        if (mode === 'intro') {
+          renderIntroParade();
+          return;
+        }
+        if (mode === 'kill') {
+          renderKillScene();
+          return;
+        }
+        if (mode === 'exile') {
+          var exTarget = tvState.tvExileTarget || 'Giocatore Esiliato';
+          renderExileSelfiePhase(exTarget, findSelfieByName(exTarget));
+          return;
+        }
+        if (mode.indexOf('win_') === 0) {
+          renderVictoryScene(mode);
+          return;
+        }
+      }
+
+      if (mode === 'votes') {
+        renderVotesScene();
+        return;
+      }
+
+      if (mode === 'idle') {
+        clearStageTimers();
+        var stage = document.getElementById('tv-stage');
+        if (stage) {
+          stage.innerHTML =
+            '<div class="idle-box">' +
+              '<span class="eyebrow">Schermo Principale · ' + escapeHtml(roomCode) + '</span>' +
+              '<h1 class="idle-title">Ombre al Tavolo</h1>' +
+              '<p class="idle-sub">In attesa di un comando di regia dal Master.</p>' +
+            '</div>';
+        }
+      }
+    }
+
+    try {
+      var localRaw = localStorage.getItem(ROOM_PREFIX + roomCode);
+      if (localRaw) {
+        applyData(JSON.parse(localRaw));
+      } else {
+        renderTv();
+      }
+    } catch (_e) {
+      renderTv();
+    }
+
+    if (db) {
+      var ref = doc(db, 'stanze', roomCode);
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) applyData(snap.data() || {});
+      }).catch(function () {});
+
+      onSnapshot(ref, function (snap) {
+        if (snap.exists()) applyData(snap.data() || {});
+      });
+    }
+  </script>
+</body>
+</html>
