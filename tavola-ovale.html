@@ -157,7 +157,7 @@
       state.ovalVotes = cleanVotes;
 
       if (!state.isMaster && !state.ovalActive) {
-        window.location.href = 'giocatore_3.html';
+        window.location.replace('giocatore_3.html');
         return;
       }
       try { localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, data, { roomCode: state.roomCode }))); } catch (_e) {}
@@ -202,6 +202,39 @@
       delete state.ovalVotes[k];
       await syncRoom();
       render();
+    };
+
+    window.closeOvalSessionDirectly = async function () {
+      if (!state.isMaster) return;
+      state.ovalActive = false;
+      var payload = {
+        roomCode: state.roomCode,
+        players: state.players,
+        eliminatedPlayers: state.eliminatedPlayers,
+        ovalActive: false,
+        ovalSessionActive: false,
+        ovalTableOpen: false,
+        ovalVotes: state.ovalVotes,
+        updatedAt: Date.now()
+      };
+      try {
+        localStorage.setItem('ombre_stanza_sync_' + state.roomCode, JSON.stringify(payload));
+      } catch (_e) {}
+      var ref = getRoomRef();
+      if (ref) {
+        try {
+          await setDoc(ref, payload, { merge: true });
+        } catch (_e) {}
+      }
+      render();
+    };
+
+    window.returnToMasterConsole = function () {
+      window.location.href = 'master_2-v2.html';
+    };
+
+    window.returnToPlayerBoard = function () {
+      window.location.href = 'giocatore_3.html';
     };
 
     function esc(s) {
@@ -251,6 +284,12 @@
           }).join('')
         : '<p class="subtext">Nessun giocatore attivo al Tavolo Ovale.</p>';
 
+      var closedNotice = !state.ovalActive
+        ? '<p class="subtext" style="color:#e5b85c;">Il Tavolo Ovale è attualmente chiuso. ' +
+            (state.isMaster ? 'Puoi rientrare nella console Master o riaprirlo dalla regia.' : 'Puoi tornare alla tua scheda giocatore.') +
+          '</p>'
+        : '';
+
       root.innerHTML =
         '<header class="card">' +
           '<div class="row">' +
@@ -258,10 +297,21 @@
               '<span class="eyebrow">Stanza ' + esc(state.roomCode) + ' · Tavolo Ovale</span>' +
               '<h1>Discussione e Votazione</h1>' +
               '<p class="subtext">Votanti attivi: <strong>' + activePlayers.length + '</strong> · Voti espressi: <strong>' + totalCast + '</strong> / ' + activePlayers.length + ' · Il Master non vota.</p>' +
+              closedNotice +
             '</div>' +
-            '<span class="badge ' + (state.isMaster ? 'badge-Gold' : (iAmEliminated ? 'badge-Crimson' : 'badge-Emerald')) + '">' +
-              (state.isMaster ? 'Master (Non Vota)' : (iAmEliminated ? 'Eliminato (Non Vota)' : ('Votante: ' + esc(state.actorName)))) +
-            '</span>' +
+            '<div class="btn-row">' +
+              '<span class="badge ' + (state.ovalActive ? 'badge-Emerald' : 'badge-Crimson') + '">' +
+                (state.ovalActive ? 'Sessione Aperta' : 'Sessione Chiusa') +
+              '</span>' +
+              '<span class="badge ' + (state.isMaster ? 'badge-Gold' : (iAmEliminated ? 'badge-Crimson' : 'badge-Emerald')) + '">' +
+                (state.isMaster ? 'Master (Non Vota)' : (iAmEliminated ? 'Eliminato (Non Vota)' : ('Votante: ' + esc(state.actorName)))) +
+              '</span>' +
+              (state.isMaster
+                ? (state.ovalActive
+                    ? '<button type="button" class="btn-crimson" onclick="closeOvalSessionDirectly()">Chiudi Tavolo Ovale</button>'
+                    : '<button type="button" class="btn-ghost" onclick="returnToMasterConsole()">Torna al Master</button>')
+                : '<button type="button" class="btn-ghost" onclick="returnToPlayerBoard()">Torna alla Scheda</button>') +
+            '</div>' +
           '</div>' +
         '</header>' +
         '<section class="card">' +
