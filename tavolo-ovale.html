@@ -31,7 +31,7 @@
     }
 
     .app-wrap {
-      max-width: 980px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 24px 16px 56px;
       display: flex;
@@ -145,14 +145,6 @@
       font-size: 13px;
     }
 
-    .btn-emerald {
-      background: var(--emerald);
-      color: #0c0e14;
-      border: none;
-      padding: 10px 15px;
-      font-size: 13px;
-    }
-
     .btn-ghost {
       background: var(--surface-2);
       color: var(--text);
@@ -163,7 +155,7 @@
 
     .two-col {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
       gap: 18px;
     }
 
@@ -223,23 +215,13 @@
       color: var(--crimson);
     }
 
-    .votes-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-    }
-
-    .vote-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 13px;
+    .check-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
+      margin-top: 12px;
       font-size: 13px;
+      color: #e5e7eb;
     }
   </style>
 
@@ -283,17 +265,23 @@
 
     var db = initDb();
 
+    function isValidPhoto(val) {
+      var s = String(val || '').trim();
+      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
+    }
+
     function readAccess() {
       try {
         var raw = localStorage.getItem(ACCESS_KEY);
-        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Giocatore', selfieDataUrl: '' };
         var p = JSON.parse(raw);
         return {
           roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
-          playerName: String(p.playerName || 'Giocatore').trim() || 'Giocatore'
+          playerName: String(p.playerName || 'Giocatore').trim() || 'Giocatore',
+          selfieDataUrl: isValidPhoto(p.selfieDataUrl) ? String(p.selfieDataUrl) : ''
         };
       } catch (_e) {
-        return { roomCode: 'TAVOLO1', playerName: 'Giocatore' };
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore', selfieDataUrl: '' };
       }
     }
 
@@ -307,7 +295,7 @@
       ovalRunoffCandidates: [],
       ovalVotes: [],
       players: [],
-      playerSelfies: {},
+      playerSelfies: access.selfieDataUrl ? { [access.playerName.toLowerCase()]: access.selfieDataUrl } : {},
       selectedTarget: '',
       useMediatorVote: false,
       feedback: null
@@ -327,7 +315,7 @@
       }
     }
 
-    function saveLocal() {
+    function saveLocal(extra) {
       try {
         var cur = loadLocal();
         var next = Object.assign({}, cur, {
@@ -339,7 +327,7 @@
           players: state.players,
           playerSelfies: state.playerSelfies,
           updatedAt: Date.now()
-        });
+        }, extra || {});
         localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(next));
       } catch (_e) {}
     }
@@ -351,7 +339,9 @@
       state.ovalRunoffCandidates = Array.isArray(data.ovalRunoffCandidates) ? data.ovalRunoffCandidates : [];
       state.ovalVotes = Array.isArray(data.ovalVotes) ? data.ovalVotes : [];
       state.players = Array.isArray(data.players) ? data.players : [];
-      state.playerSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
+
+      var cloudSelfies = (data.playerSelfies && typeof data.playerSelfies === 'object') ? data.playerSelfies : {};
+      state.playerSelfies = Object.assign({}, state.playerSelfies, cloudSelfies);
 
       var candidates = getVotingCandidates();
       if (!candidates.includes(state.selectedTarget)) {
@@ -360,18 +350,13 @@
       saveLocal();
     }
 
-    async function syncRoom(patch) {
-      saveLocal();
+    async function syncPatch(patch) {
+      saveLocal(patch);
       var ref = getRoomRef();
       if (!ref) return;
       try {
         await setDoc(ref, Object.assign({
           roomCode: state.roomCode,
-          ovalActive: state.ovalActive,
-          ovalRunoffActive: state.ovalRunoffActive,
-          ovalRunoffCandidates: state.ovalRunoffCandidates,
-          ovalVotes: state.ovalVotes,
-          playerSelfies: state.playerSelfies,
           updatedAt: Date.now()
         }, patch || {}), { merge: true });
         state.syncStatus = 'Cloud Firestore attivo';
@@ -389,6 +374,7 @@
 
     function getVotingCandidates() {
       var allNames = state.players
+        .filter(function (p) { return p && !p.isDead; })
         .map(function (p) { return String(p.name || '').trim(); })
         .filter(function (n) {
           return n && n.toLowerCase() !== state.playerName.toLowerCase();
@@ -407,7 +393,9 @@
 
     function getMySelfie() {
       var key = state.playerName.trim().toLowerCase();
-      return state.playerSelfies[key] || '';
+      if (isValidPhoto(state.playerSelfies[key])) return state.playerSelfies[key];
+      var acc = readAccess();
+      return isValidPhoto(acc.selfieDataUrl) ? acc.selfieDataUrl : '';
     }
 
     window.handleSelfieInput = function (inputEl) {
@@ -426,12 +414,19 @@
           var sx = (img.width - minSide) / 2;
           var sy = (img.height - minSide) / 2;
           ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.78);
 
           var key = state.playerName.trim().toLowerCase();
           state.playerSelfies[key] = dataUrl;
-          state.feedback = { text: 'Selfie salvato e sincronizzato per la rivelazione sulla TV.', type: 'ok' };
-          await syncRoom();
+          try {
+            var accRaw = localStorage.getItem(ACCESS_KEY);
+            var accObj = accRaw ? JSON.parse(accRaw) : {};
+            accObj.selfieDataUrl = dataUrl;
+            localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
+          } catch (_e) {}
+
+          state.feedback = { text: 'Selfie salvato per la rivelazione sulla TV.', type: 'ok' };
+          await syncPatch({ playerSelfies: state.playerSelfies });
           render();
         };
         img.src = String(ev.target.result || '');
@@ -449,7 +444,7 @@
 
     window.submitOvalVote = async function () {
       if (!state.ovalActive) {
-        state.feedback = { text: 'Il Tavolo Ovale non è attualmente aperto dal Master.', type: 'err' };
+        state.feedback = { text: 'Il Tavolo Ovale non è aperto dal Master.', type: 'err' };
         render();
         return;
       }
@@ -465,9 +460,9 @@
       var selfie = getMySelfie();
       var isMediator = getMyRoleKey() === 'mediatore';
 
-      // Rimuove eventuale voto precedente dello stesso giocatore nello stesso giro
       var filteredVotes = state.ovalVotes.filter(function (v) {
-        return String(v.voterKey || v.voterName || '').trim().toLowerCase() !== myKey;
+        var vk = String(v.voterKey || v.voterName || '').trim().toLowerCase();
+        return vk !== myKey && vk !== (myKey + '_med');
       });
 
       filteredVotes.push({
@@ -476,7 +471,6 @@
         voterSelfie: selfie,
         targetName: target,
         isRunoff: Boolean(state.ovalRunoffActive),
-        isExtraMediatorVote: Boolean(isMediator && state.useMediatorVote),
         createdAt: Date.now()
       });
 
@@ -493,8 +487,8 @@
       }
 
       state.ovalVotes = filteredVotes;
-      state.feedback = { text: 'Voto espresso su ' + target + '.', type: 'ok' };
-      await syncRoom({ ovalVotes: state.ovalVotes });
+      state.feedback = { text: 'Voto inviato su ' + target + '.', type: 'ok' };
+      await syncPatch({ ovalVotes: state.ovalVotes });
       render();
     };
 
@@ -527,6 +521,9 @@
         return String(v.voterKey || v.voterName || '').trim().toLowerCase() === myKey;
       });
 
+      var aliveCount = state.players.filter(function (p) { return p && !p.isDead; }).length;
+      var totalLabel = aliveCount > 0 ? (state.ovalVotes.length + ' / ' + aliveCount) : String(state.ovalVotes.length);
+
       var bannerHtml = state.feedback
         ? '<div class="banner banner-' + state.feedback.type + '">' + escapeHtml(state.feedback.text) + '</div>'
         : '';
@@ -534,10 +531,10 @@
       var statusBanner = state.ovalActive
         ? '<div class="banner banner-ok">' +
             (state.ovalRunoffActive
-              ? 'BALLOTTAGGIO ATTIVO: esprimi il tuo voto tra i due candidati in parità (' + escapeHtml(state.ovalRunoffCandidates.join(' e ')) + ').'
-              : 'TAVOLO OVALE APERTO: carica o scatta il tuo selfie e seleziona chi votare.') +
+              ? 'BALLOTTAGGIO APERTO (nessun limite di tempo): vota tra ' + escapeHtml(state.ovalRunoffCandidates.join(' e ')) + '.'
+              : 'TAVOLO OVALE APERTO (nessun limite di tempo): discutete al tavolo, imposta il selfie e invia il tuo voto quando sei pronto.') +
           '</div>'
-        : '<div class="banner banner-warn">Tavolo Ovale in pausa o chiuso: in attesa che il Master apra la sessione.</div>';
+        : '<div class="banner banner-warn">Tavolo Ovale chiuso: in attesa che il Master apra la discussione e il voto.</div>';
 
       var candOptions = candidates.length
         ? candidates.map(function (c) {
@@ -545,4 +542,84 @@
           }).join('')
         : '<option value="">Nessun giocatore votabile</option>';
 
-      var mediator
+      var mediatorCheckboxHtml = isMediator
+        ? '<label class="check-row"><input type="checkbox" ' + (state.useMediatorVote ? 'checked' : '') + ' onchange="toggleMediatorVote(this.checked)" /> Usa voto extra (+1 Mediatore) sullo stesso bersaglio</label>'
+        : '';
+
+      var avatarInner = selfie
+        ? '<img src="' + selfie + '" alt="' + escapeHtml(state.playerName) + '" />'
+        : escapeHtml((state.playerName || 'G').slice(0, 1).toUpperCase());
+
+      root.innerHTML =
+        '<header class="card header-row">' +
+          '<div>' +
+            '<span class="eyebrow">Tavolo Ovale · ' + escapeHtml(state.syncStatus) + '</span>' +
+            '<h1>Discussione e Voto · ' + escapeHtml(state.roomCode) + '</h1>' +
+            '<p class="subtext">Giocatore: <strong>' + escapeHtml(state.playerName) + '</strong> · Voti ricevuti: <strong class="mono">' + escapeHtml(totalLabel) + '</strong></p>' +
+          '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
+            '<span class="badge ' + (state.ovalActive ? 'badge-open' : 'badge-closed') + '">' + (state.ovalActive ? 'Sessione Aperta' : 'Sessione Chiusa') + '</span>' +
+            '<button type="button" class="btn-ghost" onclick="backToPlayerBoard()">Torna alla Plancia</button>' +
+          '</div>' +
+        '</header>' +
+        bannerHtml +
+        statusBanner +
+        '<div class="two-col">' +
+          '<section class="card">' +
+            '<span class="eyebrow">Identità Visiva sulla TV</span>' +
+            '<h2>Il Tuo Selfie</h2>' +
+            '<div class="selfie-box">' +
+              '<div class="selfie-thumb">' + avatarInner + '</div>' +
+              '<div style="flex:1;">' +
+                '<p class="subtext" style="margin-top:0;">Apparirà sulla TV sotto il tuo nome quando il Master rivelerà i voti.</p>' +
+                '<label style="display:inline-block;margin-top:10px;padding:9px 14px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">' +
+                  (selfie ? 'Cambia Selfie' : 'Scatta / Carica Selfie') +
+                  '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="handleSelfieInput(this)" />' +
+                '</label>' +
+              '</div>' +
+            '</div>' +
+          '</section>' +
+          '<section class="card card-gold">' +
+            '<span class="eyebrow">Scheda Voto</span>' +
+            '<h2>Vota un Giocatore</h2>' +
+            '<div style="margin-top:12px;">' +
+              '<select id="oval-target-select" onchange="setOvalTarget(this.value)" ' + (!state.ovalActive || !candidates.length ? 'disabled' : '') + '>' +
+                candOptions +
+              '</select>' +
+            '</div>' +
+            mediatorCheckboxHtml +
+            '<div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">' +
+              '<button type="button" class="btn-gold" onclick="submitOvalVote()" ' + (!state.ovalActive || !candidates.length ? 'disabled' : '') + '>' +
+                (hasVoted ? 'Aggiorna Voto' : 'Invia Voto') +
+              '</button>' +
+              (hasVoted ? '<span class="badge badge-open">Voto registrato</span>' : '') +
+            '</div>' +
+          '</section>' +
+        '</div>';
+    }
+
+    var localInit = loadLocal();
+    if (localInit && Object.keys(localInit).length) {
+      applyRoomData(localInit);
+    }
+    render();
+
+    var roomRef = getRoomRef();
+    if (roomRef) {
+      getDoc(roomRef).then(function (snap) {
+        if (snap.exists()) {
+          applyRoomData(snap.data() || {});
+          render();
+        }
+      }).catch(function () {});
+
+      onSnapshot(roomRef, function (snap) {
+        if (snap.exists()) {
+          applyRoomData(snap.data() || {});
+          render();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
