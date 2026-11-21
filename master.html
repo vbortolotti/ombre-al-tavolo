@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ombre al Tavolo — Master: Cerimonia, Ruoli, Missioni e Regia</title>
+  <title>Ombre al Tavolo — Console Master</title>
   <style>
     :root {
       --bg: #0c0e14;
@@ -31,12 +31,12 @@
     }
 
     .app-wrap {
-      max-width: 1160px;
+      max-width: 1120px;
       margin: 0 auto;
       padding: 24px 16px 64px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
 
     .card {
@@ -46,14 +46,15 @@
       padding: 20px;
     }
 
-    .card-gold { border-color: rgba(229, 184, 92, 0.38); }
+    .card-gold { border-color: rgba(229, 184, 92, 0.35); }
+    .card-indigo { border-color: rgba(124, 140, 255, 0.4); }
 
     .header-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
+      gap: 12px;
     }
 
     .eyebrow {
@@ -65,125 +66,151 @@
       display: block;
     }
 
-    h1 { margin: 4px 0 0; font-size: 26px; font-weight: 800; color: #ffffff; }
-    h2 { margin: 0; font-size: 19px; font-weight: 700; color: #ffffff; }
+    .eyebrow-indigo { color: var(--indigo); }
+
+    h1 { margin: 2px 0 0; font-size: 25px; font-weight: 800; color: #ffffff; }
+    h2 { margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; }
     h3 { margin: 0; font-size: 15px; font-weight: 700; color: #ffffff; }
     .subtext { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--emerald); }
     .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-    button {
+    button, select, input[type="text"], textarea {
       font-family: inherit;
-      cursor: pointer;
       border-radius: 10px;
+    }
+
+    button {
+      cursor: pointer;
       font-weight: 600;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.15s ease, background-color 0.15s ease;
     }
 
     button:hover:not(:disabled) { opacity: 0.92; }
-    button:disabled { opacity: 0.42; cursor: not-allowed; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .btn-gold { background: var(--gold); color: #0c0e14; border: none; padding: 10px 14px; font-size: 12px; font-weight: 700; }
-    .btn-emerald { background: var(--emerald); color: #0c0e14; border: none; padding: 10px 14px; font-size: 12px; font-weight: 700; }
-    .btn-emerald-lg { background: var(--emerald); color: #0c0e14; border: none; padding: 12px 20px; font-size: 14px; font-weight: 700; }
-    .btn-indigo { background: var(--indigo); color: #ffffff; border: none; padding: 10px 14px; font-size: 12px; }
-    .btn-crimson { background: var(--crimson); color: #ffffff; border: none; padding: 8px 12px; font-size: 12px; }
-    .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 10px 14px; font-size: 12px; }
-    .btn-small { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 6px 11px; font-size: 12px; }
-    .btn-remove:hover { background: rgba(224, 82, 96, 0.18); color: var(--crimson); border-color: rgba(224, 82, 96, 0.45); }
-
-    .banner { border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; border: 1px solid transparent; }
-    .banner-success { background: rgba(62, 201, 140, 0.14); border-color: rgba(62, 201, 140, 0.4); color: var(--emerald); }
-    .banner-error { background: rgba(224, 82, 96, 0.14); border-color: rgba(224, 82, 96, 0.4); color: var(--crimson); }
-    .banner-info { background: rgba(124, 140, 255, 0.14); border-color: rgba(124, 140, 255, 0.4); color: var(--indigo); }
-
-    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-    .speech-list { display: flex; flex-direction: column; gap: 10px; }
-    .speech-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; }
-    .speech-item.active { border-color: var(--gold); background: #10141f; }
-
-    .speech-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .pill-gold {
-      background: rgba(229, 184, 92, 0.15);
-      color: var(--gold);
-      border: 1px solid rgba(229, 184, 92, 0.35);
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .speech-text { margin: 0; font-size: 14px; color: #e5e7eb; }
-    .speech-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
-
-    label { display: block; font-size: 12px; font-weight: 600; color: #d1d5db; margin-bottom: 6px; }
-    textarea, input[type="text"], select {
+    select, input[type="text"], textarea {
       width: 100%;
       background: var(--bg);
       color: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 10px;
       padding: 10px 12px;
-      font-size: 14px;
-      font-family: inherit;
+      font-size: 13px;
     }
 
-    textarea:focus, input[type="text"]:focus, select:focus { outline: none; border-color: var(--gold); }
-    .custom-speech-box { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-    .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
-    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 12px; }
+    .btn-gold { background: var(--gold); color: #0c0e14; border: none; padding: 9px 13px; font-size: 12px; font-weight: 700; }
+    .btn-emerald { background: var(--emerald); color: #0c0e14; border: none; padding: 9px 13px; font-size: 12px; font-weight: 700; }
+    .btn-crimson { background: var(--crimson); color: #ffffff; border: none; padding: 9px 13px; font-size: 12px; font-weight: 700; }
+    .btn-indigo { background: var(--indigo); color: #ffffff; border: none; padding: 9px 13px; font-size: 12px; }
+    .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 9px 13px; font-size: 12px; }
 
-    .role-box {
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-Traditori { background: rgba(224, 82, 96, 0.15); color: var(--crimson); border-color: rgba(224, 82, 96, 0.4); }
+    .badge-Fedeli { background: rgba(62, 201, 140, 0.15); color: var(--emerald); border-color: rgba(62, 201, 140, 0.4); }
+    .badge-Neutro { background: rgba(229, 184, 92, 0.15); color: var(--gold); border-color: rgba(229, 184, 92, 0.4); }
+    .badge-Indigo { background: rgba(124, 140, 255, 0.16); color: var(--indigo); border-color: rgba(124, 140, 255, 0.35); }
+    .badge-Muted { background: var(--surface-2); color: var(--muted); border-color: var(--border); }
+
+    .banner {
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .banner-success { background: rgba(62, 201, 140, 0.14); border-color: rgba(62, 201, 140, 0.4); color: var(--emerald); }
+    .banner-error { background: rgba(224, 82, 96, 0.14); border-color: rgba(224, 82, 96, 0.4); color: var(--crimson); }
+    .banner-info { background: rgba(124, 140, 255, 0.14); border-color: rgba(124, 140, 255, 0.4); color: var(--indigo); }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+
+    .player-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .player-row {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 14px;
+      padding: 12px 14px;
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
 
-    .role-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .role-name { font-size: 14px; font-weight: 700; color: #ffffff; }
-    .badge { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
-    .badge-Traditori { background: rgba(224, 82, 96, 0.15); color: var(--crimson); border-color: rgba(224, 82, 96, 0.4); }
-    .badge-Fedeli { background: rgba(62, 201, 140, 0.15); color: var(--emerald); border-color: rgba(62, 201, 140, 0.4); }
-    .badge-Neutro { background: rgba(229, 184, 92, 0.15); color: var(--gold); border-color: rgba(229, 184, 92, 0.4); }
-    .role-summary { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
-    .role-counter { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-    .counter-btns { display: flex; align-items: center; gap: 8px; }
-    .btn-step { width: 28px; height: 28px; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
-    .count-val { min-width: 22px; text-align: center; font-size: 14px; font-weight: 700; color: var(--gold); }
-    .add-form { display: flex; gap: 8px; margin-bottom: 14px; }
-    .player-list { display: flex; flex-direction: column; gap: 10px; }
-    .player-row { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .player-name { font-size: 14px; font-weight: 700; color: #ffffff; }
-    .player-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-    .board-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-    .mission-chip { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: 12px; }
-    .chat-box { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; padding-right: 4px; }
-    .msg-card { border-radius: 10px; padding: 10px 12px; border: 1px solid var(--border); background: var(--bg); }
-    .msg-card.from-master { background: var(--surface-2); border-color: rgba(229, 184, 92, 0.35); margin-left: 18px; }
-    .msg-head { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-    .msg-sender { font-weight: 700; color: #ffffff; }
+    .player-row.eliminated { opacity: 0.62; border-color: rgba(224, 82, 96, 0.35); }
+
+    .player-meta { display: flex; align-items: center; gap: 12px; }
+    .avatar-sm {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .mission-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .mission-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .chat-box { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+    .msg-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
+    .msg-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
     .msg-body { margin: 0; font-size: 13px; color: #e5e7eb; }
     .chat-form { display: flex; gap: 8px; }
-    .footer-action { display: flex; justify-content: flex-end; }
-    .subpanel { padding: 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-    .pts-pill { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(62, 201, 140, 0.14); color: var(--emerald); border: 1px solid rgba(62, 201, 140, 0.35); }
+
+    .ceremony-stage {
+      background: var(--bg);
+      border: 1px solid rgba(229, 184, 92, 0.35);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .big-reveal {
+      background: rgba(229, 184, 92, 0.1);
+      border: 1px solid rgba(229, 184, 92, 0.45);
+      border-radius: 12px;
+      padding: 14px;
+    }
   </style>
 
   <script>
@@ -199,7 +226,7 @@
   </script>
 </head>
 <body>
-  <div id="master-roles-app" class="app-wrap"></div>
+  <div id="master-console-app" class="app-wrap"></div>
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -212,79 +239,79 @@
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-    var MASTER_KEY = 'ombre_master_assegnazione_ruoli_v1';
     var ROOM_PREFIX = 'ombre_stanza_sync_';
-    var CATALOG_URL = 'catalogo_missioni_ombre_al_tavolo.json';
+    var MISSION_CATALOG_URL = 'catalogo_missioni_ombre_al_tavolo.json';
 
-    var FALLBACK_CATALOG = [
-      { "id": "CN-01", "faction": "Traditori", "title": "Abbraccio al Volo", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Abbraccia un altro giocatore (o dagli una pacca amichevole sulla spalla) durante una pausa o un cambio turno." },
-      { "id": "CN-02", "faction": "Fedeli", "title": "Cinque al Tavolo", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Batti il cinque a un giocatore dopo una battuta, un tiro o una mossa riuscita." },
-      { "id": "CN-03", "faction": "Traditori", "title": "Il Prestito Leggero", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Chiedi in prestito un oggetto innocuo (es. una penna, un fazzolettino, un dado) e restituiscilo entro pochi minuti." },
-      { "id": "CN-04", "faction": "Fedeli", "title": "Stretta d'Intesa", "difficulty": "Facile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Stringi la mano a un giocatore dicendo qualcosa di cordiale o incoraggiante." },
-      { "id": "CN-05", "faction": "Traditori", "title": "Passaggio Discreto", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Fai passare un oggetto di uso comune (es. un bicchiere, un tovagliolo, un mazzo) a un giocatore senza attirare l'attenzione sul gesto." },
-      { "id": "CN-06", "faction": "Traditori", "title": "Gomito sul Tavolo", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Appoggia l'avambraccio o il gomito vicino a quello di un altro giocatore durante una discussione per almeno 15 secondi." },
-      { "id": "CN-07", "faction": "Neutro", "title": "Scambio di Posto", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Scambia temporaneamente posto o sedia con un altro giocatore per un giro o una mano." },
-      { "id": "CN-08", "faction": "Traditori", "title": "Colpetto di Avviso", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Dai un leggero tocco sul braccio o sul tavolo a un giocatore proprio mentre sta per parlare o agire." },
-      { "id": "CN-09", "faction": "Neutro", "title": "Catena di Contatto", "difficulty": "Difficile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Entro lo stesso giro, tocca amichevolmente (spalla, mano o braccio) tre giocatori diversi senza sembrare insistente." },
-      { "id": "CN-10", "faction": "Fedeli", "title": "Appoggio Ombra", "difficulty": "Difficile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Resta a contatto leggero (es. gomito a gomito o spalla a spalla) con un giocatore mentre accusa qualcun altro al tavolo." },
-      { "id": "CN-11", "faction": "Neutro", "title": "stretta di mano", "difficulty": "Difficile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "stringi la mano a due giocatori insieme" },
-      { "id": "VB-01", "faction": "Traditori", "title": "La Kamchatka Chiama", "difficulty": "Facile", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Inserisci in modo naturale in una frase l'espressione \"andiamo a conquistare la Kamchatka\" (o la parola \"Kamchatka\")." },
-      { "id": "VB-02", "faction": "Fedeli", "title": "Domanda da Giornalista", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai una domanda diretta a un giocatore iniziando con \"Secondo te, perché...\"." },
-      { "id": "VB-03", "faction": "Fedeli", "title": "Complimento di Passaggio", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai un complimento sincero o leggero a un giocatore (es. sull'ironia, sullo stile o su una giocata)." },
-      { "id": "VB-04", "faction": "Fedeli", "title": "Ripetizione a Specchio", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Ripeti esattamente l'ultima parola o breve espressione usata da un altro giocatore confermandola." },
-      { "id": "VB-05", "faction": "Traditori", "title": "Parola d'Ordine Nascosta", "difficulty": "Media", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai pronunciare a un giocatore una parola comune scelta da te (tra \"mistero\", \"destinazione\", \"ovvio\",\"supernetural\") durante il discorso." },
-      { "id": "VB-06", "faction": "Traditori", "title": "L'Avvocato del Diavolo", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Difendi a parole una tesi o una persona che nessuno stava difendendo in quel momento che non centra nel gioco." },
-      { "id": "VB-07", "faction": "Fedeli", "title": "Doppia Citazione", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "In un singolo intervento, fai dire a due giocatori diversi una citazione a film o serier tv" },
-      { "id": "VB-08", "faction": "Neutro", "title": "Cambio di Binario", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Cambia il discorso in un'altra direzione senza che nessun'altro se ne accorga" },
-      { "id": "VB-09", "faction": "Neutro", "title": "c'era una volta", "difficulty": "Difficile", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Fai dire a un giocatore una filastrocca o un pezzo di fiaba" },
-      { "id": "VB-10", "faction": "Fedeli", "title": "Coro Involontario", "difficulty": "Difficile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai dire \"sì\" o \"esatto\" o \"ok\" a tre giocatori diversi nell'arco di due minuti." },
-      { "id": "RZ-01", "faction": "Neutro", "title": "Il Dolce Circola", "difficulty": "Facile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fatti passare uno snack, un dolce o qualcosa da mangiare/bere da un altro giocatore." },
-      { "id": "RZ-02", "faction": "Fedeli", "title": "Giro di Calici", "difficulty": "Facile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Offriti di riempire i bicchieri o i calici ad almeno la metà dei giocatori al tavolo." },
-      { "id": "RZ-03", "faction": "Neutro", "title": "Risata Contagiosa", "difficulty": "Facile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Fai ridere o sorridere apertamente la metà del party con una battuta o un'osservazione." },
-      { "id": "RZ-04", "faction": "Neutro", "title": "Conferma a Cenni", "difficulty": "Facile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Ottieni un cenno d'intesa con la testa (sì o no) da un giocatore dopo averlo guardato." },
-      { "id": "RZ-05", "faction": "Traditori", "title": "Il Brindisi Silenzioso", "difficulty": "Media", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fai alzare o avvicinare il bicchiere a un altro giocatore per un brindisi senza dire \"cin cin\" o \"brindisi\"." },
-      { "id": "RZ-06", "faction": "Fedeli", "title": "scusi i piatti sono li dietro", "difficulty": "Media", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "fai alzare almeno due persone in un unico passaggio" },
-      { "id": "RZ-07", "faction": "Traditori", "title": "Passami Quello", "difficulty": "Media", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fatti porgere o spostare da un giocatore un oggetto che è più vicino a lui che a te." },
-      { "id": "RZ-08", "faction": "Neutro", "title": "imitatore", "difficulty": "Difficile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "fai si che un altro giocatore ripeta una tua azione senza dirgli di rifarla" },
-      { "id": "RZ-09", "faction": "Traditori", "title": "reazione opposta", "difficulty": "Difficile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "fai si che due giocatori dicano due cose opposte (non serve che lo dicano subito lo possono dire anche durante il corso della serata)" },
-      { "id": "RZ-10", "faction": "Neutro", "title": "Doppio Servizio", "difficulty": "Difficile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Fatti passare qualcosa da un giocatore tramite un altro giocatore se nel passaggio vi è un'altra persona allora puoi prendere un punto extra" }
+    var GAME_PHASES = [
+      { step: 1, title: 'Cerimonia dei Ruoli', tip: 'Assegna i ruoli e guida la cerimonia iniziale.' },
+      { step: 2, title: 'Interludio Ludico', tip: 'I giocatori svolgono le missioni e si confrontano al tavolo.' },
+      { step: 3, title: 'Notte (Primo Assassinio)', tip: 'Fase notturna del primo colpo: gestisci esiti e scudi.' },
+      { step: 4, title: 'Risveglio', tip: 'Annuncia gli eventi della notte e aggiorna lo stato del tavolo.' },
+      { step: 5, title: 'Interludio Ludico', tip: 'Nuova fase di gioco libero, missioni e osservazione.' },
+      { step: 6, title: 'Tavolo Ovale', tip: 'Apri il Tavolo Ovale per discussione e votazione (il Master non vota).' },
+      { step: 7, title: 'Notte (Assassino)', tip: 'Nuova fase notturna: il ciclo prosegue fino alla conclusione.' }
     ];
 
-    var ROLE_CATALOG = {
-      assassino: { name: 'Assassino', faction: 'Traditori', mainType: 'Contatto', summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
-      sabotatore: { name: 'Sabotatore', faction: 'Traditori', mainType: 'Contatto', summary: 'Può bloccare l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
-      traditore_segreto: { name: 'Traditore Segreto', faction: 'Traditori', mainType: 'Contatto', summary: 'Conosce gli altri Traditori e può scegliere a chi rivolgere le abilità dei Traditori (può fare missioni anche con gli altri Traditori).' },
-      investigatore: { name: 'Investigatore', faction: 'Fedeli', mainType: 'Verbale', summary: 'Può scoprire una delle missioni dei Traditori (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      guardia: { name: 'Guardia', faction: 'Fedeli', mainType: 'Verbale', summary: 'Può assegnare uno Scudo Protettivo a se stesso o a un altro giocatore (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      martire: { name: 'Martire', faction: 'Fedeli', mainType: 'Verbale', summary: 'Non ha missioni; se subisce una missione altrui può dichiarare un ruolo in gioco e sbloccare la Voce dell’Aldilà per proteggere con uno Scudo.' },
-      mediatore: { name: 'Mediatore', faction: 'Fedeli', mainType: 'Verbale', summary: 'Ha un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili, prevalentemente verbali).' },
-      cacciatore: { name: 'Cacciatore', faction: 'Neutro', mainType: 'Reazione', summary: 'Punti missione per chiedere "giocatore X è ruolo Y?"; può sempre (0 punti) indicare il ruolo di 3 giocatori (tutti esatti = vince subito, errore = eliminato).' }
+    var ROLE_DETAILS = {
+      assassino: {
+        name: 'Assassino',
+        faction: 'Traditori',
+        powerDesc: 'Può colpire chi vuole (tranne chi è protetto da Scudo). Se in partita c’è il Traditore Segreto, l’Assassino sceglie 2 persone e il Traditore Segreto decide chi eliminare. Costa 1 punto missione e richiede un giro di Tavolo Ovale prima di poter essere riutilizzata.'
+      },
+      sabotatore: {
+        name: 'Sabotatore',
+        faction: 'Traditori',
+        powerDesc: 'Può bloccare silenziosamente l’attivazione di un altro giocatore per il turno (5 missioni, 3 ripetibili; contatto; no Traditori tranne Traditore Segreto).'
+      },
+      traditore_segreto: {
+        name: 'Traditore Segreto',
+        faction: 'Traditori',
+        powerDesc: 'Conosci gli altri Traditori e, quando l’Assassino indica 2 bersagli, decidi tu quale dei due eliminare.'
+      },
+      investigatore: {
+        name: 'Investigatore',
+        faction: 'Fedeli',
+        powerDesc: 'Puoi scoprire una missione degli Assassini a bassa difficoltà (5 missioni, 3 ripetibili; missioni prevalentemente verbali).'
+      },
+      guardia: {
+        name: 'Guardia',
+        faction: 'Fedeli',
+        powerDesc: 'Puoi assegnare uno Scudo Protettivo valido per 1 notte a te stesso o a un altro giocatore.'
+      },
+      martire: {
+        name: 'Martire',
+        faction: 'Fedeli',
+        powerDesc: 'Non hai missioni standard; puoi rilevare un ruolo o assegnare uno Scudo persistente fino a colpo di Assassino o Sabotatore.'
+      },
+      mediatore: {
+        name: 'Mediatore',
+        faction: 'Fedeli',
+        powerDesc: 'Hai un voto extra (+1) alla Tavola Rotonda (5 missioni, 3 ripetibili; missioni prevalentemente verbali).'
+      },
+      cacciatore: {
+        name: 'Cacciatore',
+        faction: 'Neutro',
+        powerDesc: 'Usa i punti missione per chiedere "giocatore X è ruolo Y?" con risposta automatica Sì/No; oppure (0 punti) indica il ruolo di 3 giocatori.'
+      }
     };
 
-    var SPEECH_TEMPLATES = {
-      suspense: [
-        'Le luci si abbassano intorno al tavolo della stanza {{STANZA}}. Ognuno ha davanti a sé un destino ancora non svelato.',
-        'Nel silenzio della notte, le ombre iniziano a muoversi: alcuni giureranno fedeltà alla luce, altri nasconderanno un secondo fine.',
-        'Ora riceverete il vostro ruolo segreto. Guardate la vostra scheda soltanto quando siete certi che nessuno sbircia, poi alzate lo sguardo sul tavolo.'
-      ],
-      solenne: [
-        'Benvenuti nella cerimonia d’apertura del tavolo {{STANZA}}. Da questo istante il patto del gioco è sigillato.',
-        'Ogni ruolo porta con sé un dovere, un limite e una scelta che peserà sull’intera serata.',
-        'Prendete coscienza della vostra identità segreta con calma e preparatevi a sostenere la vostra parte.'
-      ],
-      rapido: [
-        'Tavolo {{STANZA}}, ci siamo: i ruoli stanno per essere distribuiti.',
-        'Controlla in segreto la tua scheda non appena viene assegnata, non mostrare nulla e resta pronto a giocare.'
-      ]
-    };
-
-    function safeGetItem(key) {
-      try { return window.localStorage.getItem(key); } catch (_e) { return null; }
-    }
-
-    function safeSetItem(key, val) {
-      try { window.localStorage.setItem(key, val); } catch (_e) {}
-    }
+    var FALLBACK_CATALOG = [
+      { id: 'TRD-01', faction: 'Traditori', title: 'Sussurro Complice', type: 'Verbale', repeatable: true, points: 1, desc: 'Infila una parola chiave concordata nel discorso al tavolo senza destare sospetti.' },
+      { id: 'TRD-02', faction: 'Traditori', title: 'Intesa Silenziosa', type: 'Contatto', repeatable: false, points: 1, desc: 'Scambia un cenno o tocca un oggetto con un altro giocatore durante il giro.' },
+      { id: 'TRD-03', faction: 'Traditori', title: 'Sguardo Fuorviante', type: 'Reazione', repeatable: true, points: 1, desc: 'Induci un altro giocatore a sospettare di un Fedele dopo una domanda.' },
+      { id: 'TRD-04', faction: 'Traditori', title: 'Passaggio d’Ombra', type: 'Contatto', repeatable: false, points: 1, desc: 'Consegna o sposta un piccolo oggetto in modo discreto.' },
+      { id: 'TRD-05', faction: 'Traditori', title: 'Doppio Senso', type: 'Verbale', repeatable: true, points: 1, desc: 'Rispondi a una domanda con una frase ambigua che possa sembrare sincera.' },
+      { id: 'FED-01', faction: 'Fedeli', title: 'Indagine Aperta', type: 'Verbale', repeatable: false, points: 1, desc: 'Poni una domanda diretta su un episodio avvenuto nel turno precedente.' },
+      { id: 'FED-02', faction: 'Fedeli', title: 'Confronto Chiaro', type: 'Verbale', repeatable: true, points: 1, desc: 'Chiedi a un giocatore di ripetere la propria versione su un sospetto.' },
+      { id: 'FED-03', faction: 'Fedeli', title: 'Patto di Fiducia', type: 'Verbale', repeatable: true, points: 1, desc: 'Sostieni apertamente un compagno di tavolo spiegando perché ti sembra affidabile.' },
+      { id: 'FED-04', faction: 'Fedeli', title: 'Occhio Vigile', type: 'Reazione', repeatable: false, points: 1, desc: 'Nota e commenta un cambio di tono o esitazione durante la discussione.' },
+      { id: 'FED-05', faction: 'Fedeli', title: 'Verità sul Tavolo', type: 'Verbale', repeatable: true, points: 1, desc: 'Riassumi gli indizi raccolti fino a questo momento in modo chiaro.' },
+      { id: 'NEU-01', faction: 'Neutro', title: 'Osservatore Solitario', type: 'Reazione', repeatable: true, points: 1, desc: 'Osserva chi difende chi senza schierarti apertamente.' },
+      { id: 'NEU-02', faction: 'Neutro', title: 'Domanda Scomoda', type: 'Verbale', repeatable: false, points: 1, desc: 'Fai una domanda che mette alla prova due giocatori diversi.' },
+      { id: 'NEU-03', faction: 'Neutro', title: 'Caccia ai Dettagli', type: 'Reazione', repeatable: true, points: 1, desc: 'Individua una contraddizione tra due interventi al tavolo.' },
+      { id: 'NEU-04', faction: 'Neutro', title: 'Scambio Mirato', type: 'Contatto', repeatable: false, points: 1, desc: 'Interagisci brevemente con un bersaglio per osservarne la reazione.' },
+      { id: 'NEU-05', faction: 'Neutro', title: 'Equilibrio Precario', type: 'Verbale', repeatable: true, points: 1, desc: 'Mantieni una posizione neutra guidando la discussione verso un chiarimento.' }
+    ];
 
     function initFirestore() {
       try {
@@ -295,16 +322,563 @@
     }
 
     var firestoreDb = initFirestore();
-    var unsubscribeRoom = null;
-    var chatDraft = '';
-    var selectedDeadReplayName = '';
-    var selectedExileName = '';
 
-    function getRoomDocRef(roomCode) {
-      if (!firestoreDb) return null;
-      var cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
-      return doc(firestoreDb, 'stanze', cleanRoom);
+    function readAccess() {
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        if (!raw) return { roomCode: 'TAVOLO1', playerName: 'Master' };
+        var parsed = JSON.parse(raw);
+        return {
+          roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          playerName: String(parsed.playerName || 'Master').trim() || 'Master'
+        };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', playerName: 'Master' };
+      }
     }
+
+    function isValidAvatarSrc(val) {
+      var s = String(val || '').trim();
+      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
+    }
+
+    var access = readAccess();
+    var state = {
+      roomCode: access.roomCode,
+      masterName: access.playerName,
+      syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Locale',
+      players: [],
+      playerSelfies: {},
+      missionAssignments: {},
+      playerPoints: {},
+      shieldedPlayers: [],
+      martyrShieldedPlayers: [],
+      sabotagedPlayers: [],
+      eliminatedPlayers: [],
+      phaseIndex: 0,
+      cycleCount: 1,
+      ovalActive: false,
+      ovalRoundCount: 0,
+      tvMode: 'idle',
+      tvKillTarget: '',
+      tvExileTarget: '',
+      tvVideoPaused: false,
+      tvRevealTick: 0,
+      masterChat: [],
+      catalog: FALLBACK_CATALOG.slice(),
+      ceremonyStepIndex: 0,
+      ceremonyRoleKey: 'assassino',
+      newPlayerName: '',
+      selectedPlayerForMissions: '',
+      banner: null
+    };
+
+    var masterChatDraft = '';
+    var directTargetName = '';
+
+    function getRoomRef() {
+      if (!firestoreDb) return null;
+      return doc(firestoreDb, 'stanze', state.roomCode);
+    }
+
+    function nameKeyOf(n) {
+      return String(n || '').trim().toLowerCase();
+    }
+
+    function isMasterAccountName(n) {
+      var k = nameKeyOf(n);
+      return !k || k === 'master' || k === nameKeyOf(state.masterName);
+    }
+
+    function isPlayerEliminated(name) {
+      var k = nameKeyOf(name);
+      if (!k) return false;
+      if ((state.eliminatedPlayers || []).some(function (x) { return nameKeyOf(x) === k; })) return true;
+      var p = (state.players || []).find(function (pl) { return nameKeyOf(pl.name) === k; });
+      return Boolean(p && (p.eliminated === true || p.alive === false || p.status === 'eliminated'));
+    }
+
+    function buildFiveMissionsForFaction(faction, existingList) {
+      var pool = state.catalog.filter(function (item) {
+        return String(item.faction || '').toLowerCase() === String(faction || '').toLowerCase();
+      });
+      if (!pool.length) {
+        pool = FALLBACK_CATALOG.filter(function (item) {
+          return String(item.faction || '').toLowerCase() === String(faction || '').toLowerCase();
+        });
+      }
+      var prev = Array.isArray(existingList) ? existingList : [];
+      var out = [];
+      for (var i = 0; i < 5; i++) {
+        var catItem = pool[i % pool.length] || FALLBACK_CATALOG[i % FALLBACK_CATALOG.length];
+        var oldItem = prev[i] || {};
+        var approved = Boolean(oldItem.masterApproved);
+        var claimed = Boolean(oldItem.playerClaimedDone !== undefined ? oldItem.playerClaimedDone : oldItem.done);
+        out.push({
+          slot: i + 1,
+          id: catItem.id || ('M' + (i + 1)),
+          title: oldItem.title && oldItem.customAssigned ? oldItem.title : (catItem.title || ('Missione ' + (i + 1))),
+          type: oldItem.type && oldItem.customAssigned ? oldItem.type : (catItem.type || 'Verbale'),
+          repeatable: oldItem.customAssigned ? Boolean(oldItem.repeatable) : Boolean(catItem.repeatable),
+          points: Number(catItem.points || 1),
+          desc: oldItem.desc && oldItem.customAssigned ? oldItem.desc : (catItem.desc || catItem.description || ''),
+          customAssigned: Boolean(oldItem.customAssigned),
+          playerClaimedDone: claimed,
+          masterApproved: approved,
+          done: approved || claimed
+        });
+      }
+      return out;
+    }
+
+    function recomputePlayerPoints(key, list) {
+      var approvedCount = (list || []).filter(function (m) { return Boolean(m.masterApproved); }).length;
+      state.playerPoints[key] = approvedCount;
+    }
+
+    function applyRoomSnapshot(data) {
+      if (!data || typeof data !== 'object') return;
+
+      if (typeof data.phaseIndex === 'number') {
+        state.phaseIndex = Math.max(0, Math.min(GAME_PHASES.length - 1, Number(data.phaseIndex)));
+      }
+      if (typeof data.cycleCount === 'number') {
+        state.cycleCount = Math.max(1, Number(data.cycleCount));
+      }
+
+      if (data.playerSelfies && typeof data.playerSelfies === 'object') {
+        state.playerSelfies = Object.assign({}, data.playerSelfies);
+      }
+
+      if (Array.isArray(data.players)) {
+        state.players = data.players.filter(function (p) {
+          return p && p.name && !isMasterAccountName(p.name) && p.isMaster !== true;
+        });
+      }
+
+      if (data.missionAssignments && typeof data.missionAssignments === 'object') {
+        state.missionAssignments = Object.assign({}, data.missionAssignments);
+      }
+      if (data.playerPoints && typeof data.playerPoints === 'object') {
+        state.playerPoints = Object.assign({}, data.playerPoints);
+      }
+
+      state.shieldedPlayers = Array.isArray(data.shieldedPlayers) ? data.shieldedPlayers.slice() : [];
+      state.martyrShieldedPlayers = Array.isArray(data.martyrShieldedPlayers) ? data.martyrShieldedPlayers.slice() : [];
+      state.sabotagedPlayers = Array.isArray(data.sabotagedPlayers) ? data.sabotagedPlayers.slice() : [];
+      state.eliminatedPlayers = Array.isArray(data.eliminatedPlayers) ? data.eliminatedPlayers.slice() : [];
+
+      if (typeof data.ovalActive === 'boolean') state.ovalActive = data.ovalActive;
+      if (typeof data.ovalRoundCount === 'number') state.ovalRoundCount = Number(data.ovalRoundCount);
+
+      if (typeof data.tvMode === 'string') state.tvMode = data.tvMode;
+      if (typeof data.tvKillTarget === 'string') state.tvKillTarget = data.tvKillTarget;
+      if (typeof data.tvExileTarget === 'string') state.tvExileTarget = data.tvExileTarget;
+      if (typeof data.tvVideoPaused === 'boolean') state.tvVideoPaused = data.tvVideoPaused;
+      if (typeof data.tvRevealTick === 'number') state.tvRevealTick = Number(data.tvRevealTick);
+
+      if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat.slice();
+
+      if (!state.selectedPlayerForMissions && state.players.length > 0) {
+        state.selectedPlayerForMissions = state.players[0].name;
+      }
+      if (!directTargetName && state.players.length > 0) {
+        directTargetName = state.players[0].name;
+      }
+
+      saveLocal();
+    }
+
+    function saveLocal() {
+      try {
+        var raw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+        var cur = raw ? JSON.parse(raw) : { roomCode: state.roomCode };
+        cur.roomCode = state.roomCode;
+        cur.players = state.players;
+        cur.playerSelfies = state.playerSelfies;
+        cur.missionAssignments = state.missionAssignments;
+        cur.playerPoints = state.playerPoints;
+        cur.shieldedPlayers = state.shieldedPlayers;
+        cur.martyrShieldedPlayers = state.martyrShieldedPlayers;
+        cur.sabotagedPlayers = state.sabotagedPlayers;
+        cur.eliminatedPlayers = state.eliminatedPlayers;
+        cur.phaseIndex = state.phaseIndex;
+        cur.cycleCount = state.cycleCount;
+        cur.ovalActive = state.ovalActive;
+        cur.ovalRoundCount = state.ovalRoundCount;
+        cur.tvMode = state.tvMode;
+        cur.tvKillTarget = state.tvKillTarget;
+        cur.tvExileTarget = state.tvExileTarget;
+        cur.tvVideoPaused = state.tvVideoPaused;
+        cur.tvRevealTick = state.tvRevealTick;
+        cur.masterChat = state.masterChat;
+        cur.updatedAt = Date.now();
+        localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(cur));
+      } catch (_e) {}
+    }
+
+    async function pushRoomUpdate(extra) {
+      saveLocal();
+      var ref = getRoomRef();
+      if (!ref) return;
+      try {
+        await setDoc(ref, Object.assign({
+          roomCode: state.roomCode,
+          players: state.players,
+          playerSelfies: state.playerSelfies,
+          missionAssignments: state.missionAssignments,
+          playerPoints: state.playerPoints,
+          shieldedPlayers: state.shieldedPlayers,
+          martyrShieldedPlayers: state.martyrShieldedPlayers,
+          sabotagedPlayers: state.sabotagedPlayers,
+          eliminatedPlayers: state.eliminatedPlayers,
+          phaseIndex: state.phaseIndex,
+          cycleCount: state.cycleCount,
+          ovalActive: state.ovalActive,
+          ovalRoundCount: state.ovalRoundCount,
+          tvMode: state.tvMode,
+          tvKillTarget: state.tvKillTarget,
+          tvExileTarget: state.tvExileTarget,
+          tvVideoPaused: state.tvVideoPaused,
+          tvRevealTick: state.tvRevealTick,
+          masterChat: state.masterChat,
+          updatedAt: Date.now()
+        }, extra || {}), { merge: true });
+        state.syncStatus = 'Cloud Firestore attivo';
+      } catch (_e) {
+        state.syncStatus = 'Locale (controlla regole Firestore)';
+      }
+    }
+
+    function getPlayerAvatar(name) {
+      var k = nameKeyOf(name);
+      if (k && state.playerSelfies && isValidAvatarSrc(state.playerSelfies[k])) return state.playerSelfies[k];
+      var found = (state.players || []).find(function (p) { return nameKeyOf(p.name) === k; });
+      if (found && isValidAvatarSrc(found.selfie || found.selfieDataUrl)) return found.selfie || found.selfieDataUrl;
+      return '';
+    }
+
+    window.setNewPlayerName = function (val) { state.newPlayerName = String(val || ''); };
+
+    window.addPlayerToRoom = async function () {
+      var inp = document.getElementById('master-new-player-input');
+      var clean = String((inp ? inp.value : state.newPlayerName) || '').trim();
+      if (!clean) {
+        state.banner = { text: 'Inserisci un nome giocatore valido.', type: 'error' };
+        render();
+        return;
+      }
+      var k = nameKeyOf(clean);
+      var exists = state.players.some(function (p) { return nameKeyOf(p.name) === k; });
+      if (exists) {
+        state.banner = { text: 'Il giocatore "' + clean + '" è già presente nella stanza.', type: 'info' };
+        render();
+        return;
+      }
+      state.players.push({
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: clean,
+        boardUnlocked: true,
+        assignedRoleKey: null,
+        eliminated: false,
+        alive: true,
+        joinedAt: Date.now()
+      });
+      if (!state.selectedPlayerForMissions) state.selectedPlayerForMissions = clean;
+      if (!directTargetName) directTargetName = clean;
+      state.newPlayerName = '';
+      if (inp) inp.value = '';
+      state.banner = { text: 'Giocatore "' + clean + '" aggiunto alla stanza ' + state.roomCode + '.', type: 'success' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.removePlayerFromRoom = async function (playerName) {
+      var k = nameKeyOf(playerName);
+      state.players = state.players.filter(function (p) { return nameKeyOf(p.name) !== k; });
+      state.eliminatedPlayers = state.eliminatedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
+      state.shieldedPlayers = state.shieldedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
+      state.martyrShieldedPlayers = state.martyrShieldedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
+      state.sabotagedPlayers = state.sabotagedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
+      if (nameKeyOf(state.selectedPlayerForMissions) === k) {
+        state.selectedPlayerForMissions = state.players[0] ? state.players[0].name : '';
+      }
+      if (nameKeyOf(directTargetName) === k) {
+        directTargetName = state.players[0] ? state.players[0].name : '';
+      }
+      state.banner = { text: 'Giocatore "' + playerName + '" rimosso dalla stanza.', type: 'info' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.assignRoleToPlayer = async function (playerName, roleKey) {
+      var k = nameKeyOf(playerName);
+      var idx = state.players.findIndex(function (p) { return nameKeyOf(p.name) === k; });
+      if (idx === -1) return;
+      var normalizedRole = roleKey && ROLE_DETAILS[roleKey] ? roleKey : null;
+      state.players[idx].assignedRoleKey = normalizedRole;
+
+      if (normalizedRole) {
+        var rInfo = ROLE_DETAILS[normalizedRole];
+        var existingM = state.missionAssignments[k] || [];
+        var built = buildFiveMissionsForFaction(rInfo.faction, existingM);
+        state.missionAssignments[k] = built;
+        recomputePlayerPoints(k, built);
+      }
+
+      state.banner = {
+        text: normalizedRole
+          ? ('Ruolo "' + ROLE_DETAILS[normalizedRole].name + '" assegnato a ' + state.players[idx].name + '.')
+          : ('Ruolo rimosso a ' + state.players[idx].name + '.'),
+        type: 'success'
+      };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.toggleEliminatePlayer = async function (playerName) {
+      var k = nameKeyOf(playerName);
+      var idx = state.players.findIndex(function (p) { return nameKeyOf(p.name) === k; });
+      if (idx === -1) return;
+      var currentlyElim = isPlayerEliminated(playerName);
+      var nextElim = !currentlyElim;
+      state.players[idx].eliminated = nextElim;
+      state.players[idx].alive = !nextElim;
+      state.players[idx].status = nextElim ? 'eliminated' : 'alive';
+      if (nextElim) {
+        if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === k; })) {
+          state.eliminatedPlayers.push(state.players[idx].name);
+        }
+      } else {
+        state.eliminatedPlayers = state.eliminatedPlayers.filter(function (n) { return nameKeyOf(n) !== k; });
+      }
+      state.banner = {
+        text: nextElim
+          ? ('Giocatore "' + state.players[idx].name + '" segnato come eliminato.')
+          : ('Giocatore "' + state.players[idx].name + '" riportato in gioco.'),
+        type: 'info'
+      };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.selectPlayerForMissions = function (playerName) {
+      state.selectedPlayerForMissions = String(playerName || '');
+      render();
+    };
+
+    window.assignCatalogMissionToSlot = async function (playerName, slotIdx, catalogId) {
+      var k = nameKeyOf(playerName);
+      var pObj = state.players.find(function (p) { return nameKeyOf(p.name) === k; });
+      var rObj = pObj && pObj.assignedRoleKey ? ROLE_DETAILS[pObj.assignedRoleKey] : null;
+      var faction = rObj ? rObj.faction : 'Fedeli';
+      var list = buildFiveMissionsForFaction(faction, state.missionAssignments[k] || []);
+      var cat = state.catalog.find(function (c) { return String(c.id) === String(catalogId); });
+      if (cat && list[slotIdx]) {
+        list[slotIdx] = Object.assign({}, list[slotIdx], {
+          id: cat.id,
+          title: cat.title,
+          type: cat.type || 'Verbale',
+          repeatable: Boolean(cat.repeatable),
+          points: Number(cat.points || 1),
+          desc: cat.desc || cat.description || '',
+          customAssigned: true
+        });
+      }
+      state.missionAssignments[k] = list;
+      recomputePlayerPoints(k, list);
+      state.banner = { text: 'Missione assegnata a ' + (pObj ? pObj.name : playerName) + ' (Slot ' + (slotIdx + 1) + ').', type: 'success' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.toggleApproveMission = async function (playerName, slotIdx) {
+      var k = nameKeyOf(playerName);
+      var pObj = state.players.find(function (p) { return nameKeyOf(p.name) === k; });
+      var rObj = pObj && pObj.assignedRoleKey ? ROLE_DETAILS[pObj.assignedRoleKey] : null;
+      var faction = rObj ? rObj.faction : 'Fedeli';
+      var list = buildFiveMissionsForFaction(faction, state.missionAssignments[k] || []);
+      if (!list[slotIdx]) return;
+      list[slotIdx].masterApproved = !list[slotIdx].masterApproved;
+      list[slotIdx].done = list[slotIdx].masterApproved || list[slotIdx].playerClaimedDone;
+      state.missionAssignments[k] = list;
+      recomputePlayerPoints(k, list);
+      state.banner = {
+        text: list[slotIdx].masterApproved
+          ? ('Missione "' + list[slotIdx].title + '" confermata per ' + (pObj ? pObj.name : playerName) + ' (+1 punto).')
+          : ('Conferma rimossa per "' + list[slotIdx].title + '".'),
+        type: 'success'
+      };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.adjustPlayerPoints = async function (playerName, delta) {
+      var k = nameKeyOf(playerName);
+      if (!k) return;
+      var cur = Number(state.playerPoints[k] || 0);
+      state.playerPoints[k] = Math.max(0, cur + Number(delta || 0));
+      state.banner = { text: 'Punti di ' + playerName + ' aggiornati a ' + state.playerPoints[k] + '.', type: 'info' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.masterSetPhase = async function (idx) {
+      var clamped = Math.max(0, Math.min(GAME_PHASES.length - 1, Number(idx || 0)));
+      state.phaseIndex = clamped;
+      state.banner = { text: 'Fase impostata su: ' + GAME_PHASES[clamped].step + '. ' + GAME_PHASES[clamped].title, type: 'info' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.masterNextPhase = async function () {
+      if (state.phaseIndex < GAME_PHASES.length - 1) {
+        state.phaseIndex += 1;
+      } else {
+        state.phaseIndex = 0;
+        state.cycleCount = Number(state.cycleCount || 1) + 1;
+      }
+      state.banner = { text: 'Fase avanzata: ' + GAME_PHASES[state.phaseIndex].step + '. ' + GAME_PHASES[state.phaseIndex].title + ' (Ciclo #' + state.cycleCount + ').', type: 'info' };
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.masterToggleOvalSession = async function (open) {
+      var isOpen = Boolean(open);
+      state.ovalActive = isOpen;
+      if (isOpen) {
+        state.phaseIndex = 5;
+        state.ovalRoundCount = Number(state.ovalRoundCount || 0) + 1;
+      }
+      state.banner = {
+        text: isOpen
+          ? 'Tavolo Ovale APERTO: i giocatori vengono reindirizzati a tavola-ovale.html (il Master non partecipa al voto).'
+          : 'Tavolo Ovale CHIUSO: i giocatori tornano alle rispettive schede.',
+        type: isOpen ? 'success' : 'info'
+      };
+      await pushRoomUpdate({
+        ovalActive: state.ovalActive,
+        ovalSessionActive: state.ovalActive,
+        ovalTableOpen: state.ovalActive,
+        ovalRedirectUrl: 'tavola-ovale.html',
+        phaseIndex: state.phaseIndex,
+        ovalRoundCount: state.ovalRoundCount
+      });
+      render();
+    };
+
+    window.setTvKillTarget = function (v) { state.tvKillTarget = String(v || ''); };
+    window.setTvExileTarget = function (v) { state.tvExileTarget = String(v || ''); };
+
+    window.masterTriggerTvScene = async function (mode) {
+      var cleanMode = String(mode || 'idle');
+      if (cleanMode === 'kill' && !state.tvKillTarget && state.players.length > 0) {
+        state.tvKillTarget = state.players[0].name;
+      }
+      if (cleanMode === 'exile' && !state.tvExileTarget && state.players.length > 0) {
+        state.tvExileTarget = state.players[0].name;
+      }
+      state.tvMode = cleanMode;
+      state.tvVideoPaused = false;
+      state.tvRevealTick = Number(state.tvRevealTick || 0) + 1;
+
+      if (cleanMode === 'kill' && state.tvKillTarget) {
+        var killKey = nameKeyOf(state.tvKillTarget);
+        var killIdx = state.players.findIndex(function (p) { return nameKeyOf(p.name) === killKey; });
+        if (killIdx !== -1) {
+          state.players[killIdx].eliminated = true;
+          state.players[killIdx].alive = false;
+          state.players[killIdx].status = 'eliminated';
+        }
+        if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === killKey; })) {
+          state.eliminatedPlayers.push(state.tvKillTarget);
+        }
+      }
+
+      if (cleanMode === 'exile' && state.tvExileTarget) {
+        var exKey = nameKeyOf(state.tvExileTarget);
+        var exIdx = state.players.findIndex(function (p) { return nameKeyOf(p.name) === exKey; });
+        if (exIdx !== -1) {
+          state.players[exIdx].eliminated = true;
+          state.players[exIdx].alive = false;
+          state.players[exIdx].status = 'eliminated';
+        }
+        if (!state.eliminatedPlayers.some(function (n) { return nameKeyOf(n) === exKey; })) {
+          state.eliminatedPlayers.push(state.tvExileTarget);
+        }
+      }
+
+      state.banner = {
+        text: cleanMode === 'idle'
+          ? 'Trasmissione TV riportata in standby.'
+          : ('Scena TV "' + cleanMode + '" inviata a TV e schede giocatore (Tick #' + state.tvRevealTick + ').'),
+        type: 'success'
+      };
+      await pushRoomUpdate({
+        tvMode: state.tvMode,
+        tvKillTarget: state.tvKillTarget,
+        tvExileTarget: state.tvExileTarget,
+        tvVideoPaused: state.tvVideoPaused,
+        tvRevealTick: state.tvRevealTick,
+        players: state.players,
+        eliminatedPlayers: state.eliminatedPlayers
+      });
+      render();
+    };
+
+    window.masterToggleTvPause = async function () {
+      state.tvVideoPaused = !state.tvVideoPaused;
+      state.tvRevealTick = Number(state.tvRevealTick || 0) + 1;
+      await pushRoomUpdate({
+        tvVideoPaused: state.tvVideoPaused,
+        tvRevealTick: state.tvRevealTick
+      });
+      render();
+    };
+
+    window.setCeremonyStep = function (idx) {
+      state.ceremonyStepIndex = Math.max(0, Math.min(3, Number(idx || 0)));
+      render();
+    };
+
+    window.setCeremonyRole = function (rk) {
+      state.ceremonyRoleKey = rk && ROLE_DETAILS[rk] ? rk : 'assassino';
+      render();
+    };
+
+    window.updateMasterChatDraft = function (v) { masterChatDraft = String(v || ''); };
+    window.setDirectTargetName = function (v) { directTargetName = String(v || ''); };
+
+    window.sendMasterMessage = async function (onlyTraitorSecret) {
+      var inp = document.getElementById('master-chat-input');
+      var txt = String((inp ? inp.value : masterChatDraft) || '').trim();
+      if (!txt) return;
+      var target = onlyTraitorSecret ? '' : (directTargetName || '');
+      var prefix = onlyTraitorSecret ? '[TRADITORE SEGRETO] ' : (target ? ('[A ' + target + '] ') : '[MASTER] ');
+      state.masterChat = state.masterChat.concat([{
+        id: 'mc_' + Date.now(),
+        fromMaster: true,
+        senderName: state.masterName || 'Master',
+        playerName: target,
+        text: prefix + txt,
+        createdAt: Date.now()
+      }]).slice(-150);
+      masterChatDraft = '';
+      if (inp) inp.value = '';
+      await pushRoomUpdate();
+      render();
+    };
+
+    window.openTvScreen = function () {
+      window.open('tv.html?room=' + encodeURIComponent(state.roomCode), '_blank');
+    };
+
+    window.openOvalMonitor = function () {
+      window.open('tavolo-ovale.html?room=' + encodeURIComponent(state.roomCode) + '&master=1', '_blank');
+    };
+
+    window.goToRolesPage = function () { window.location.href = 'ruoli.html'; };
+    window.goToAccessPage = function () { window.location.href = 'index.html'; };
 
     function escapeHtml(value) {
       return String(value == null ? '' : value)
@@ -315,1212 +889,373 @@
         .replace(/'/g, '&#39;');
     }
 
-    function isValidPhoto(val) {
-      var s = String(val || '').trim();
-      return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(s) || /^https?:\/\//i.test(s);
+    function escapeJsSingle(value) {
+      return escapeHtml(value).replace(/\\/g, '\\\\').replace(/'/g, '&#39;');
     }
 
-    function readAccess() {
-      try {
-        var raw = safeGetItem(ACCESS_KEY);
-        if (!raw) return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
-        var parsed = JSON.parse(raw);
-        return {
-          roomCode: String(parsed && parsed.roomCode ? parsed.roomCode : 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
-          masterName: String(parsed && parsed.playerName ? parsed.playerName : 'Master').trim() || 'Master',
-          selfieDataUrl: parsed && isValidPhoto(parsed.selfieDataUrl) ? String(parsed.selfieDataUrl) : ''
-        };
-      } catch (_e) {
-        return { roomCode: 'TAVOLO1', masterName: 'Master', selfieDataUrl: '' };
+    function renderAvatarSm(name) {
+      var src = getPlayerAvatar(name);
+      if (isValidAvatarSrc(src)) {
+        return '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(name) + '" class="avatar-sm" />';
       }
+      return '<div class="avatar-sm">' + escapeHtml(String(name || 'G').slice(0, 1).toUpperCase()) + '</div>';
     }
 
-    function createDefaultCounts() {
-      return {
-        assassino: 1, sabotatore: 1, traditore_segreto: 1, investigatore: 1,
-        guardia: 1, martire: 1, mediatore: 1, cacciatore: 1
-      };
-    }
-
-    function normalizePlayerList(rawPlayers) {
-      if (!Array.isArray(rawPlayers)) return [];
-      var seen = {};
-      var out = [];
-      rawPlayers.forEach(function (p, idx) {
-        var name = String(p && p.name ? p.name : '').trim();
-        if (!name) return;
-        var key = name.toLowerCase();
-        var roleKey = p && p.assignedRoleKey && ROLE_CATALOG[p.assignedRoleKey] ? p.assignedRoleKey : null;
-        if (seen[key]) {
-          var existing = out[seen[key] - 1];
-          if (p && p.boardUnlocked) existing.boardUnlocked = true;
-          if (roleKey) existing.assignedRoleKey = roleKey;
-          if (p && p.isDead) existing.isDead = true;
-          return;
-        }
-        out.push({
-          id: String(p && p.id ? p.id : ('p_' + idx + '_' + key)),
-          name: name,
-          boardUnlocked: Boolean(p && p.boardUnlocked),
-          assignedRoleKey: roleKey,
-          isDead: Boolean(p && p.isDead)
-        });
-        seen[key] = out.length;
+    function renderCeremonySection() {
+      var steps = [
+        '1. Apertura e Silenzio',
+        '2. Chiamata Ruolo & Risposta',
+        '3. Conferma Schede Private',
+        '4. Chiusura Cerimonia'
+      ];
+      var activeRole = ROLE_DETAILS[state.ceremonyRoleKey] || ROLE_DETAILS.assassino;
+      var rolePlayers = state.players.filter(function (p) {
+        return p.assignedRoleKey === state.ceremonyRoleKey && !isPlayerEliminated(p.name);
       });
-      return out;
-    }
-
-    function loadState() {
-      var ctx = readAccess();
-      var base = {
-        roomCode: ctx.roomCode,
-        masterName: ctx.masterName,
-        masterSelfie: ctx.selfieDataUrl,
-        syncStatus: firestoreDb ? 'Cloud Firestore attivo' : 'Locale',
-        roleCounts: createDefaultCounts(),
-        players: [],
-        playerPoints: {},
-        missionAssignments: {},
-        catalog: FALLBACK_CATALOG.slice(),
-        catalogSource: 'Catalogo integrato (31 missioni)',
-        speechTone: 'suspense',
-        customSpeechText: '',
-        activeParagraphIndex: 0,
-        assignmentCompleted: false,
-        boardOpened: false,
-        banner: null,
-        chatTab: 'master',
-        playerFilter: 'ALL',
-        masterChat: [],
-        traitorChat: [],
-        ovalActive: false,
-        ovalSessionTick: 0,
-        ovalRunoffActive: false,
-        ovalRunoffCandidates: [],
-        ovalVotes: [],
-        revealedVoteIndex: 0,
-        tvMode: 'idle',
-        tvKillTarget: '',
-        tvExileTarget: '',
-        tvVideoPaused: false,
-        tvRevealTick: 0,
-        playerSelfies: ctx.selfieDataUrl ? { [ctx.masterName.toLowerCase()]: ctx.selfieDataUrl } : {}
-      };
-
-      try {
-        var raw = safeGetItem(MASTER_KEY);
-        if (raw) {
-          var parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
-            if (parsed.roleCounts && typeof parsed.roleCounts === 'object') {
-              Object.keys(base.roleCounts).forEach(function (k) {
-                var n = Number(parsed.roleCounts[k]);
-                if (!isNaN(n)) base.roleCounts[k] = Math.max(0, Math.min(12, n));
-              });
-            }
-            if (Array.isArray(parsed.players) && String(parsed.roomCode || '').toUpperCase() === base.roomCode) {
-              base.players = normalizePlayerList(parsed.players);
-            }
-            if (parsed.speechTone && SPEECH_TEMPLATES[parsed.speechTone]) base.speechTone = parsed.speechTone;
-            if (typeof parsed.customSpeechText === 'string') base.customSpeechText = parsed.customSpeechText;
-            if (typeof parsed.activeParagraphIndex === 'number') base.activeParagraphIndex = Math.max(0, parsed.activeParagraphIndex);
-            if (String(parsed.roomCode || '').toUpperCase() === base.roomCode) {
-              base.assignmentCompleted = Boolean(parsed.assignmentCompleted);
-              base.boardOpened = Boolean(parsed.boardOpened);
-            }
-          }
-        }
-      } catch (_e) {}
-
-      try {
-        var roomRaw = safeGetItem(ROOM_PREFIX + base.roomCode);
-        if (roomRaw) {
-          var roomParsed = JSON.parse(roomRaw);
-          if (roomParsed && typeof roomParsed === 'object') {
-            if (Array.isArray(roomParsed.masterChat)) base.masterChat = roomParsed.masterChat;
-            if (Array.isArray(roomParsed.traitorChat)) base.traitorChat = roomParsed.traitorChat;
-            if (Array.isArray(roomParsed.players) && base.players.length === 0) {
-              base.players = normalizePlayerList(roomParsed.players);
-            }
-            if (roomParsed.playerPoints && typeof roomParsed.playerPoints === 'object') {
-              base.playerPoints = Object.assign({}, roomParsed.playerPoints);
-            }
-            if (roomParsed.missionAssignments && typeof roomParsed.missionAssignments === 'object') {
-              base.missionAssignments = Object.assign({}, roomParsed.missionAssignments);
-            }
-            if (typeof roomParsed.ovalActive === 'boolean') base.ovalActive = roomParsed.ovalActive;
-            if (typeof roomParsed.ovalSessionTick === 'number') base.ovalSessionTick = roomParsed.ovalSessionTick;
-            if (typeof roomParsed.ovalRunoffActive === 'boolean') base.ovalRunoffActive = roomParsed.ovalRunoffActive;
-            if (Array.isArray(roomParsed.ovalRunoffCandidates)) base.ovalRunoffCandidates = roomParsed.ovalRunoffCandidates;
-            if (Array.isArray(roomParsed.ovalVotes)) base.ovalVotes = roomParsed.ovalVotes;
-            if (typeof roomParsed.revealedVoteIndex === 'number') base.revealedVoteIndex = roomParsed.revealedVoteIndex;
-            if (typeof roomParsed.tvMode === 'string') base.tvMode = roomParsed.tvMode;
-            if (typeof roomParsed.tvKillTarget === 'string') base.tvKillTarget = roomParsed.tvKillTarget;
-            if (typeof roomParsed.tvExileTarget === 'string') base.tvExileTarget = roomParsed.tvExileTarget;
-            if (typeof roomParsed.tvVideoPaused === 'boolean') base.tvVideoPaused = roomParsed.tvVideoPaused;
-            if (typeof roomParsed.tvRevealTick === 'number') base.tvRevealTick = roomParsed.tvRevealTick;
-            if (roomParsed.masterSelfie && isValidPhoto(roomParsed.masterSelfie)) base.masterSelfie = roomParsed.masterSelfie;
-            if (roomParsed.playerSelfies && typeof roomParsed.playerSelfies === 'object') {
-              base.playerSelfies = Object.assign({}, base.playerSelfies, roomParsed.playerSelfies);
-            }
-          }
-        }
-      } catch (_e) {}
-
-      return base;
-    }
-
-    var state = loadState();
-    var missionSingleView = false;
-    var missionSingleIndex = 0;
-    var collapsedMissionPlayers = {};
-
-    window.masterClearChat = async function () {
-      var isTraitor = state.chatTab === 'traitors';
-      if (isTraitor) {
-        state.traitorChat = [];
-        await syncPatchToCloud({ traitorChat: [] });
-      } else {
-        state.masterChat = [];
-        await syncPatchToCloud({ masterChat: [] });
-      }
-      state.banner = {
-        text: isTraitor ? 'Chat Traditori svuotata.' : 'Chat Diretta svuotata.',
-        type: 'info'
-      };
-      render();
-    };
-
-    window.masterToggleMissionCard = function (pKey) {
-      var k = String(pKey || '');
-      collapsedMissionPlayers[k] = !collapsedMissionPlayers[k];
-      render();
-    };
-
-    window.masterToggleMissionViewMode = function () {
-      missionSingleView = !missionSingleView;
-      if (missionSingleIndex >= (state.players || []).length) {
-        missionSingleIndex = 0;
-      }
-      render();
-    };
-
-    window.masterStepMissionPlayer = function (delta) {
-      var len = (state.players || []).length;
-      if (!len) return;
-      missionSingleIndex = (missionSingleIndex + Number(delta || 0) + len) % len;
-      render();
-    };
-
-    function persistLocal() {
-      safeSetItem(MASTER_KEY, JSON.stringify({
-        roomCode: state.roomCode,
-        masterName: state.masterName,
-        roleCounts: state.roleCounts,
-        players: state.players,
-        speechTone: state.speechTone,
-        customSpeechText: state.customSpeechText,
-        activeParagraphIndex: state.activeParagraphIndex,
-        assignmentCompleted: state.assignmentCompleted,
-        boardOpened: state.boardOpened
-      }));
-
-      var existingRoom = {};
-      try {
-        var raw = safeGetItem(ROOM_PREFIX + state.roomCode);
-        if (raw) existingRoom = JSON.parse(raw) || {};
-      } catch (_e) {}
-
-      safeSetItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, existingRoom, {
-        roomCode: state.roomCode,
-        masterName: state.masterName,
-        masterSelfie: state.masterSelfie,
-        players: state.players,
-        roleCounts: state.roleCounts,
-        playerPoints: state.playerPoints,
-        missionAssignments: state.missionAssignments,
-        masterChat: state.masterChat,
-        traitorChat: state.traitorChat,
-        ovalActive: state.ovalActive,
-        ovalSessionTick: state.ovalSessionTick,
-        ovalRunoffActive: state.ovalRunoffActive,
-        ovalRunoffCandidates: state.ovalRunoffCandidates,
-        ovalVotes: state.ovalVotes,
-        revealedVoteIndex: state.revealedVoteIndex,
-        tvMode: state.tvMode,
-        tvKillTarget: state.tvKillTarget,
-        tvExileTarget: state.tvExileTarget,
-        tvVideoPaused: state.tvVideoPaused,
-        tvRevealTick: state.tvRevealTick,
-        playerSelfies: state.playerSelfies,
-        updatedAt: Date.now()
-      })));
-    }
-
-    async function syncPatchToCloud(patch) {
-      Object.assign(state, patch || {});
-      persistLocal();
-      var ref = getRoomDocRef(state.roomCode);
-      if (!ref) return;
-      try {
-        await setDoc(ref, Object.assign({
-          roomCode: state.roomCode,
-          masterName: state.masterName || 'Master',
-          updatedAt: Date.now()
-        }, patch || {}), { merge: true });
-        state.syncStatus = 'Cloud Firestore attivo';
-      } catch (_e) {
-        state.syncStatus = 'Locale';
-      }
-    }
-
-    function applyCloudRoomData(data) {
-      if (!data || typeof data !== 'object') return;
-      if (data.masterName && (!state.masterName || state.masterName === 'Master')) {
-        state.masterName = String(data.masterName);
-      }
-      if (data.masterSelfie && isValidPhoto(data.masterSelfie)) {
-        state.masterSelfie = String(data.masterSelfie);
-      }
-      if (data.playerSelfies && typeof data.playerSelfies === 'object') {
-        state.playerSelfies = Object.assign({}, state.playerSelfies, data.playerSelfies);
-      }
-      if (Array.isArray(data.players)) {
-        var cloudPlayers = normalizePlayerList(data.players);
-        var prevByName = {};
-        state.players.forEach(function (p) { prevByName[p.name.toLowerCase()] = p; });
-        state.players = cloudPlayers.map(function (cp) {
-          var prev = prevByName[cp.name.toLowerCase()];
-          return {
-            id: cp.id,
-            name: cp.name,
-            boardUnlocked: Boolean(cp.boardUnlocked || (prev && prev.boardUnlocked)),
-            assignedRoleKey: cp.assignedRoleKey || (prev ? prev.assignedRoleKey : null),
-            isDead: Boolean(cp.isDead !== undefined ? cp.isDead : (prev && prev.isDead))
-          };
-        });
-        if (state.players.some(function (p) { return Boolean(p.assignedRoleKey); })) {
-          state.assignmentCompleted = true;
-        }
-      }
-      if (data.playerPoints && typeof data.playerPoints === 'object') {
-        state.playerPoints = Object.assign({}, data.playerPoints);
-      }
-      if (data.missionAssignments && typeof data.missionAssignments === 'object') {
-        state.missionAssignments = Object.assign({}, data.missionAssignments);
-      }
-      if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat;
-      if (Array.isArray(data.traitorChat)) state.traitorChat = data.traitorChat;
-      if (typeof data.ovalActive === 'boolean') state.ovalActive = data.ovalActive;
-      if (typeof data.ovalSessionTick === 'number') state.ovalSessionTick = data.ovalSessionTick;
-      if (typeof data.ovalRunoffActive === 'boolean') state.ovalRunoffActive = data.ovalRunoffActive;
-      if (Array.isArray(data.ovalRunoffCandidates)) state.ovalRunoffCandidates = data.ovalRunoffCandidates;
-      if (Array.isArray(data.ovalVotes)) state.ovalVotes = data.ovalVotes;
-      if (typeof data.revealedVoteIndex === 'number') state.revealedVoteIndex = data.revealedVoteIndex;
-      if (typeof data.tvMode === 'string') state.tvMode = data.tvMode;
-      if (typeof data.tvKillTarget === 'string') state.tvKillTarget = data.tvKillTarget;
-      if (typeof data.tvExileTarget === 'string') state.tvExileTarget = data.tvExileTarget;
-      if (typeof data.tvVideoPaused === 'boolean') state.tvVideoPaused = data.tvVideoPaused;
-      if (typeof data.tvRevealTick === 'number') state.tvRevealTick = data.tvRevealTick;
-      persistLocal();
-    }
-
-    async function subscribeToRoomCloud() {
-      if (typeof unsubscribeRoom === 'function') {
-        unsubscribeRoom();
-        unsubscribeRoom = null;
-      }
-      var ref = getRoomDocRef(state.roomCode);
-      if (!ref) {
-        state.syncStatus = 'Solo locale';
-        return;
-      }
-      try {
-        var snap = await getDoc(ref);
-        if (snap.exists()) {
-          applyCloudRoomData(snap.data() || {});
-          render();
-        } else {
-          await syncPatchToCloud({
-            players: state.players,
-            roleCounts: state.roleCounts,
-            playerPoints: state.playerPoints,
-            missionAssignments: state.missionAssignments,
-            masterChat: state.masterChat,
-            traitorChat: state.traitorChat
-          });
-        }
-      } catch (_e) {}
-
-      unsubscribeRoom = onSnapshot(ref, function (snap) {
-        state.syncStatus = 'Cloud Firestore attivo';
-        if (snap.exists()) {
-          applyCloudRoomData(snap.data() || {});
-        }
-        render();
-      }, function () {
-        state.syncStatus = 'Locale';
-        render();
-      });
-    }
-
-    async function loadCatalogJson() {
-      try {
-        var res = await fetch(CATALOG_URL, { cache: 'no-store' });
-        if (!res.ok) return;
-        var jsonData = await res.json();
-        if (Array.isArray(jsonData) && jsonData.length) {
-          state.catalog = jsonData.filter(function (m) { return m && m.active !== false; });
-          state.catalogSource = CATALOG_URL + ' (' + state.catalog.length + ' missioni)';
-          render();
-        }
-      } catch (_e) {}
-    }
-
-    function pickRandom(list, count, usedIds) {
-      var pool = list.filter(function (item) {
-        return item && item.id && !usedIds[item.id];
-      });
-      for (var i = pool.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
-      }
-      var chosen = pool.slice(0, count);
-      chosen.forEach(function (c) { usedIds[c.id] = true; });
-      return chosen;
-    }
-
-    function drawFiveMissionsForRole(roleKey) {
-      var role = ROLE_CATALOG[roleKey] || { faction: 'Fedeli', mainType: 'Verbale' };
-      var activeCat = state.catalog.filter(function (m) { return m && m.active !== false; });
-      var byFaction = activeCat.filter(function (m) { return String(m.faction || '').toLowerCase() === String(role.faction || '').toLowerCase(); });
-      var mainTypePool = byFaction.filter(function (m) { return String(m.type || '').toLowerCase() === String(role.mainType || '').toLowerCase(); });
-      var otherPool = byFaction.filter(function (m) { return String(m.type || '').toLowerCase() !== String(role.mainType || '').toLowerCase(); });
-      var fallbackPool = activeCat.filter(function (m) { return String(m.faction || '').toLowerCase() !== String(role.faction || '').toLowerCase(); });
-
-      var used = {};
-      var selected = [];
-      selected = selected.concat(pickRandom(mainTypePool, 3, used));
-      selected = selected.concat(pickRandom(otherPool, 2, used));
-      if (selected.length < 5) {
-        selected = selected.concat(pickRandom(byFaction, 5 - selected.length, used));
-      }
-      if (selected.length < 5) {
-        selected = selected.concat(pickRandom(fallbackPool, 5 - selected.length, used));
-      }
-
-      return selected.slice(0, 5).map(function (m, idx) {
-        return {
-          slot: idx + 1,
-          id: m.id,
-          title: m.title,
-          type: m.type || 'Missione',
-          faction: m.faction || role.faction,
-          difficulty: m.difficulty || 'Media',
-          repeatable: Boolean(m.repeatable),
-          points: Number(m.points || 1),
-          desc: m.description || '',
-          playerClaimedDone: false,
-          masterApproved: false
-        };
-      });
-    }
-
-    window.masterDrawAllMissions = async function () {
-      if (!state.players.length) {
-        return setBanner('Aggiungi prima almeno un giocatore al tavolo.', 'error');
-      }
-      var nextAssignments = Object.assign({}, state.missionAssignments || {});
-      state.players.forEach(function (p) {
-        var pKey = String(p.name || '').trim().toLowerCase();
-        if (!pKey) return;
-        if (p.assignedRoleKey === 'martire') {
-          nextAssignments[pKey] = [];
-        } else {
-          nextAssignments[pKey] = drawFiveMissionsForRole(p.assignedRoleKey || 'investigatore');
-        }
-      });
-      state.missionAssignments = nextAssignments;
-      state.banner = { text: 'Pesca 3+2 completata per i giocatori attivi.', type: 'success' };
-      await syncPatchToCloud({ missionAssignments: state.missionAssignments });
-      render();
-    };
-
-    window.masterApproveMission = async function (playerKey, slotIdx) {
-      var k = String(playerKey || '').trim().toLowerCase();
-      var list = Array.isArray(state.missionAssignments[k]) ? state.missionAssignments[k].slice() : [];
-      var item = list[slotIdx];
-      if (!item) return;
-      var wasApproved = Boolean(item.masterApproved);
-      var ptsDelta = Number(item.points || 1);
-      item.masterApproved = !wasApproved;
-      if (!wasApproved) item.playerClaimedDone = true;
-      list[slotIdx] = item;
-      state.missionAssignments = Object.assign({}, state.missionAssignments, { [k]: list });
-
-      var curPts = Number(state.playerPoints[k] || 0);
-      var nextPts = Math.max(0, curPts + (wasApproved ? -ptsDelta : ptsDelta));
-      state.playerPoints = Object.assign({}, state.playerPoints, { [k]: nextPts });
-
-      await syncPatchToCloud({
-        missionAssignments: state.missionAssignments,
-        playerPoints: state.playerPoints
-      });
-      render();
-    };
-
-    window.masterAdjustPoints = async function (playerName, delta) {
-      var k = String(playerName || '').trim().toLowerCase();
-      if (!k) return;
-      var cur = Number(state.playerPoints[k] || 0);
-      var next = Math.max(0, cur + Number(delta || 0));
-      state.playerPoints = Object.assign({}, state.playerPoints, { [k]: next });
-      await syncPatchToCloud({ playerPoints: state.playerPoints });
-      render();
-    };
-
-    function setBanner(text, type) {
-      state.banner = { text: text, type: type || 'info' };
-      persistLocal();
-      render();
-    }
-
-    function getParagraphs() {
-      var room = state.roomCode || 'TAVOLO1';
-      var custom = String(state.customSpeechText || '').trim();
-      if (custom) {
-        return custom.split(/\r?\n\s*\r?\n/).map(function (part) {
-          return part.replace(/\{\{STANZA\}\}/gi, room).trim();
-        }).filter(Boolean);
-      }
-      return (SPEECH_TEMPLATES[state.speechTone] || SPEECH_TEMPLATES.suspense).map(function (line) {
-        return line.replace(/\{\{STANZA\}\}/gi, room);
-      });
-    }
-
-    window.masterSetTone = function (tone) {
-      if (!SPEECH_TEMPLATES[tone]) return;
-      state.speechTone = tone;
-      state.customSpeechText = '';
-      state.activeParagraphIndex = 0;
-      persistLocal();
-      render();
-    };
-
-    window.masterSetCustomSpeech = function (val) {
-      state.customSpeechText = String(val || '');
-      state.activeParagraphIndex = 0;
-      persistLocal();
-      render();
-    };
-
-    window.masterSelectParagraph = function (idx) {
-      var list = getParagraphs();
-      if (!list.length) return;
-      state.activeParagraphIndex = Math.max(0, Math.min(list.length - 1, Number(idx || 0)));
-      persistLocal();
-      render();
-    };
-
-    window.masterCopySpeech = function () {
-      var text = getParagraphs().join('\n\n');
-      if (!text) return setBanner('Nessun testo del discorso da copiare.', 'error');
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = text;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        setBanner('Discorso copiato negli appunti.', 'success');
-      } catch (_e) {
-        setBanner('Impossibile copiare il testo.', 'error');
-      }
-    };
-
-    window.masterAdjustRole = async function (roleKey, delta) {
-      if (!ROLE_CATALOG[roleKey]) return;
-      state.roleCounts[roleKey] = Math.max(0, Math.min(12, Number(state.roleCounts[roleKey] || 0) + delta));
-      state.banner = null;
-      await syncPatchToCloud({ roleCounts: state.roleCounts });
-      render();
-    };
-
-    window.masterAddPlayer = async function (name) {
-      var clean = String(name || '').trim();
-      if (!clean) return setBanner('Inserisci un nome valido.', 'error');
-      if (state.players.some(function (p) { return p.name.toLowerCase() === clean.toLowerCase(); })) {
-        return setBanner('Giocatore già presente al tavolo.', 'info');
-      }
-      state.players.push({
-        id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        name: clean,
-        boardUnlocked: false,
-        assignedRoleKey: null,
-        isDead: false
-      });
-      state.assignmentCompleted = false;
-      state.banner = null;
-      await syncPatchToCloud({ players: state.players });
-      render();
-    };
-
-    window.masterRemovePlayer = async function (playerId) {
-      state.players = state.players.filter(function (p) { return p.id !== playerId; });
-      state.banner = null;
-      await syncPatchToCloud({ players: state.players });
-      render();
-    };
-
-    window.masterAssignRoles = async function () {
-      if (!state.players.length) return setBanner('Aggiungi almeno un giocatore al tavolo.', 'error');
-      var pool = [];
-      Object.keys(ROLE_CATALOG).forEach(function (k) {
-        var cnt = Number(state.roleCounts[k] || 0);
-        for (var i = 0; i < cnt; i++) pool.push(k);
-      });
-      if (pool.length < state.players.length) {
-        return setBanner('Hai ' + pool.length + ' ruoli per ' + state.players.length + ' giocatori.', 'error');
-      }
-      for (var i = pool.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
-      }
-      var chosen = pool.slice(0, state.players.length);
-      var nextAssignments = {};
-      state.players = state.players.map(function (p, idx) {
-        var rKey = chosen[idx];
-        var pKey = p.name.trim().toLowerCase();
-        nextAssignments[pKey] = rKey === 'martire' ? [] : drawFiveMissionsForRole(rKey);
-        return Object.assign({}, p, { boardUnlocked: true, assignedRoleKey: rKey });
-      });
-      state.missionAssignments = nextAssignments;
-      state.assignmentCompleted = true;
-      state.banner = { text: 'Ruoli e missioni 3+2 assegnati sulla stanza ' + state.roomCode + '.', type: 'success' };
-      await syncPatchToCloud({
-        players: state.players,
-        missionAssignments: state.missionAssignments
-      });
-      render();
-    };
-
-    window.masterResetRoles = async function () {
-      state.players = state.players.map(function (p) {
-        return Object.assign({}, p, { boardUnlocked: false, assignedRoleKey: null });
-      });
-      state.missionAssignments = {};
-      state.assignmentCompleted = false;
-      state.boardOpened = false;
-      state.banner = { text: 'Ruoli e missioni azzerati.', type: 'info' };
-      await syncPatchToCloud({
-        players: state.players,
-        missionAssignments: state.missionAssignments
-      });
-      render();
-    };
-
-    window.masterOpenBoard = function () {
-      if (!state.assignmentCompleted) {
-        return setBanner('Assegna prima i ruoli ai giocatori al tavolo.', 'error');
-      }
-      state.boardOpened = true;
-      state.banner = null;
-      persistLocal();
-      render();
-    };
-
-    window.masterOpenCeremony = function () {
-      state.boardOpened = false;
-      state.banner = null;
-      persistLocal();
-      render();
-    };
-
-    window.masterGoTo = function (page) { window.location.href = page; };
-    window.masterSetChatTab = function (tab) { state.chatTab = tab === 'traitors' ? 'traitors' : 'master'; render(); };
-    window.masterSetPlayerFilter = function (val) { state.playerFilter = val || 'ALL'; render(); };
-    window.masterUpdateChatDraft = function (val) { chatDraft = String(val || ''); };
-
-    window.masterSendChat = async function () {
-      var inp = document.getElementById('master-chat-input');
-      var txt = String((inp ? inp.value : chatDraft) || '').trim();
-      if (!txt) return;
-      var isTraitor = state.chatTab === 'traitors';
-      var msg = {
-        id: 'm_' + Date.now(),
-        fromMaster: true,
-        senderName: state.masterName || 'Master',
-        playerName: isTraitor ? null : (state.playerFilter !== 'ALL' ? state.playerFilter : null),
-        text: txt,
-        createdAt: Date.now()
-      };
-      if (isTraitor) state.traitorChat = state.traitorChat.concat([msg]).slice(-100);
-      else state.masterChat = state.masterChat.concat([msg]).slice(-150);
-      chatDraft = '';
-      if (inp) inp.value = '';
-      await syncPatchToCloud(isTraitor ? { traitorChat: state.traitorChat } : { masterChat: state.masterChat });
-      render();
-    };
-
-    function compressMasterSelfie(file, maxSize, quality) {
-      return new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-          var img = new Image();
-          img.onload = function () {
-            var ratio = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
-            var w = Math.max(1, Math.round((img.width || maxSize) * ratio));
-            var h = Math.max(1, Math.round((img.height || maxSize) * ratio));
-            var canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            var ctx = canvas.getContext('2d');
-            if (!ctx) return resolve(String(ev.target.result || ''));
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-          img.onerror = reject;
-          img.src = String(ev.target.result || '');
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    window.masterHandleSelfieChange = async function (inputEl) {
-      var file = inputEl && inputEl.files && inputEl.files[0];
-      if (!file) return;
-      var compressed = await compressMasterSelfie(file, 320, 0.72);
-      var mKey = (state.masterName || 'Master').trim().toLowerCase();
-      var nextSelfies = Object.assign({}, state.playerSelfies || {});
-      nextSelfies[mKey] = compressed;
-      state.masterSelfie = compressed;
-      state.playerSelfies = nextSelfies;
-      try {
-        var accRaw = safeGetItem(ACCESS_KEY);
-        var accObj = accRaw ? JSON.parse(accRaw) : {};
-        accObj.selfieDataUrl = compressed;
-        safeSetItem(ACCESS_KEY, JSON.stringify(accObj));
-      } catch (_e) {}
-      await syncPatchToCloud({ masterName: state.masterName || 'Master', masterSelfie: compressed, playerSelfies: nextSelfies });
-      render();
-    };
-
-    window.masterClearSelfie = async function () {
-      var mKey = (state.masterName || 'Master').trim().toLowerCase();
-      var nextSelfies = Object.assign({}, state.playerSelfies || {});
-      delete nextSelfies[mKey];
-      state.masterSelfie = '';
-      state.playerSelfies = nextSelfies;
-      try {
-        var accRaw = safeGetItem(ACCESS_KEY);
-        var accObj = accRaw ? JSON.parse(accRaw) : {};
-        accObj.selfieDataUrl = '';
-        safeSetItem(ACCESS_KEY, JSON.stringify(accObj));
-      } catch (_e) {}
-      await syncPatchToCloud({ masterSelfie: '', playerSelfies: nextSelfies });
-      render();
-    };
-
-    function computeTiedTopTwo(votes) {
-      if (!Array.isArray(votes) || !votes.length) return [];
-      var counts = {};
-      votes.forEach(function (v) {
-        var t = String((v && v.targetName) || '').trim();
-        if (t) counts[t] = (counts[t] || 0) + 1;
-      });
-      var entries = Object.keys(counts).map(function (k) { return { name: k, count: counts[k] }; });
-      entries.sort(function (a, b) { return b.count - a.count; });
-      if (entries.length < 2) return [];
-      var topVal = entries[0].count;
-      var tied = entries.filter(function (e) { return e.count === topVal; });
-      if (tied.length >= 2) return [tied[0].name, tied[1].name];
-      var secondVal = entries[1].count;
-      var seconds = entries.filter(function (e) { return e.count === secondVal; });
-      if (seconds.length === 1) return [entries[0].name, seconds[0].name];
-      return [];
-    }
-
-    window.masterToggleOvalSession = async function (open) {
-      var isOpen = Boolean(open);
-      var tick = isOpen ? Date.now() : 0;
-      await syncPatchToCloud({
-        ovalActive: isOpen,
-        ovalSessionTick: tick,
-        phaseIndex: isOpen ? 5 : 4,
-        chatDisabled: isOpen,
-        ovalVotes: isOpen ? [] : (state.ovalVotes || []),
-        revealedVoteIndex: 0,
-        ovalRunoffActive: false,
-        ovalRunoffCandidates: []
-      });
-      if (isOpen) {
-        state.banner = {
-          text: 'Tavolo Ovale aperto: stato sincronizzato e giocatori reindirizzati a tavolo-ovale.html.',
-          type: 'success'
-        };
-        try {
-          window.open('tavolo-ovale.html?stanza=' + encodeURIComponent(state.roomCode), '_blank', 'noopener');
-        } catch (_e) {}
-      } else {
-        state.banner = {
-          text: 'Tavolo Ovale chiuso.',
-          type: 'info'
-        };
-      }
-      render();
-    };
-
-    window.masterStartRunoff = async function () {
-      var tied = computeTiedTopTwo(state.ovalVotes || []);
-      if (tied.length !== 2) return;
-      await syncPatchToCloud({
-        ovalActive: true,
-        ovalRunoffActive: true,
-        ovalRunoffCandidates: tied,
-        ovalVotes: [],
-        revealedVoteIndex: 0,
-        tvMode: 'votes',
-        tvRevealTick: Date.now()
-      });
-      render();
-    };
-
-    window.masterClearRunoff = async function () {
-      await syncPatchToCloud({ ovalRunoffActive: false, ovalRunoffCandidates: [] });
-      render();
-    };
-
-    window.masterResetOvalVotes = async function () {
-      await syncPatchToCloud({
-        ovalVotes: [],
-        revealedVoteIndex: 0,
-        ovalRunoffActive: false,
-        ovalRunoffCandidates: []
-      });
-      render();
-    };
-
-    window.masterRevealNextVote = async function () {
-      var total = Array.isArray(state.ovalVotes) ? state.ovalVotes.length : 0;
-      if (!total) return;
-      var currentIdx = Number(state.revealedVoteIndex || 0);
-      var nextIdx = state.tvMode === 'votes' ? Math.min(total - 1, currentIdx + 1) : 0;
-      await syncPatchToCloud({
-        tvMode: 'votes',
-        revealedVoteIndex: nextIdx,
-        tvRevealTick: Date.now()
-      });
-      render();
-    };
-
-    window.masterRevealPrevVote = async function () {
-      var total = Array.isArray(state.ovalVotes) ? state.ovalVotes.length : 0;
-      if (!total) return;
-      var currentIdx = Number(state.revealedVoteIndex || 0);
-      await syncPatchToCloud({
-        tvMode: 'votes',
-        revealedVoteIndex: Math.max(0, currentIdx - 1),
-        tvRevealTick: Date.now()
-      });
-      render();
-    };
-
-    window.masterToggleTvVideoPlay = async function () {
-      await syncPatchToCloud({ tvVideoPaused: !Boolean(state.tvVideoPaused) });
-      render();
-    };
-
-    window.masterTogglePlayerDead = async function (playerName) {
-      var targetKey = String(playerName || '').trim().toLowerCase();
-      var foundName = '';
-      var nextPlayers = (state.players || []).map(function (p) {
-        if (String(p.name || '').trim().toLowerCase() === targetKey) {
-          foundName = p.name;
-          return Object.assign({}, p, { isDead: !Boolean(p.isDead) });
-        }
-        return p;
-      });
-      if (foundName && !selectedDeadReplayName) selectedDeadReplayName = foundName;
-      await syncPatchToCloud({ players: nextPlayers });
-      render();
-    };
-
-    window.masterSetDeadReplayTarget = function (name) { selectedDeadReplayName = String(name || ''); };
-
-    window.masterReplayKillForDead = async function () {
-      var sel = document.getElementById('master-dead-replay-select');
-      var target = String((sel ? sel.value : selectedDeadReplayName) || '').trim();
-      var deadList = (state.players || []).filter(function (p) { return p && p.isDead; });
-      if (!target && deadList.length) target = deadList[deadList.length - 1].name;
-      var patch = { tvMode: 'kill', tvVideoPaused: false, tvRevealTick: Date.now() };
-      if (target) patch.tvKillTarget = target;
-      await syncPatchToCloud(patch);
-      render();
-    };
-
-    window.masterSetExileTarget = function (name) { selectedExileName = String(name || ''); };
-
-    window.masterTriggerExile = async function () {
-      var sel = document.getElementById('master-exile-select');
-      var target = String((sel ? sel.value : selectedExileName) || '').trim();
-      await syncPatchToCloud({
-        tvMode: 'exile',
-        tvExileTarget: target,
-        tvVideoPaused: false,
-        tvRevealTick: Date.now()
-      });
-      render();
-    };
-
-    window.masterSetTvMode = async function (mode) {
-      var targetInput = document.getElementById('master-tv-kill-target');
-      var killTarget = targetInput ? String(targetInput.value || '').trim() : '';
-      var patch = { tvMode: mode, tvVideoPaused: false, tvRevealTick: Date.now() };
-      if (killTarget) patch.tvKillTarget = killTarget;
-      if (mode === 'votes') patch.revealedVoteIndex = 0;
-      await syncPatchToCloud(patch);
-      render();
-    };
-
-    function formatClock(ts) {
-      try {
-        if (!ts) return '';
-        return new Date(ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-      } catch (_e) { return ''; }
-    }
-
-    function renderTvOvalRegiaSection() {
-      var masterName = String(state.masterName || 'Master');
-      var masterSelfie = isValidPhoto(state.masterSelfie) ? state.masterSelfie : '';
-      var players = Array.isArray(state.players) ? state.players : [];
-      var deadPlayers = players.filter(function (p) { return p && p.isDead; });
-      var votes = Array.isArray(state.ovalVotes) ? state.ovalVotes : [];
-      var idx = Number(state.revealedVoteIndex || 0);
-      var tied = computeTiedTopTwo(votes);
-      var ovalActive = Boolean(state.ovalActive);
-      var tvMode = state.tvMode || 'idle';
-      var isPaused = Boolean(state.tvVideoPaused);
-
-      var masterAvatarHtml = masterSelfie
-        ? '<img src="' + masterSelfie + '" alt="Selfie Master" style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid #e5b85c;display:block;" />'
-        : '<div style="width:48px;height:48px;border-radius:12px;background:#1d2230;border:1px solid rgba(229,184,92,0.45);color:#e5b85c;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;">' + escapeHtml(masterName.slice(0, 1).toUpperCase()) + '</div>';
-
-      var tallies = {};
-      votes.forEach(function (v) {
-        var t = String((v && v.targetName) || '').trim();
-        if (t) tallies[t] = (tallies[t] || 0) + 1;
-      });
-      var tallyStr = Object.keys(tallies).length
-        ? Object.keys(tallies).map(function (k) { return escapeHtml(k) + ': ' + tallies[k]; }).join(' · ')
-        : 'Nessun voto registrato';
-
-      var deadOptions = deadPlayers.map(function (p) {
-        var sel = p.name === selectedDeadReplayName ? ' selected' : '';
-        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + ' (Morto)</option>';
+      var stepBtns = steps.map(function (label, idx) {
+        var cls = state.ceremonyStepIndex === idx ? 'btn-gold' : 'btn-ghost';
+        return '<button type="button" class="' + cls + '" onclick="setCeremonyStep(' + idx + ')">' + escapeHtml(label) + '</button>';
+      }).join('');
+      var roleOpts = Object.keys(ROLE_DETAILS).map(function (rk) {
+        return '<option value="' + rk + '"' + (state.ceremonyRoleKey === rk ? ' selected' : '') + '>' + escapeHtml(ROLE_DETAILS[rk].name) + ' (' + escapeHtml(ROLE_DETAILS[rk].faction) + ')</option>';
       }).join('');
 
-      var allPlayerOptions = players.map(function (p) {
-        var sel = p.name === selectedExileName ? ' selected' : '';
-        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
-      }).join('');
-
-      var deadTogglesHtml = players.length
-        ? players.map(function (p) {
-            var dead = Boolean(p.isDead);
-            var safeName = String(p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            return '<button type="button" onclick="masterTogglePlayerDead(\'' + safeName + '\')" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (dead ? 'rgba(224,82,96,0.55)' : 'rgba(255,255,255,0.14)') + ';background:' + (dead ? 'rgba(224,82,96,0.2)' : '#1d2230') + ';color:' + (dead ? '#fca5a5' : '#f3f4f6') + ';font-size:11px;font-weight:700;cursor:pointer;">' + (dead ? '☠ ' : '○ ') + escapeHtml(p.name) + '</button>';
-          }).join('')
-        : '<span style="font-size:12px;color:#9ca3af;">Nessun giocatore al tavolo.</span>';
+      var holderHtml = rolePlayers.length
+        ? rolePlayers.map(function (p) {
+            return '<span class="badge badge-' + activeRole.faction + '">' + escapeHtml(p.name) + '</span>';
+          }).join(' ')
+        : '<span class="subtext">Nessun giocatore attivo assegnato a questo ruolo al momento.</span>';
 
       return (
-        '<section class="card card-gold" style="display:flex;flex-direction:column;gap:14px;">' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1);">' +
-            '<div style="display:flex;align-items:center;gap:12px;">' +
-              masterAvatarHtml +
-              '<div>' +
-                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
-                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge di regia e nella sfilata iniziale.</div>' +
+        '<section class="card card-gold">' +
+          '<div class="header-row">' +
+            '<div><span class="eyebrow">Guida del Master</span><h2>Cerimonia dei Ruoli</h2></div>' +
+            '<span class="badge badge-Indigo">Step ' + (state.ceremonyStepIndex + 1) + ' / 4</span>' +
+          '</div>' +
+          '<div class="ceremony-stage">' +
+            '<div class="btn-row">' + stepBtns + '</div>' +
+            '<div class="big-reveal">' +
+              '<div class="header-row"><div><span class="eyebrow">Step Attivo</span><h3>' + escapeHtml(steps[state.ceremonyStepIndex]) + '</h3></div></div>' +
+              '<p class="subtext" style="color:#e5e7eb;margin-top:6px;">Invita i giocatori ad aprire la propria <strong>Scheda Privata</strong> sul telefono e richiama i ruoli uno alla volta senza svelare le identità al tavolo.</p>' +
+              '<div class="grid-2" style="margin-top:12px;">' +
+                '<div><label class="subtext" style="display:block;margin-bottom:4px;">Ruolo da richiamare</label><select onchange="setCeremonyRole(this.value)">' + roleOpts + '</select></div>' +
+                '<div><span class="subtext" style="display:block;margin-bottom:6px;">Giocatori assegnati (visibile solo al Master)</span><div class="btn-row">' + holderHtml + '</div></div>' +
               '</div>' +
             '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-              '<label style="margin:0;padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">' +
-                (masterSelfie ? 'Cambia Selfie Master' : 'Scatta / Carica Selfie Master') +
-                '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="masterHandleSelfieChange(this)" />' +
-              '</label>' +
-              (masterSelfie ? '<button type="button" onclick="masterClearSelfie()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Rimuovi</button>' : '') +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Regia Tavolo Ovale, Rivelazione Voti & Esilio · Stanza ' + escapeHtml(state.roomCode) + '</div>' +
-              '<h2 style="margin:2px 0 0;font-size:18px;color:#fff;">Tavolo Ovale: ' + (ovalActive ? '<span style="color:#3ec98c;">APERTO</span>' : '<span style="color:#9ca3af;">CHIUSO</span>') + ' · Voto ' + (votes.length ? (Math.min(votes.length, idx + 1) + ' / ' + votes.length) : '0 / 0') + '</h2>' +
-              '<p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">Conteggio: ' + tallyStr + (tied.length === 2 ? ' · <strong style="color:#e5b85c;">Parità: ' + escapeHtml(tied[0]) + ' e ' + escapeHtml(tied[1]) + '</strong>' : '') + '</p>' +
-            '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-              '<button type="button" onclick="masterToggleOvalSession(true)" style="padding:9px 13px;border-radius:10px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Apri Tavolo Ovale</button>' +
-              '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
-              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Vai a Tavolo Ovale</a>' +
-            '</div>' +
-          '</div>' +
-          '<div class="subpanel">' +
-            '<div style="font-size:12px;font-weight:700;color:#e5b85c;">Morti, Eliminazione & Esilio dal Tavolo (Controllo Master)</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + deadTogglesHtml + '</div>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-              '<select id="master-dead-replay-select" onchange="masterSetDeadReplayTarget(this.value)" style="max-width:250px;padding:8px 10px;font-size:12px;"><option value="">Ultimo morto automatico</option>' + deadOptions + '</select>' +
-              '<button type="button" onclick="masterReplayKillForDead()" style="padding:8px 12px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
-              '<select id="master-exile-select" onchange="masterSetExileTarget(this.value)" style="max-width:240px;padding:8px 10px;font-size:12px;"><option value="">Seleziona esiliato...</option>' + allPlayerOptions + '</select>' +
-              '<button type="button" onclick="masterTriggerExile()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:rgba(229,184,92,0.16);color:#e5b85c;font-weight:700;font-size:12px;cursor:pointer;">Esilia dal Tavolo (Selfie + Video)</button>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
-            '<button type="button" onclick="masterRevealPrevVote()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Voto Precedente</button>' +
-            '<button type="button" onclick="masterRevealNextVote()" style="padding:8px 12px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Rivela Prossimo Voto</button>' +
-            '<button type="button" onclick="masterStartRunoff()" ' + (tied.length === 2 ? '' : 'disabled ') + 'style="padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Ballottaggio (Parità)</button>' +
-            '<button type="button" onclick="masterClearRunoff()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Annulla Ballottaggio</button>' +
-            '<button type="button" onclick="masterResetOvalVotes()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(224,82,96,0.45);background:rgba(224,82,96,0.14);color:#e05260;font-weight:700;font-size:12px;cursor:pointer;">Azzera Voti</button>' +
-          '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);">' +
-            '<input id="master-tv-kill-target" type="text" placeholder="Nome eliminato (opzionale)..." style="max-width:220px;padding:8px 10px;font-size:12px;" />' +
-            '<button type="button" onclick="masterSetTvMode(\'intro\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.5);background:' + (tvMode === 'intro' ? '#e5b85c' : '#1d2230') + ';color:' + (tvMode === 'intro' ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">Ingresso + Sfilata</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'kill\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Eliminazione</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'exile\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Video Esilio</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_fedeli\')" style="padding:8px 11px;border-radius:9px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Fedeli</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_traditori\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Traditori</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'win_solitario\')" style="padding:8px 11px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Solitaria</button>' +
-            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video' : 'Pausa Video') + '</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by</button>' +
           '</div>' +
         '</section>'
       );
     }
 
-    function renderMissionsAndPointsSection() {
-      var totalPlayers = Array.isArray(state.players) ? state.players.length : 0;
-      if (totalPlayers > 0 && missionSingleIndex >= totalPlayers) {
-        missionSingleIndex = 0;
-      }
-      var visiblePlayers = totalPlayers
-        ? (missionSingleView ? [state.players[missionSingleIndex]] : state.players)
-        : [];
+    function renderPlayersAndRolesSection() {
+      var rowsHtml = state.players.length
+        ? state.players.map(function (p) {
+            var k = nameKeyOf(p.name);
+            var elim = isPlayerEliminated(p.name);
+            var roleKey = p.assignedRoleKey && ROLE_DETAILS[p.assignedRoleKey] ? p.assignedRoleKey : '';
+            var roleObj = roleKey ? ROLE_DETAILS[roleKey] : null;
+            var pts = state.playerPoints[k] !== undefined ? Number(state.playerPoints[k] || 0) : 0;
+            var safeName = escapeJsSingle(p.name);
 
-      var cards = visiblePlayers.length
-        ? visiblePlayers.map(function (p) {
-            var pKey = String(p.name || '').trim().toLowerCase();
-            var r = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
-            var pts = Number((state.playerPoints && state.playerPoints[pKey]) || 0);
-            var mList = Array.isArray(state.missionAssignments[pKey]) ? state.missionAssignments[pKey] : [];
-            var safeKey = pKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            var safeName = String(p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            var isCollapsed = Boolean(collapsedMissionPlayers[pKey]);
+            var roleSelectOpts = '<option value="">-- Nessun ruolo --</option>' + Object.keys(ROLE_DETAILS).map(function (rk) {
+              return '<option value="' + rk + '"' + (roleKey === rk ? ' selected' : '') + '>' + escapeHtml(ROLE_DETAILS[rk].name) + ' (' + escapeHtml(ROLE_DETAILS[rk].faction) + ')</option>';
+            }).join('');
 
-            var mHtml = isCollapsed
-              ? '<div class="subtext" style="margin-top:8px;">Scheda giocatore ridotta (' + mList.length + ' missioni). Clicca <strong>Espandi</strong> per aprirla.</div>'
-              : (p.assignedRoleKey === 'martire'
-                  ? '<div class="subtext">Il Martire non ha missioni standard: ottiene punti quando subisce missioni altrui.</div>'
-                  : (mList.length
-                      ? '<div style="display:flex;flex-direction:column;gap:6px;">' + mList.map(function (m, sIdx) {
-                          var flag = m.masterApproved
-                            ? '<span style="color:#3ec98c;font-weight:700;">Approvata ✓</span>'
-                            : (m.playerClaimedDone
-                                ? '<span style="color:#e5b85c;font-weight:700;">Segnalata dal giocatore</span>'
-                                : '<span style="color:#9ca3af;">In corso</span>');
-                          return (
-                            '<div class="mission-chip">' +
-                              '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">' +
-                                '<strong>' + escapeHtml(m.id || ('M' + (sIdx + 1))) + ' · ' + escapeHtml(m.title) + '</strong>' +
-                                '<button type="button" class="btn-small" onclick="masterApproveMission(\'' + safeKey + '\', ' + sIdx + ')">' + (m.masterApproved ? 'Revoca' : 'Approva +1pt') + '</button>' +
-                              '</div>' +
-                              '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">' + escapeHtml(m.type) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + flag + '</div>' +
-                            '</div>'
-                          );
-                        }).join('') + '</div>'
-                      : '<div class="subtext">Nessuna missione pescata ancora.</div>'));
+            var statusBadges = [];
+            if (roleObj) {
+              statusBadges.push('<span class="badge badge-' + roleObj.faction + '">' + escapeHtml(roleObj.name) + ' · ' + escapeHtml(roleObj.faction) + '</span>');
+            } else {
+              statusBadges.push('<span class="badge badge-Muted">Ruolo non assegnato</span>');
+            }
+            if (elim) {
+              statusBadges.push('<span class="badge badge-Traditori">Eliminato</span>');
+            }
+            if ((state.shieldedPlayers || []).some(function (s) { return nameKeyOf(s) === k; })) {
+              statusBadges.push('<span class="badge badge-Fedeli">Scudo 1 Notte</span>');
+            }
+            if ((state.martyrShieldedPlayers || []).some(function (s) { return nameKeyOf(s) === k; })) {
+              statusBadges.push('<span class="badge badge-Neutro">Scudo Martire</span>');
+            }
+            if ((state.sabotagedPlayers || []).some(function (s) { return nameKeyOf(s) === k; })) {
+              statusBadges.push('<span class="badge badge-Traditori">Sabotato</span>');
+            }
 
             return (
-              '<div class="board-card">' +
-                '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+              '<div class="player-row ' + (elim ? 'eliminated' : '') + '">' +
+                '<div class="player-meta">' +
+                  renderAvatarSm(p.name) +
                   '<div>' +
-                    '<div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div>' +
-                    '<div class="player-sub">' + (r ? '<span class="badge badge-' + r.faction + '">' + escapeHtml(r.name) + ' · ' + escapeHtml(r.faction) + '</span>' : 'Nessun ruolo') + '</div>' +
-                  '</div>' +
-                  '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">' +
-                    '<button type="button" class="btn-small" onclick="masterToggleMissionCard(\'' + safeKey + '\')">' + (isCollapsed ? 'Espandi' : 'Riduci') + '</button>' +
-                    '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', -1)">-</button>' +
-                    '<span class="pts-pill">' + pts + ' pt</span>' +
-                    '<button type="button" class="btn-step" onclick="masterAdjustPoints(\'' + safeName + '\', 1)">+</button>' +
+                    '<div style="font-size:15px;font-weight:800;color:#fff;">' + escapeHtml(p.name) + ' <span class="badge badge-Muted" style="margin-left:6px;">Punti: ' + pts + '</span></div>' +
+                    '<div class="btn-row" style="margin-top:5px;">' + statusBadges.join('') + '</div>' +
                   '</div>' +
                 '</div>' +
-                mHtml +
+                '<div class="btn-row">' +
+                  '<select style="width:auto;min-width:190px;" onchange="assignRoleToPlayer(&#39;' + safeName + '&#39;, this.value)">' + roleSelectOpts + '</select>' +
+                  '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, 1)">+1 Pt</button>' +
+                  '<button type="button" class="btn-ghost" onclick="adjustPlayerPoints(&#39;' + safeName + '&#39;, -1)">-1 Pt</button>' +
+                  '<button type="button" class="' + (elim ? 'btn-emerald' : 'btn-crimson') + '" onclick="toggleEliminatePlayer(&#39;' + safeName + '&#39;)">' + (elim ? 'Riattiva' : 'Elimina') + '</button>' +
+                  '<button type="button" class="btn-ghost" onclick="removePlayerFromRoom(&#39;' + safeName + '&#39;)">Rimuovi</button>' +
+                '</div>' +
               '</div>'
             );
           }).join('')
-        : '<p class="subtext">Nessun giocatore al tavolo.</p>';
-
-      var singleNavHtml = (missionSingleView && totalPlayers > 0)
-        ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:var(--bg);border:1px solid var(--border);">' +
-            '<button type="button" class="btn-ghost" onclick="masterStepMissionPlayer(-1)">← Giocatore Precedente</button>' +
-            '<span class="subtext" style="margin:0;">Giocatore <strong>' + (missionSingleIndex + 1) + '</strong> di <strong>' + totalPlayers + '</strong></span>' +
-            '<button type="button" class="btn-ghost" onclick="masterStepMissionPlayer(1)">Giocatore Successivo →</button>' +
-          '</div>'
-        : '';
+        : '<p class="subtext">Nessun giocatore ancora collegato alla stanza ' + escapeHtml(state.roomCode) + '.</p>';
 
       return (
         '<section class="card">' +
-          '<div class="section-head">' +
-            '<div><span class="eyebrow">Catalogo JSON · ' + escapeHtml(state.catalogSource) + '</span><h2>Missioni 3+2 & Punti Giocatori</h2></div>' +
-            '<div class="btn-row">' +
-              '<button type="button" class="' + (missionSingleView ? 'btn-indigo' : 'btn-ghost') + '" onclick="masterToggleMissionViewMode()">' + (missionSingleView ? 'Mostra Tutti i Giocatori' : '1 Giocatore alla Volta') + '</button>' +
-              '<button type="button" class="btn-gold" onclick="masterDrawAllMissions()">Pesca 5 Missioni (3+2)</button>' +
+          '<div class="header-row">' +
+            '<div><span class="eyebrow">Gestione Tavolo</span><h2>Giocatori e Assegnazione Ruoli (' + state.players.length + ')</h2></div>' +
+            '<div class="btn-row" style="min-width:260px;">' +
+              '<input id="master-new-player-input" type="text" value="' + escapeHtml(state.newPlayerName) + '" oninput="setNewPlayerName(this.value)" onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();addPlayerToRoom();}" placeholder="Nome nuovo giocatore..." style="width:auto;flex:1;" />' +
+              '<button type="button" class="btn-gold" onclick="addPlayerToRoom()">Aggiungi</button>' +
             '</div>' +
           '</div>' +
-          singleNavHtml +
-          '<div class="board-grid" style="' + (missionSingleView ? 'grid-template-columns:minmax(0, 1fr);' : '') + '">' + cards + '</div>' +
+          '<div class="player-list">' + rowsHtml + '</div>' +
+        '</section>'
+      );
+    }
+
+    function renderMissionsManagerSection() {
+      var selectedPlayer = state.players.find(function (p) {
+        return nameKeyOf(p.name) === nameKeyOf(state.selectedPlayerForMissions);
+      }) || state.players[0] || null;
+
+      var playerOpts = state.players.map(function (p) {
+        var sel = selectedPlayer && nameKeyOf(p.name) === nameKeyOf(selectedPlayer.name) ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
+      }).join('');
+
+      var bodyHtml = '';
+      if (!selectedPlayer) {
+        bodyHtml = '<p class="subtext" style="margin-top:10px;">Aggiungi o collega almeno un giocatore per gestire le 5 missioni.</p>';
+      } else {
+        var k = nameKeyOf(selectedPlayer.name);
+        var rObj = selectedPlayer.assignedRoleKey ? ROLE_DETAILS[selectedPlayer.assignedRoleKey] : null;
+        var faction = rObj ? rObj.faction : 'Fedeli';
+        var missions = buildFiveMissionsForFaction(faction, state.missionAssignments[k] || []);
+        var safePName = escapeJsSingle(selectedPlayer.name);
+
+        var itemsHtml = missions.map(function (m, idx) {
+          var catOpts = state.catalog.map(function (c) {
+            var sel = String(c.id) === String(m.id) ? ' selected' : '';
+            return '<option value="' + escapeHtml(c.id) + '"' + sel + '>[' + escapeHtml(c.faction) + '] ' + escapeHtml(c.title) + '</option>';
+          }).join('');
+
+          var claimedBadge = m.playerClaimedDone
+            ? '<span class="badge badge-Neutro">Segnalata dal Giocatore</span>'
+            : '<span class="badge badge-Muted">Non segnalata</span>';
+          var approvedBadge = m.masterApproved
+            ? '<span class="badge badge-Fedeli">Confermata ✓</span>'
+            : '<span class="badge badge-Muted">Da confermare</span>';
+
+          return (
+            '<div class="mission-item">' +
+              '<div style="flex:1;min-width:240px;">' +
+                '<div style="font-size:14px;font-weight:700;color:#fff;">' + m.slot + '. ' + escapeHtml(m.title) + ' <span class="subtext">(' + escapeHtml(m.type) + ')</span></div>' +
+                '<div class="subtext">' + escapeHtml(m.desc) + '</div>' +
+                '<div class="btn-row" style="margin-top:6px;">' + claimedBadge + approvedBadge + '</div>' +
+              '</div>' +
+              '<div class="btn-row">' +
+                '<select style="width:auto;max-width:250px;" onchange="assignCatalogMissionToSlot(&#39;' + safePName + '&#39;, ' + idx + ', this.value)">' + catOpts + '</select>' +
+                '<button type="button" class="' + (m.masterApproved ? 'btn-emerald' : 'btn-gold') + '" onclick="toggleApproveMission(&#39;' + safePName + '&#39;, ' + idx + ')">' + (m.masterApproved ? 'Confermata ✓' : 'Conferma (+1 Pt)') + '</button>' +
+              '</div>' +
+            '</div>'
+          );
+        }).join('');
+
+        bodyHtml =
+          '<div class="mission-box">' +
+            '<div class="header-row">' +
+              '<div><strong>Missioni di ' + escapeHtml(selectedPlayer.name) + '</strong> <span class="subtext">(' + escapeHtml(faction) + ')</span></div>' +
+              '<span class="badge badge-Indigo">Punti Confermati: ' + Number(state.playerPoints[k] || 0) + '</span>' +
+            '</div>' +
+            itemsHtml +
+          '</div>';
+      }
+
+      return (
+        '<section class="card">' +
+          '<div class="header-row">' +
+            '<div><span class="eyebrow">Catalogo & Verifica</span><h2>Assegnazione e Approvazione Missioni</h2></div>' +
+            (state.players.length
+              ? '<select style="width:auto;min-width:210px;" onchange="selectPlayerForMissions(this.value)">' + playerOpts + '</select>'
+              : '') +
+          '</div>' +
+          bodyHtml +
+        '</section>'
+      );
+    }
+
+    function renderStageAndTvSection() {
+      var curPhase = GAME_PHASES[state.phaseIndex] || GAME_PHASES[0];
+      var phaseBtns = GAME_PHASES.map(function (ph, idx) {
+        return '<button type="button" class="' + (state.phaseIndex === idx ? 'btn-indigo' : 'btn-ghost') + '" onclick="masterSetPhase(' + idx + ')">' + ph.step + '. ' + escapeHtml(ph.title) + '</button>';
+      }).join('');
+
+      var targetOpts = state.players.map(function (p) {
+        return '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</option>';
+      }).join('');
+
+      return (
+        '<section class="card card-indigo">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow eyebrow-indigo">Regia Fasi · Tavolo Ovale · TV</span>' +
+              '<h2>Fase Corrente: ' + curPhase.step + '. ' + escapeHtml(curPhase.title) + ' (Ciclo #' + state.cycleCount + ')</h2>' +
+              '<p class="subtext">Nota: al Tavolo Ovale il <strong>Master non vota</strong>; coordina discussione, esito e regia TV.</p>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="btn-indigo" onclick="masterNextPhase()">Fase Successiva →</button>' +
+              '<button type="button" class="btn-gold" onclick="openTvScreen()">Apri Schermo TV</button>' +
+              '<button type="button" class="btn-ghost" onclick="openOvalMonitor()">Monitor Tavolo Ovale</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="btn-row" style="margin-top:12px;">' + phaseBtns + '</div>' +
+
+          '<div class="mission-box" style="margin-top:14px;">' +
+            '<div class="header-row">' +
+              '<div><strong>Controllo Tavolo Ovale (Senza Voto Master)</strong><div class="subtext">Stato attuale: <strong>' + (state.ovalActive ? 'APERTO' : 'CHIUSO') + '</strong> · Giri svolti: ' + state.ovalRoundCount + '</div></div>' +
+              '<div class="btn-row">' +
+                '<button type="button" class="btn-emerald" onclick="masterToggleOvalSession(true)">Apri Tavolo Ovale</button>' +
+                '<button type="button" class="btn-crimson" onclick="masterToggleOvalSession(false)">Chiudi Tavolo Ovale</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="mission-box" style="margin-top:12px;">' +
+            '<strong>Regia Video & Scene TV (TV + Schede Giocatore)</strong>' +
+            '<div class="grid-2">' +
+              '<div><label class="subtext" style="display:block;margin-bottom:4px;">Protagonista Eliminazione Notte</label><select onchange="setTvKillTarget(this.value)">' + (targetOpts || '<option value="">-- Nessun giocatore --</option>') + '</select></div>' +
+              '<div><label class="subtext" style="display:block;margin-bottom:4px;">Protagonista Esilio Tavolo Ovale</label><select onchange="setTvExileTarget(this.value)">' + (targetOpts || '<option value="">-- Nessun giocatore --</option>') + '</select></div>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="btn-gold" onclick="masterTriggerTvScene(&#39;intro&#39;)">Video Ingresso</button>' +
+              '<button type="button" class="btn-crimson" onclick="masterTriggerTvScene(&#39;kill&#39;)">Video Eliminazione</button>' +
+              '<button type="button" class="btn-gold" onclick="masterTriggerTvScene(&#39;exile&#39;)">Video Esilio</button>' +
+              '<button type="button" class="btn-emerald" onclick="masterTriggerTvScene(&#39;win_fedeli&#39;)">Vittoria Fedeli</button>' +
+              '<button type="button" class="btn-crimson" onclick="masterTriggerTvScene(&#39;win_traditori&#39;)">Vittoria Traditori</button>' +
+              '<button type="button" class="btn-indigo" onclick="masterTriggerTvScene(&#39;win_solitario&#39;)">Vittoria Cacciatore</button>' +
+              '<button type="button" class="btn-ghost" onclick="masterToggleTvPause()">' + (state.tvVideoPaused ? 'Riprendi Video' : 'Pausa Video') + '</button>' +
+              '<button type="button" class="btn-ghost" onclick="masterTriggerTvScene(&#39;idle&#39;)">Chiudi / Standby TV</button>' +
+            '</div>' +
+          '</div>' +
         '</section>'
       );
     }
 
     function renderChatSection() {
-      var isTraitor = state.chatTab === 'traitors';
-      var list = isTraitor
-        ? state.traitorChat
-        : state.masterChat.filter(function (m) {
-            if (state.playerFilter === 'ALL') return true;
-            return String(m.playerName || '').toLowerCase() === String(state.playerFilter).toLowerCase();
-          });
+      var targetOpts = '<option value="">Tutti i giocatori / Generale</option>' + state.players.map(function (p) {
+        var sel = nameKeyOf(directTargetName) === nameKeyOf(p.name) ? ' selected' : '';
+        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>Diretto a ' + escapeHtml(p.name) + '</option>';
+      }).join('');
 
-      var msgsHtml = list.length
-        ? list.map(function (m) {
-            var label = m.fromMaster
-              ? (escapeHtml(m.senderName || 'Master') + (m.playerName ? ' -> ' + escapeHtml(m.playerName) : ' (Tutti)'))
-              : escapeHtml(m.senderName || 'Giocatore');
+      var msgsHtml = state.masterChat.length
+        ? state.masterChat.slice().reverse().map(function (m) {
             return (
-              '<div class="msg-card ' + (m.fromMaster ? 'from-master' : '') + '">' +
-                '<div class="msg-head"><span class="msg-sender">' + label + '</span><span>' + escapeHtml(formatClock(m.createdAt)) + '</span></div>' +
+              '<div class="msg-card">' +
+                '<div class="msg-head"><strong>' + escapeHtml(m.senderName || (m.fromMaster ? 'Master' : 'Giocatore')) + '</strong><span>' + escapeHtml(m.playerName ? ('-> ' + m.playerName) : 'Stanza') + '</span></div>' +
                 '<p class="msg-body">' + escapeHtml(m.text) + '</p>' +
               '</div>'
             );
           }).join('')
-        : '<p class="subtext">Nessun messaggio in questo canale.</p>';
-
-      var optionsHtml = state.players.map(function (p) {
-        var sel = String(state.playerFilter).toLowerCase() === String(p.name).toLowerCase() ? ' selected' : '';
-        return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
-      }).join('');
+        : '<p class="subtext">Nessun messaggio o segnalazione ancora ricevuta.</p>';
 
       return (
         '<section class="card">' +
-          '<div class="section-head">' +
-            '<div><span class="eyebrow">Comunicazioni Master</span><h2>' + (isTraitor ? 'Chat Traditori' : 'Chat Diretta Giocatori') + '</h2></div>' +
-            '<div class="btn-row">' +
-              '<button type="button" class="' + (!isTraitor ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetChatTab(\'master\')">Chat Diretta</button>' +
-              '<button type="button" class="' + (isTraitor ? 'btn-crimson' : 'btn-ghost') + '" onclick="masterSetChatTab(\'traitors\')">Chat Traditori</button>' +
-              '<button type="button" class="btn-ghost" onclick="masterClearChat()">Pulisci Chat</button>' +
-            '</div>' +
+          '<div class="header-row">' +
+            '<div><span class="eyebrow">Comunicazioni Segrete</span><h2>Chat Diretta e Notifiche Giocatori</h2></div>' +
+            '<select style="width:auto;min-width:210px;" onchange="setDirectTargetName(this.value)">' + targetOpts + '</select>' +
           '</div>' +
-          (!isTraitor
-            ? '<div style="max-width:340px;margin-bottom:10px;"><label for="master-filter-sel">Destinatario</label><select id="master-filter-sel" onchange="masterSetPlayerFilter(this.value)"><option value="ALL">Tutti i giocatori</option>' + optionsHtml + '</select></div>'
-            : '') +
           '<div class="chat-box">' + msgsHtml + '</div>' +
           '<div class="chat-form">' +
-            '<input id="master-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="masterUpdateChatDraft(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();masterSendChat();}" placeholder="Scrivi un messaggio..." />' +
-            '<button type="button" class="btn-gold" onclick="masterSendChat()">Invia</button>' +
+            '<input id="master-chat-input" type="text" value="' + escapeHtml(masterChatDraft) + '" oninput="updateMasterChatDraft(this.value)" onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();sendMasterMessage(false);}" placeholder="Scrivi un messaggio al giocatore o alla stanza..." />' +
+            '<button type="button" class="btn-gold" onclick="sendMasterMessage(false)">Invia</button>' +
+            '<button type="button" class="btn-crimson" onclick="sendMasterMessage(true)">Nota Traditore Segreto</button>' +
           '</div>' +
         '</section>'
       );
     }
 
     function render() {
-      var root = document.getElementById('master-roles-app');
+      var root = document.getElementById('master-console-app');
       if (!root) return;
-      var totalRoles = Object.keys(ROLE_CATALOG).reduce(function (acc, k) { return acc + Number(state.roleCounts[k] || 0); }, 0);
-      var paragraphs = getParagraphs();
-      var activeIdx = paragraphs.length ? Math.min(state.activeParagraphIndex, paragraphs.length - 1) : 0;
-      var syncId = 'SYNC-' + state.roomCode;
-      var bannerHtml = state.banner ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>' : '';
 
-      if (state.boardOpened) {
-        root.innerHTML =
-          '<header class="card header-row">' +
-            '<div><span class="eyebrow">Plancia Master · ' + escapeHtml(state.syncStatus) + '</span><h1>Tavolo di ' + escapeHtml(state.roomCode) + '</h1><p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p></div>' +
-            '<div class="btn-row">' +
-              '<button type="button" class="btn-gold" onclick="masterOpenCeremony()">Cerimonia e Ruoli</button>' +
-              '<button type="button" class="btn-ghost" onclick="masterGoTo(\'ruoli.html\')">Tutti i Ruoli</button>' +
-              '<button type="button" class="btn-ghost" onclick="masterGoTo(\'index.html\')">Accesso</button>' +
-            '</div>' +
-          '</header>' +
-          bannerHtml +
-          renderTvOvalRegiaSection() +
-          renderMissionsAndPointsSection() +
-          renderChatSection();
-        return;
-      }
-
-      var speechItemsHtml = paragraphs.map(function (line, idx) {
-        var active = idx === activeIdx;
-        return (
-          '<div class="speech-item ' + (active ? 'active' : '') + '" onclick="masterSelectParagraph(' + idx + ')">' +
-            '<div class="speech-meta"><span style="color:' + (active ? 'var(--gold)' : 'var(--muted)') + ';">Parte ' + (idx + 1) + ' di ' + paragraphs.length + '</span>' + (active ? '<span class="pill-gold">In lettura</span>' : '') + '</div>' +
-            '<p class="speech-text">' + escapeHtml(line) + '</p>' +
-          '</div>'
-        );
-      }).join('');
-
-      var roleCardsHtml = Object.keys(ROLE_CATALOG).map(function (k) {
-        var role = ROLE_CATALOG[k];
-        var cnt = Number(state.roleCounts[k] || 0);
-        return (
-          '<div class="role-box">' +
-            '<div><div class="role-top"><span class="role-name">' + escapeHtml(role.name) + '</span><span class="badge badge-' + role.faction + '">' + escapeHtml(role.faction) + '</span></div><p class="role-summary">' + escapeHtml(role.summary) + '</p></div>' +
-            '<div class="role-counter"><span>Copie:</span><div class="counter-btns"><button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', -1)">-</button><span class="count-val">' + cnt + '</span><button type="button" class="btn-step" onclick="masterAdjustRole(\'' + k + '\', 1)">+</button></div></div>' +
-          '</div>'
-        );
-      }).join('');
-
-      var playersHtml = state.players.length
-        ? state.players.map(function (p) {
-            var role = p.assignedRoleKey ? ROLE_CATALOG[p.assignedRoleKey] : null;
-            var safeId = String(p.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            return (
-              '<div class="player-row">' +
-                '<div><div class="player-name">' + escapeHtml(p.name) + (p.isDead ? ' <span style="color:var(--crimson);font-size:11px;">[MORTO]</span>' : '') + '</div><div class="player-sub">' + (role ? '<span class="badge badge-' + role.faction + '">' + escapeHtml(role.name) + ' (' + escapeHtml(role.faction) + ')</span>' : 'In attesa di ruolo') + '</div></div>' +
-                '<button type="button" class="btn-small btn-remove" onclick="masterRemovePlayer(\'' + safeId + '\')">Rimuovi</button>' +
-              '</div>'
-            );
-          }).join('')
-        : '<p class="subtext">Nessun giocatore ancora al tavolo.</p>';
+      var bannerHtml = state.banner
+        ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
+        : '';
 
       root.innerHTML =
-        '<header class="card header-row">' +
-          '<div><span class="eyebrow">Pagina Master · ' + escapeHtml(state.syncStatus) + '</span><h1>Cerimonia di Assegnazione Ruoli</h1><p class="subtext">Master: <strong>' + escapeHtml(state.masterName) + '</strong> · Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">' + escapeHtml(syncId) + '</strong></p></div>' +
-          '<div class="btn-row">' +
-            '<button type="button" class="btn-emerald" onclick="masterOpenBoard()">Plancia Master</button>' +
-            '<button type="button" class="btn-ghost" onclick="masterGoTo(\'ruoli.html\')">Tutti i Ruoli</button>' +
-            '<button type="button" class="btn-ghost" onclick="masterGoTo(\'index.html\')">Accesso</button>' +
-            '<button type="button" class="btn-gold" onclick="masterAssignRoles()">Assegna Ruoli</button>' +
-            '<button type="button" class="btn-ghost" onclick="masterResetRoles()">Azzera Ruoli</button>' +
+        '<header class="card">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow">Console Regia Master · ' + escapeHtml(state.syncStatus) + '</span>' +
+              '<h1>Ombre al Tavolo — ' + escapeHtml(state.masterName) + '</h1>' +
+              '<p class="subtext">Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">SYNC-' + escapeHtml(state.roomCode) + '</strong> · Giocatori attivi: <strong>' + state.players.filter(function (p) { return !isPlayerEliminated(p.name); }).length + '</strong> / ' + state.players.length + '</p>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<button type="button" class="btn-gold" onclick="goToRolesPage()">Compendio Ruoli</button>' +
+              '<button type="button" class="btn-ghost" onclick="goToAccessPage()">Cambia Stanza</button>' +
+            '</div>' +
           '</div>' +
         '</header>' +
         bannerHtml +
-        '<section class="card card-gold">' +
-          '<div class="section-head"><div><span class="eyebrow">Prompter del Master</span><h2>Discorso di Assegnazione Ruoli</h2></div><div class="btn-row"><button type="button" class="' + (!state.customSpeechText && state.speechTone === 'suspense' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'suspense\')">Suspense</button><button type="button" class="' + (!state.customSpeechText && state.speechTone === 'solenne' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'solenne\')">Solenne</button><button type="button" class="' + (!state.customSpeechText && state.speechTone === 'rapido' ? 'btn-gold' : 'btn-ghost') + '" onclick="masterSetTone(\'rapido\')">Rapido</button><button type="button" class="btn-ghost" onclick="masterCopySpeech()">Copia</button></div></div>' +
-          '<div class="speech-list">' + speechItemsHtml + '</div>' +
-          '<div class="speech-controls"><div class="btn-row"><button type="button" class="btn-ghost" onclick="masterSelectParagraph(' + (activeIdx - 1) + ')"' + (activeIdx <= 0 ? ' disabled' : '') + '>Precedente</button><button type="button" class="btn-indigo" onclick="masterSelectParagraph(' + (activeIdx + 1) + ')"' + (activeIdx >= paragraphs.length - 1 ? ' disabled' : '') + '>Successiva</button></div><span class="subtext">Usa <code>{{STANZA}}</code> per il codice stanza.</span></div>' +
-          '<div class="custom-speech-box"><label for="master-custom-speech">Discorso personalizzato</label><textarea id="master-custom-speech" rows="2" oninput="masterSetCustomSpeech(this.value)">' + escapeHtml(state.customSpeechText) + '</textarea></div>' +
-        '</section>' +
-        '<div class="two-col">' +
-          '<section class="card"><div class="section-head"><h2>1. Ruoli</h2><span class="subtext">Totale: <strong style="color:var(--gold);">' + totalRoles + '</strong></span></div><div class="roles-grid">' + roleCardsHtml + '</div></section>' +
-          '<section class="card"><div class="section-head"><h2>2. Giocatori (' + state.players.length + ')</h2></div><form class="add-form" onsubmit="event.preventDefault(); var inp = document.getElementById(\'master-player-input\'); masterAddPlayer(inp.value); inp.value = \'\';"><input id="master-player-input" type="text" maxlength="24" placeholder="Nome giocatore..." /><button type="submit" class="btn-indigo">Aggiungi</button></form><div class="player-list">' + playersHtml + '</div></section>' +
-        '</div>' +
-        renderTvOvalRegiaSection() +
-        '<div class="footer-action"><button type="button" class="btn-emerald-lg" onclick="masterOpenBoard()">Completa e Vai alla Plancia Master</button></div>';
+        renderStageAndTvSection() +
+        renderCeremonySection() +
+        renderPlayersAndRolesSection() +
+        renderMissionsManagerSection() +
+        renderChatSection();
     }
 
+    async function loadMissionCatalog() {
+      try {
+        var res = await fetch(MISSION_CATALOG_URL, { cache: 'no-store' });
+        if (!res.ok) return;
+        var json = await res.json();
+        var list = Array.isArray(json) ? json : (Array.isArray(json.missions) ? json.missions : []);
+        if (list.length > 0) {
+          state.catalog = list.map(function (item, idx) {
+            return {
+              id: item.id || ('CAT-' + (idx + 1)),
+              faction: item.faction || 'Fedeli',
+              title: item.title || item.name || ('Missione ' + (idx + 1)),
+              type: item.type || 'Verbale',
+              repeatable: Boolean(item.repeatable),
+              points: Number(item.points || 1),
+              desc: item.desc || item.description || ''
+            };
+          });
+          render();
+        }
+      } catch (_e) {}
+    }
+
+    try {
+      var initialRaw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+      if (initialRaw) {
+        applyRoomSnapshot(JSON.parse(initialRaw));
+      }
+    } catch (_e) {}
+
     render();
-    loadCatalogJson();
-    subscribeToRoomCloud();
+    loadMissionCatalog();
+
+    var ref = getRoomRef();
+    if (ref) {
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) {
+          applyRoomSnapshot(snap.data() || {});
+          render();
+        }
+      }).catch(function () {});
+
+      onSnapshot(ref, function (snap) {
+        state.syncStatus = 'Cloud Firestore attivo';
+        if (!snap.exists()) return;
+        applyRoomSnapshot(snap.data() || {});
+        render();
+      });
+    }
   </script>
 </body>
 </html>
