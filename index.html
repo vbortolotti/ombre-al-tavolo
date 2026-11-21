@@ -91,6 +91,7 @@
         roomCode: 'TAVOLO1',
         playerName: '',
         role: 'player',
+        selfieDataUrl: '',
         syncStatus: firestoreDb ? 'Cloud Firestore pronto' : 'Locale',
         banner: null
       };
@@ -105,6 +106,7 @@
           roomCode: String(parsed.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
           playerName: String(parsed.playerName || '').trim(),
           role: parsed.role === 'master' ? 'master' : 'player',
+          selfieDataUrl: String(parsed.selfieDataUrl || ''),
           syncStatus: firestoreDb ? 'Cloud Firestore pronto' : 'Locale',
           banner: parsed.banner || null
         };
@@ -123,6 +125,7 @@
           roomCode: accessState.roomCode,
           playerName: accessState.playerName,
           role: accessState.role,
+          selfieDataUrl: accessState.selfieDataUrl,
           syncStatus: accessState.syncStatus,
           banner: accessState.banner
         }));
@@ -137,10 +140,59 @@
       renderAccessPage();
     }
 
+    function compressImageFileToDataUrl(file, maxSize = 320, quality = 0.72) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const ratio = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1));
+            const w = Math.max(1, Math.round((img.width || maxSize) * ratio));
+            const h = Math.max(1, Math.round((img.height || maxSize) * ratio));
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(String(ev.target.result || ''));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = String(ev.target.result || '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleSelfieFileChange(inputEl) {
+      const file = inputEl && inputEl.files && inputEl.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageFileToDataUrl(file);
+        accessState.selfieDataUrl = dataUrl;
+        accessState.banner = { text: 'Selfie acquisito e pronto per la stanza.', type: 'success' };
+        saveAccessState();
+        renderAccessPage();
+      } catch (err) {
+        console.error('Errore elaborazione selfie:', err);
+        setAccessBanner('Impossibile leggere la foto selezionata. Riprova.', 'error');
+      }
+    }
+
+    function clearSelfie() {
+      accessState.selfieDataUrl = '';
+      accessState.banner = { text: 'Selfie rimosso.', type: 'info' };
+      saveAccessState();
+      renderAccessPage();
+    }
+
     function updateRoomCode(value) {
       const inp = document.getElementById('access-room-input');
       const prevStart = inp ? inp.selectionStart : null;
-      const prevEnd = inp ? inp.selectionEnd : null;
       const prevLen = String(value || '').length;
 
       const cleaned = String(value || '')
@@ -201,12 +253,21 @@
       }
     }
 
-    async function registerParticipantInRoom(roomCode, participantName, role) {
+    async function registerParticipantInRoom(roomCode, participantName, role, selfieDataUrl) {
       const cleanRoom = String(roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1';
       const cleanName = String(participantName || '').trim();
       if (!cleanName) return;
 
-      let record = { roomCode: cleanRoom, players: [], roleCounts: {}, updatedAt: Date.now() };
+      const nameKey = cleanName.toLowerCase();
+      const chosenSelfie = String(selfieDataUrl || '');
+
+      let record = {
+        roomCode: cleanRoom,
+        players: [],
+        playerSelfies: {},
+        roleCounts: {},
+        updatedAt: Date.now()
+      };
       try {
         const raw = localStorage.getItem(ROOM_SYNC_PREFIX + cleanRoom);
         if (raw) {
@@ -216,17 +277,26 @@
         console.error('Errore lettura stanza locale:', err);
       }
 
+      const localSelfies = (record.playerSelfies && typeof record.playerSelfies === 'object')
+        ? { ...record.playerSelfies }
+        : {};
+      if (chosenSelfie) {
+        localSelfies[nameKey] = chosenSelfie;
+      }
+
       const list = Array.isArray(record.players) ? [...record.players] : [];
       const existsIdx = list.findIndex(
-        p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+        p => String(p.name || '').trim().toLowerCase() === nameKey
       );
 
       if (role === 'player') {
+        const mergedSelfie = chosenSelfie || (existsIdx !== -1 ? (list[existsIdx].selfie || list[existsIdx].selfieDataUrl || '') : '');
         if (existsIdx === -1) {
           list.push({
             id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
             name: cleanName,
-            selfieDataUrl: null,
+            selfie: mergedSelfie,
+            selfieDataUrl: mergedSelfie || null,
             boardUnlocked: false,
             assignedRoleKey: null,
             joinedAt: Date.now()
@@ -235,12 +305,19 @@
           list[existsIdx] = {
             ...list[existsIdx],
             name: cleanName,
+            selfie: mergedSelfie,
+            selfieDataUrl: mergedSelfie || null,
             joinedAt: Date.now()
           };
         }
       }
 
       record.players = list;
+      record.playerSelfies = localSelfies;
+      if (role === 'master') {
+        record.masterName = cleanName;
+        if (chosenSelfie) record.masterSelfie = chosenSelfie;
+      }
       record.updatedAt = Date.now();
 
       try {
@@ -255,16 +332,25 @@
           const snap = await getDoc(ref);
           const cloudData = snap.exists() ? (snap.data() || {}) : {};
           const cloudPlayers = Array.isArray(cloudData.players) ? [...cloudData.players] : [];
+          const cloudSelfies = (cloudData.playerSelfies && typeof cloudData.playerSelfies === 'object')
+            ? { ...cloudData.playerSelfies }
+            : {};
+
+          if (chosenSelfie) {
+            cloudSelfies[nameKey] = chosenSelfie;
+          }
 
           if (role === 'player') {
             const cIdx = cloudPlayers.findIndex(
-              p => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+              p => String(p.name || '').trim().toLowerCase() === nameKey
             );
+            const mergedSelfie = chosenSelfie || (cIdx !== -1 ? (cloudPlayers[cIdx].selfie || cloudPlayers[cIdx].selfieDataUrl || '') : '');
             if (cIdx === -1) {
               cloudPlayers.push({
                 id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
                 name: cleanName,
-                selfieDataUrl: null,
+                selfie: mergedSelfie,
+                selfieDataUrl: mergedSelfie || null,
                 boardUnlocked: false,
                 assignedRoleKey: null,
                 joinedAt: Date.now()
@@ -273,17 +359,25 @@
               cloudPlayers[cIdx] = {
                 ...cloudPlayers[cIdx],
                 name: cleanName,
+                selfie: mergedSelfie,
+                selfieDataUrl: mergedSelfie || null,
                 joinedAt: Date.now()
               };
             }
           }
 
-          await setDoc(ref, {
+          const cloudPatch = {
             roomCode: cleanRoom,
             masterName: role === 'master' ? cleanName : (cloudData.masterName || 'Master'),
             players: cloudPlayers,
+            playerSelfies: cloudSelfies,
             updatedAt: Date.now()
-          }, { merge: true });
+          };
+          if (role === 'master' && chosenSelfie) {
+            cloudPatch.masterSelfie = chosenSelfie;
+          }
+
+          await setDoc(ref, cloudPatch, { merge: true });
           accessState.syncStatus = 'Cloud Firestore attivo';
         } catch (err) {
           console.error('Errore registrazione su Firestore:', err);
@@ -311,7 +405,7 @@
       accessState.banner = null;
       saveAccessState();
 
-      await registerParticipantInRoom(cleanRoom, cleanName, accessState.role);
+      await registerParticipantInRoom(cleanRoom, cleanName, accessState.role, accessState.selfieDataUrl);
 
       if (accessState.role === 'master') {
         try {
@@ -355,6 +449,8 @@
         const displayRoom = accessState.roomCode || 'TAVOLO1';
         const syncId = 'SYNC-' + displayRoom;
         const banner = accessState.banner;
+        const roleNoun = accessState.role === 'master' ? 'Selfie del Master' : 'Il Tuo Selfie';
+        const initialChar = escapeHtml((accessState.playerName || (accessState.role === 'master' ? 'M' : 'G')).slice(0, 1).toUpperCase());
 
         const bannerHtml = banner
           ? `<div class="rounded-xl border px-4 py-3 text-sm font-medium ${
@@ -366,13 +462,17 @@
             }">${escapeHtml(banner.text)}</div>`
           : '';
 
+        const selfiePreviewHtml = accessState.selfieDataUrl
+          ? `<img src="${accessState.selfieDataUrl}" alt="Anteprima selfie" class="w-full h-full object-cover" />`
+          : `<span class="font-serif text-2xl font-bold text-gold">${initialChar}</span>`;
+
         container.innerHTML = `
           <div class="rounded-2xl bg-surface border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl">
             <header class="text-center space-y-2 border-b border-white/10 pb-5">
               <span class="inline-block text-xs font-bold uppercase tracking-widest text-gold">Accesso al Tavolo</span>
               <h1 class="font-serif text-3xl sm:text-4xl font-bold text-white">Ombre al Tavolo</h1>
               <p class="text-xs sm:text-sm text-gray-400">
-                Inserisci il codice stanza per sincronizzare i telefoni, il tuo nome e scegli il tuo ruolo.
+                Inserisci il codice stanza, il tuo nome, scatta o carica il selfie e scegli il tuo ruolo.
               </p>
             </header>
 
@@ -463,6 +563,35 @@
                 </div>
               </div>
 
+              <div class="rounded-xl bg-bgdark border border-white/10 p-4 flex items-center gap-4">
+                <div class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-gold/60 bg-surface2 flex items-center justify-center shrink-0">
+                  ${selfiePreviewHtml}
+                </div>
+                <div class="space-y-2 flex-1">
+                  <div class="text-xs font-semibold uppercase tracking-wider text-gold">${escapeHtml(roleNoun)}</div>
+                  <p class="text-xs text-gray-400">
+                    Usato per la sfilata iniziale, i voti al Tavolo Ovale, l'eliminazione e l'esilio sulla TV.
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <label class="px-3 py-1.5 rounded-lg bg-gold text-bgdark font-bold text-xs cursor-pointer hover:brightness-110 transition">
+                      Scatta / Scegli Selfie
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="user"
+                        class="hidden"
+                        onchange="handleSelfieFileChange(this)"
+                      />
+                    </label>
+                    ${
+                      accessState.selfieDataUrl
+                        ? `<button type="button" onclick="clearSelfie()" class="px-2.5 py-1.5 rounded-lg bg-surface2 border border-white/10 text-xs text-gray-300 hover:text-white cursor-pointer">Rimuovi</button>`
+                        : ''
+                    }
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 class="w-full py-3.5 rounded-xl bg-gold text-bgdark font-bold text-sm hover:brightness-110 transition cursor-pointer"
@@ -497,6 +626,8 @@
     window.updatePlayerName = updatePlayerName;
     window.selectRole = selectRole;
     window.copySyncId = copySyncId;
+    window.handleSelfieFileChange = handleSelfieFileChange;
+    window.clearSelfie = clearSelfie;
     window.proceedToRolePage = proceedToRolePage;
     window.goToRolesCatalog = goToRolesCatalog;
 
