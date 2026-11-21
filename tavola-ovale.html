@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ombre al Tavolo — Tavolo Ovale</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --surface: #151924;
+      --surface-2: #1d2230;
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --gold: #e5b85c;
+      --crimson: #e05260;
+      --emerald: #3ec98c;
+      --indigo: #7c8cff;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 18px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); display: block; }
+    h1 { margin: 2px 0 0; font-size: 24px; font-weight: 800; color: #fff; }
+    h2 { margin: 0; font-size: 18px; font-weight: 700; color: #fff; }
+    .subtext { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    button { font-family: inherit; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-gold { background: var(--gold); color: #0c0e14; border: none; padding: 9px 14px; font-size: 12px; }
+    .btn-crimson { background: var(--crimson); color: #fff; border: none; padding: 9px 14px; font-size: 12px; }
+    .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 9px 14px; font-size: 12px; }
+
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; }
+    .badge-Gold { background: rgba(229, 184, 92, 0.15); color: var(--gold); border-color: rgba(229, 184, 92, 0.4); }
+    .badge-Crimson { background: rgba(224, 82, 96, 0.15); color: var(--crimson); border-color: rgba(224, 82, 96, 0.4); }
+    .badge-Emerald { background: rgba(62, 201, 140, 0.15); color: var(--emerald); border-color: rgba(62, 201, 140, 0.4); }
+
+    .cand-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .cand-row {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+  </style>
+
+  <script>
+    window.OMBRE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDTTdNc3bTlrCWeYHWH_vYG7u9CpPPQ2Xk",
+      authDomain: "ombre-al-tavolo.firebaseapp.com",
+      projectId: "ombre-al-tavolo",
+      storageBucket: "ombre-al-tavolo.firebasestorage.app",
+      messagingSenderId: "97309042699",
+      appId: "1:97309042699:web:a457efd353f770f2a0bf0e",
+      measurementId: "G-BZ4K22W409"
+    };
+  </script>
+</head>
+<body>
+  <div id="oval-app" class="wrap"></div>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
+    var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    function initFirestore() {
+      try {
+        if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
+        var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
+        return getFirestore(app);
+      } catch (_e) { return null; }
+    }
+
+    var firestoreDb = initFirestore();
+    var params = new URLSearchParams(window.location.search);
+
+    function readAccess() {
+      try {
+        var raw = localStorage.getItem(ACCESS_KEY);
+        var p = raw ? JSON.parse(raw) : {};
+        return {
+          roomCode: String(params.get('room') || p.roomCode || 'TAVOLO1').trim().toUpperCase() || 'TAVOLO1',
+          playerName: String(params.get('player') || p.playerName || 'Giocatore').trim() || 'Giocatore',
+          isMaster: params.get('master') === '1' || String(p.playerName || '').trim().toLowerCase() === 'master'
+        };
+      } catch (_e) {
+        return { roomCode: 'TAVOLO1', playerName: 'Giocatore', isMaster: false };
+      }
+    }
+
+    var acc = readAccess();
+    var state = {
+      roomCode: acc.roomCode,
+      actorName: acc.playerName,
+      isMaster: acc.isMaster,
+      players: [],
+      eliminatedPlayers: [],
+      ovalActive: false,
+      ovalVotes: {}
+    };
+
+    function nameKey(n) { return String(n || '').trim().toLowerCase(); }
+    function getRoomRef() { return firestoreDb ? doc(firestoreDb, 'stanze', state.roomCode) : null; }
+
+    function isPlayerEliminated(name) {
+      var k = nameKey(name);
+      if (!k) return false;
+      if ((state.eliminatedPlayers || []).some(function (x) { return nameKey(x) === k; })) return true;
+      var p = (state.players || []).find(function (pl) { return nameKey(pl.name) === k; });
+      return Boolean(p && (p.eliminated === true || p.alive === false || p.status === 'eliminated'));
+    }
+
+    function getActiveVoters() {
+      return (state.players || []).filter(function (p) {
+        var k = nameKey(p.name);
+        return p && p.name && k !== 'master' && p.isMaster !== true && !isPlayerEliminated(p.name);
+      });
+    }
+
+    function applySnapshot(data) {
+      if (!data || typeof data !== 'object') return;
+      if (Array.isArray(data.players)) state.players = data.players;
+      if (Array.isArray(data.eliminatedPlayers)) state.eliminatedPlayers = data.eliminatedPlayers;
+      if (typeof data.ovalActive === 'boolean') state.ovalActive = data.ovalActive;
+      if (data.ovalVotes && typeof data.ovalVotes === 'object') state.ovalVotes = Object.assign({}, data.ovalVotes);
+
+      var cleanVotes = {};
+      var activeKeys = {};
+      getActiveVoters().forEach(function (v) { activeKeys[nameKey(v.name)] = true; });
+      Object.keys(state.ovalVotes).forEach(function (voterK) {
+        var targetN = state.ovalVotes[voterK];
+        if (activeKeys[voterK] && targetN && !isPlayerEliminated(targetN)) {
+          cleanVotes[voterK] = targetN;
+        }
+      });
+      state.ovalVotes = cleanVotes;
+
+      if (!state.isMaster && !state.ovalActive) {
+        window.location.href = 'giocatore_3.html';
+        return;
+      }
+      try { localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(Object.assign({}, data, { roomCode: state.roomCode }))); } catch (_e) {}
+    }
+
+    async function syncRoom() {
+      var payload = {
+        roomCode: state.roomCode,
+        players: state.players,
+        eliminatedPlayers: state.eliminatedPlayers,
+        ovalActive: state.ovalActive,
+        ovalVotes: state.ovalVotes,
+        updatedAt: Date.now()
+      };
+      try { localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(payload)); } catch (_e) {}
+      var ref = getRoomRef();
+      if (!ref) return;
+      try { await setDoc(ref, payload, { merge: true }); } catch (_e) {}
+    }
+
+    window.castVoteFor = async function (targetName) {
+      if (state.isMaster) return;
+      if (isPlayerEliminated(state.actorName)) return;
+      if (isPlayerEliminated(targetName)) return;
+      state.ovalVotes[nameKey(state.actorName)] = targetName;
+      await syncRoom();
+      render();
+    };
+
+    window.exileCandidate = async function (targetName) {
+      if (!state.isMaster) return;
+      var k = nameKey(targetName);
+      var idx = (state.players || []).findIndex(function (p) { return nameKey(p.name) === k; });
+      if (idx !== -1) {
+        state.players[idx].eliminated = true;
+        state.players[idx].alive = false;
+        state.players[idx].status = 'eliminated';
+      }
+      if (!(state.eliminatedPlayers || []).some(function (n) { return nameKey(n) === k; })) {
+        state.eliminatedPlayers.push(targetName);
+      }
+      delete state.ovalVotes[k];
+      await syncRoom();
+      render();
+    };
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function escJs(s) { return esc(s).replace(/\\/g, '\\\\').replace(/'/g, '&#39;'); }
+
+    function render() {
+      var root = document.getElementById('oval-app');
+      if (!root) return;
+      var activePlayers = getActiveVoters();
+      var myKey = nameKey(state.actorName);
+      var iAmEliminated = !state.isMaster && isPlayerEliminated(state.actorName);
+      var myVote = state.ovalVotes[myKey] || '';
+
+      var counts = {};
+      activePlayers.forEach(function (p) { counts[nameKey(p.name)] = 0; });
+      Object.keys(state.ovalVotes).forEach(function (vk) {
+        var tk = nameKey(state.ovalVotes[vk]);
+        if (counts[tk] !== undefined) counts[tk] += 1;
+      });
+
+      var totalCast = Object.keys(state.ovalVotes).length;
+
+      var rowsHtml = activePlayers.length
+        ? activePlayers.map(function (p) {
+            var ck = nameKey(p.name);
+            var vCount = counts[ck] || 0;
+            var picked = nameKey(myVote) === ck;
+            var canVote = !state.isMaster && !iAmEliminated;
+            return (
+              '<div class="cand-row">' +
+                '<div><strong>' + esc(p.name) + '</strong> <span class="badge badge-Gold" style="margin-left:8px;">Voti: ' + vCount + '</span></div>' +
+                '<div class="btn-row">' +
+                  (canVote
+                    ? '<button type="button" class="' + (picked ? 'btn-crimson' : 'btn-gold') + '" onclick="castVoteFor(&#39;' + escJs(p.name) + '&#39;)">' + (picked ? 'Voto Registrato ✓' : 'Vota Esilio') + '</button>'
+                    : '') +
+                  (state.isMaster
+                    ? '<button type="button" class="btn-crimson" onclick="exileCandidate(&#39;' + escJs(p.name) + '&#39;)">Conferma Esilio</button>'
+                    : '') +
+                '</div>' +
+              '</div>'
+            );
+          }).join('')
+        : '<p class="subtext">Nessun giocatore attivo al Tavolo Ovale.</p>';
+
+      root.innerHTML =
+        '<header class="card">' +
+          '<div class="row">' +
+            '<div>' +
+              '<span class="eyebrow">Stanza ' + esc(state.roomCode) + ' · Tavolo Ovale</span>' +
+              '<h1>Discussione e Votazione</h1>' +
+              '<p class="subtext">Votanti attivi: <strong>' + activePlayers.length + '</strong> · Voti espressi: <strong>' + totalCast + '</strong> / ' + activePlayers.length + ' · Il Master non vota.</p>' +
+            '</div>' +
+            '<span class="badge ' + (state.isMaster ? 'badge-Gold' : (iAmEliminated ? 'badge-Crimson' : 'badge-Emerald')) + '">' +
+              (state.isMaster ? 'Master (Non Vota)' : (iAmEliminated ? 'Eliminato (Non Vota)' : ('Votante: ' + esc(state.actorName)))) +
+            '</span>' +
+          '</div>' +
+        '</header>' +
+        '<section class="card">' +
+          '<h2>Giocatori Attivi</h2>' +
+          (iAmEliminated ? '<p class="subtext" style="color:#ff8b96;">Sei eliminato o esiliato: non puoi esprimere voti.</p>' : '') +
+          '<div class="cand-list">' + rowsHtml + '</div>' +
+        '</section>';
+    }
+
+    try {
+      var rawLocal = localStorage.getItem(ROOM_PREFIX + state.roomCode);
+      if (rawLocal) applySnapshot(JSON.parse(rawLocal));
+    } catch (_e) {}
+    render();
+
+    var ref = getRoomRef();
+    if (ref) {
+      getDoc(ref).then(function (snap) {
+        if (snap.exists()) { applySnapshot(snap.data() || {}); render(); }
+      }).catch(function () {});
+      onSnapshot(ref, function (snap) {
+        if (!snap.exists()) return;
+        applySnapshot(snap.data() || {});
+        render();
+      });
+    }
+  </script>
+</body>
+</html>
