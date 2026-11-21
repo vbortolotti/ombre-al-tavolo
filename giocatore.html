@@ -46,9 +46,8 @@
       padding: 20px;
     }
 
-    .card-gold {
-      border-color: rgba(229, 184, 92, 0.35);
-    }
+    .card-gold { border-color: rgba(229, 184, 92, 0.35); }
+    .card-indigo { border-color: rgba(124, 140, 255, 0.4); }
 
     .header-row {
       display: flex;
@@ -100,54 +99,18 @@
       display: block;
     }
 
-    h1 {
-      margin: 2px 0 0;
-      font-size: 25px;
-      font-weight: 800;
-      color: #ffffff;
-    }
+    .eyebrow-indigo { color: var(--indigo); }
 
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      color: #ffffff;
-    }
+    h1 { margin: 2px 0 0; font-size: 25px; font-weight: 800; color: #ffffff; }
+    h2 { margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; }
+    .subtext { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--emerald); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-    .subtext {
-      margin: 4px 0 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: var(--emerald);
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    button, select, input[type="text"] {
-      font-family: inherit;
-      border-radius: 10px;
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 600;
-      transition: opacity 0.15s ease, background-color 0.15s ease;
-    }
-
+    button, select, input[type="text"] { font-family: inherit; border-radius: 10px; }
+    button { cursor: pointer; font-weight: 600; transition: opacity 0.15s ease, background-color 0.15s ease; }
     button:hover:not(:disabled) { opacity: 0.92; }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
 
     select, input[type="text"] {
       width: 100%;
@@ -158,42 +121,10 @@
       font-size: 13px;
     }
 
-    .btn-gold {
-      background: var(--gold);
-      color: #0c0e14;
-      border: none;
-      padding: 10px 14px;
-      font-size: 12px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-emerald {
-      background: var(--emerald);
-      color: #0c0e14;
-      border: none;
-      padding: 9px 13px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .btn-indigo {
-      background: var(--indigo);
-      color: #ffffff;
-      border: none;
-      padding: 10px 14px;
-      font-size: 12px;
-    }
-
-    .btn-ghost {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 10px 14px;
-      font-size: 12px;
-    }
+    .btn-gold { background: var(--gold); color: #0c0e14; border: none; padding: 10px 14px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-emerald { background: var(--emerald); color: #0c0e14; border: none; padding: 9px 13px; font-size: 12px; font-weight: 700; }
+    .btn-indigo { background: var(--indigo); color: #ffffff; border: none; padding: 10px 14px; font-size: 12px; }
+    .btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 10px 14px; font-size: 12px; }
 
     .shield-box {
       border-radius: 14px;
@@ -207,179 +138,39 @@
       gap: 12px;
     }
 
-    .shield-box.shield-inactive {
-      border-color: var(--border);
-      background: var(--surface);
-      opacity: 0.9;
-    }
+    .shield-box.shield-inactive { border-color: var(--border); background: var(--surface); opacity: 0.9; }
+    .shield-title { font-size: 14px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px; }
 
-    .shield-title {
-      font-size: 14px;
-      font-weight: 800;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+    .badge-Traditori { background: rgba(224, 82, 96, 0.15); color: var(--crimson); border-color: rgba(224, 82, 96, 0.4); }
+    .badge-Fedeli { background: rgba(62, 201, 140, 0.15); color: var(--emerald); border-color: rgba(62, 201, 140, 0.4); }
+    .badge-Neutro { background: rgba(229, 184, 92, 0.15); color: var(--gold); border-color: rgba(229, 184, 92, 0.4); }
+    .badge-Indigo { background: rgba(124, 140, 255, 0.16); color: var(--indigo); border-color: rgba(124, 140, 255, 0.35); }
 
-    .badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }
+    .banner { border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; border: 1px solid transparent; }
+    .banner-success { background: rgba(62, 201, 140, 0.14); border-color: rgba(62, 201, 140, 0.4); color: var(--emerald); }
+    .banner-error { background: rgba(224, 82, 96, 0.14); border-color: rgba(224, 82, 96, 0.4); color: var(--crimson); }
+    .banner-info { background: rgba(124, 140, 255, 0.14); border-color: rgba(124, 140, 255, 0.4); color: var(--indigo); }
 
-    .badge-Traditori {
-      background: rgba(224, 82, 96, 0.15);
-      color: var(--crimson);
-      border-color: rgba(224, 82, 96, 0.4);
-    }
+    .mission-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .mission-row { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 13px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .mission-row.claimed { border-color: rgba(229, 184, 92, 0.45); background: rgba(229, 184, 92, 0.06); }
+    .mission-row.approved { border-color: rgba(62, 201, 140, 0.5); background: rgba(62, 201, 140, 0.08); }
+    .mission-title { font-size: 14px; font-weight: 700; color: #ffffff; }
+    .mission-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .mission-status { font-size: 11px; margin-top: 5px; font-weight: 700; }
 
-    .badge-Fedeli {
-      background: rgba(62, 201, 140, 0.15);
-      color: var(--emerald);
-      border-color: rgba(62, 201, 140, 0.4);
-    }
+    .ability-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .ability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+    .answer-box { border-radius: 12px; padding: 12px 14px; font-weight: 700; font-size: 14px; }
+    .answer-yes { background: rgba(62, 201, 140, 0.16); border: 1px solid rgba(62, 201, 140, 0.45); color: var(--emerald); }
+    .answer-no { background: rgba(224, 82, 96, 0.16); border: 1px solid rgba(224, 82, 96, 0.45); color: var(--crimson); }
 
-    .badge-Neutro {
-      background: rgba(229, 184, 92, 0.15);
-      color: var(--gold);
-      border-color: rgba(229, 184, 92, 0.4);
-    }
-
-    .banner {
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid transparent;
-    }
-
-    .banner-success {
-      background: rgba(62, 201, 140, 0.14);
-      border-color: rgba(62, 201, 140, 0.4);
-      color: var(--emerald);
-    }
-
-    .banner-error {
-      background: rgba(224, 82, 96, 0.14);
-      border-color: rgba(224, 82, 96, 0.4);
-      color: var(--crimson);
-    }
-
-    .banner-info {
-      background: rgba(124, 140, 255, 0.14);
-      border-color: rgba(124, 140, 255, 0.4);
-      color: var(--indigo);
-    }
-
-    .mission-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .mission-row {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 13px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .mission-row.done {
-      border-color: rgba(62, 201, 140, 0.45);
-      background: rgba(62, 201, 140, 0.06);
-    }
-
-    .mission-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    .mission-desc {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .ability-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .ability-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 10px;
-    }
-
-    .answer-box {
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .answer-yes {
-      background: rgba(62, 201, 140, 0.16);
-      border: 1px solid rgba(62, 201, 140, 0.45);
-      color: var(--emerald);
-    }
-
-    .answer-no {
-      background: rgba(224, 82, 96, 0.16);
-      border: 1px solid rgba(224, 82, 96, 0.45);
-      color: var(--crimson);
-    }
-
-    .chat-box {
-      max-height: 220px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .msg-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 9px 12px;
-    }
-
-    .msg-head {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 3px;
-    }
-
-    .msg-body {
-      margin: 0;
-      font-size: 13px;
-      color: #e5e7eb;
-    }
-
-    .chat-form {
-      display: flex;
-      gap: 8px;
-    }
+    .chat-box { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+    .msg-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
+    .msg-head { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+    .msg-body { margin: 0; font-size: 13px; color: #e5e7eb; }
+    .chat-form { display: flex; gap: 8px; }
   </style>
 
   <script>
@@ -409,6 +200,16 @@
 
     var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
     var ROOM_PREFIX = 'ombre_stanza_sync_';
+
+    var GAME_PHASES = [
+      { step: 1, title: 'Cerimonia dei Ruoli', tip: 'Ricevi e consulta la tua scheda privata in segreto.' },
+      { step: 2, title: 'Interludio Ludico', tip: 'Gioca al tavolo, osserva i comportamenti e porta avanti le tue missioni.' },
+      { step: 3, title: 'Notte (Primo Assassinio)', tip: 'Silenzio al tavolo: fase del primo colpo notturno.' },
+      { step: 4, title: 'Risveglio', tip: 'Scopri cosa è accaduto durante la notte.' },
+      { step: 5, title: 'Interludio Ludico', tip: 'Nuovo momento di gioco al tavolo, missioni e confronti.' },
+      { step: 6, title: 'Tavolo Ovale', tip: 'Confronto collettivo: preparati alla discussione e alle decisioni del tavolo.' },
+      { step: 7, title: 'Notte (Assassino)', tip: 'Nuova fase notturna: il ciclo prosegue fino alla conclusione.' }
+    ];
 
     var ROLE_DETAILS = {
       assassino: {
@@ -455,25 +256,25 @@
 
     var DEFAULT_MISSIONS_BY_FACTION = {
       Traditori: [
-        { slot: 1, title: 'Missione 1 · Contatto Cauto', desc: 'Avvia un contatto discreto con un giocatore non Traditore durante il turno.', done: false },
-        { slot: 2, title: 'Missione 2 · Sussurro al Tavolo', desc: 'Fai passare una frase ambigua senza destare sospetti immediati.', done: false },
-        { slot: 3, title: 'Missione 3 · Devianza del Voto', desc: 'Orienta il sospetto verso un giocatore Fedele durante il confronto.', done: false },
-        { slot: 4, title: 'Missione 4 · Scambio Silenzioso', desc: 'Completa un piccolo scambio o gesto concordato senza farti notare.', done: false },
-        { slot: 5, title: 'Missione 5 · Colpo nell’Ombra', desc: 'Porta a termine l’obiettivo del turno mantenendo coperta la tua fazione.', done: false }
+        { slot: 1, title: 'Missione 1 · Contatto Cauto', type: 'Contatto', repeatable: true, desc: 'Avvia un contatto discreto con un giocatore non Traditore durante il turno.', playerClaimedDone: false, masterApproved: false },
+        { slot: 2, title: 'Missione 2 · Sussurro al Tavolo', type: 'Verbale', repeatable: false, desc: 'Fai passare una frase ambigua senza destare sospetti immediati.', playerClaimedDone: false, masterApproved: false },
+        { slot: 3, title: 'Missione 3 · Devianza del Voto', type: 'Reazione', repeatable: true, desc: 'Orienta il sospetto verso un giocatore Fedele durante il confronto.', playerClaimedDone: false, masterApproved: false },
+        { slot: 4, title: 'Missione 4 · Scambio Silenzioso', type: 'Contatto', repeatable: false, desc: 'Completa un piccolo scambio o gesto concordato senza farti notare.', playerClaimedDone: false, masterApproved: false },
+        { slot: 5, title: 'Missione 5 · Colpo nell’Ombra', type: 'Contatto', repeatable: true, desc: 'Porta a termine l’obiettivo del turno mantenendo coperta la tua fazione.', playerClaimedDone: false, masterApproved: false }
       ],
       Fedeli: [
-        { slot: 1, title: 'Missione 1 · Raccolta Indizi', desc: 'Ascolta con attenzione e riporta un dettaglio utile emerso al tavolo.', done: false },
-        { slot: 2, title: 'Missione 2 · Domanda Mirata', desc: 'Poni una domanda incisiva per verificare la coerenza di un giocatore.', done: false },
-        { slot: 3, title: 'Missione 3 · Alleanza Verbale', desc: 'Costruisci un confronto costruttivo con un altro giocatore al tavolo.', done: false },
-        { slot: 4, title: 'Missione 4 · Difesa del Giusto', desc: 'Sostieni con argomenti chiari un giocatore che ritieni affidabile.', done: false },
-        { slot: 5, title: 'Missione 5 · Verità alla Luce', desc: 'Aiuta il tavolo a individuare un comportamento incoerente prima del voto.', done: false }
+        { slot: 1, title: 'Missione 1 · Raccolta Indizi', type: 'Verbale', repeatable: false, desc: 'Ascolta con attenzione e riporta un dettaglio utile emerso al tavolo.', playerClaimedDone: false, masterApproved: false },
+        { slot: 2, title: 'Missione 2 · Domanda Mirata', type: 'Verbale', repeatable: true, desc: 'Poni una domanda incisiva per verificare la coerenza di un giocatore.', playerClaimedDone: false, masterApproved: false },
+        { slot: 3, title: 'Missione 3 · Alleanza Verbale', type: 'Verbale', repeatable: true, desc: 'Costruisci un confronto costruttivo con un altro giocatore al tavolo.', playerClaimedDone: false, masterApproved: false },
+        { slot: 4, title: 'Missione 4 · Difesa del Giusto', type: 'Verbale', repeatable: false, desc: 'Sostieni con argomenti chiari un giocatore che ritieni affidabile.', playerClaimedDone: false, masterApproved: false },
+        { slot: 5, title: 'Missione 5 · Verità alla Luce', type: 'Reazione', repeatable: true, desc: 'Aiuta il tavolo a individuare un comportamento incoerente prima del voto.', playerClaimedDone: false, masterApproved: false }
       ],
       Neutro: [
-        { slot: 1, title: 'Missione 1 · Osservazione Diretta', desc: 'Osserva le interazioni tra due giocatori per ricavare un indizio.', done: false },
-        { slot: 2, title: 'Missione 2 · Analisi dei Ruoli', desc: 'Confronta le dichiarazioni al tavolo con i ruoli possibili in gioco.', done: false },
-        { slot: 3, title: 'Missione 3 · Caccia Silenziosa', desc: 'Individua un bersaglio su cui concentrare la tua prossima domanda.', done: false },
-        { slot: 4, title: 'Missione 4 · Verifica Incrociata', desc: 'Controlla la reazione di un giocatore quando viene nominato un altro ruolo.', done: false },
-        { slot: 5, title: 'Missione 5 · Mira Finale', desc: 'Prepara la tua verifica conclusiva o la chiamata da 3 giocatori.', done: false }
+        { slot: 1, title: 'Missione 1 · Osservazione Diretta', type: 'Reazione', repeatable: true, desc: 'Osserva le interazioni tra due giocatori per ricavare un indizio.', playerClaimedDone: false, masterApproved: false },
+        { slot: 2, title: 'Missione 2 · Analisi dei Ruoli', type: 'Verbale', repeatable: false, desc: 'Confronta le dichiarazioni al tavolo con i ruoli possibili in gioco.', playerClaimedDone: false, masterApproved: false },
+        { slot: 3, title: 'Missione 3 · Caccia Silenziosa', type: 'Reazione', repeatable: true, desc: 'Individua un bersaglio su cui concentrare la tua prossima domanda.', playerClaimedDone: false, masterApproved: false },
+        { slot: 4, title: 'Missione 4 · Verifica Incrociata', type: 'Contatto', repeatable: false, desc: 'Controlla la reazione di un giocatore quando viene nominato un altro ruolo.', playerClaimedDone: false, masterApproved: false },
+        { slot: 5, title: 'Missione 5 · Mira Finale', type: 'Reazione', repeatable: true, desc: 'Prepara la tua verifica conclusiva o la chiamata da 3 giocatori.', playerClaimedDone: false, masterApproved: false }
       ]
     };
 
@@ -482,10 +283,7 @@
         if (!window.OMBRE_FIREBASE_CONFIG || !window.OMBRE_FIREBASE_CONFIG.projectId) return null;
         var app = getApps().length ? getApps()[0] : initializeApp(window.OMBRE_FIREBASE_CONFIG);
         return getFirestore(app);
-      } catch (err) {
-        console.error('Errore Firestore su giocatore.html:', err);
-        return null;
-      }
+      } catch (_e) { return null; }
     }
 
     var firestoreDb = initFirestore();
@@ -520,8 +318,12 @@
       players: [],
       assignedRoleKey: null,
       privateCardOpen: false,
+      missionsVisible: false,
       missions: [],
+      playerPoints: {},
       missionPoints: 0,
+      phaseIndex: 0,
+      cycleCount: 1,
       hunterTargetName: '',
       hunterTargetRole: 'assassino',
       hunterLastAnswer: null,
@@ -558,11 +360,19 @@
       var out = [];
       for (var i = 0; i < 5; i++) {
         var base = source[i] || (DEFAULT_MISSIONS_BY_FACTION[faction] || DEFAULT_MISSIONS_BY_FACTION.Fedeli)[i];
+        var claimed = Boolean(base.playerClaimedDone !== undefined ? base.playerClaimedDone : base.done);
+        var approved = Boolean(base.masterApproved);
         out.push({
           slot: i + 1,
+          id: base.id || ('M' + (i + 1)),
           title: base.title || ('Missione ' + (i + 1)),
-          desc: base.desc || '',
-          done: Boolean(base.done)
+          type: base.type || 'Missione',
+          repeatable: Boolean(base.repeatable),
+          points: Number(base.points || 1),
+          desc: base.desc || base.description || '',
+          playerClaimedDone: claimed,
+          masterApproved: approved,
+          done: approved || claimed
         });
       }
       return out;
@@ -593,6 +403,9 @@
     function applyRoomSnapshot(data) {
       if (!data || typeof data !== 'object') return;
       var nameKey = String(state.playerName || '').trim().toLowerCase();
+
+      if (typeof data.phaseIndex === 'number') state.phaseIndex = Math.max(0, Math.min(GAME_PHASES.length - 1, Number(data.phaseIndex)));
+      if (typeof data.cycleCount === 'number') state.cycleCount = Math.max(1, Number(data.cycleCount));
 
       if (data.playerSelfies && typeof data.playerSelfies === 'object') {
         state.playerSelfies = Object.assign({}, data.playerSelfies);
@@ -633,12 +446,15 @@
         : null;
 
       state.missions = ensureFiveMissions(state.missions, faction, cloudMissions);
-      var completedCount = state.missions.filter(function (m) { return Boolean(m.done); }).length;
-      state.missionPoints = completedCount;
-
-      if (Array.isArray(data.masterChat)) {
-        state.masterChat = data.masterChat;
+      if (data.playerPoints && typeof data.playerPoints === 'object') {
+        state.playerPoints = Object.assign({}, data.playerPoints);
       }
+      var approvedCount = state.missions.filter(function (m) { return Boolean(m.masterApproved); }).length;
+      state.missionPoints = (nameKey && state.playerPoints[nameKey] !== undefined)
+        ? Number(state.playerPoints[nameKey] || 0)
+        : approvedCount;
+
+      if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat;
       state.shieldedPlayers = Array.isArray(data.shieldedPlayers) ? data.shieldedPlayers : [];
       state.martyrShieldedPlayers = Array.isArray(data.martyrShieldedPlayers) ? data.martyrShieldedPlayers : [];
       state.sabotagedPlayers = Array.isArray(data.sabotagedPlayers) ? data.sabotagedPlayers : [];
@@ -664,6 +480,8 @@
         var raw = localStorage.getItem(ROOM_PREFIX + state.roomCode);
         var cur = raw ? JSON.parse(raw) : { roomCode: state.roomCode };
         cur.players = state.players;
+        cur.phaseIndex = state.phaseIndex;
+        cur.cycleCount = state.cycleCount;
         cur.playerSelfies = Object.assign({}, cur.playerSelfies || {}, state.playerSelfies || {});
         if (nameKey) {
           if (state.selfieDataUrl) {
@@ -675,7 +493,8 @@
         cur.missionAssignments = cur.missionAssignments && typeof cur.missionAssignments === 'object'
           ? cur.missionAssignments
           : {};
-        cur.missionAssignments[nameKey] = state.missions;
+        if (nameKey) cur.missionAssignments[nameKey] = state.missions;
+        cur.playerPoints = Object.assign({}, cur.playerPoints || {}, state.playerPoints || {});
         cur.masterChat = state.masterChat;
         cur.updatedAt = Date.now();
         localStorage.setItem(ROOM_PREFIX + state.roomCode, JSON.stringify(cur));
@@ -691,7 +510,9 @@
         var snap = await getDoc(ref);
         var cur = snap.exists() ? (snap.data() || {}) : {};
         var nextAssignments = Object.assign({}, cur.missionAssignments || {});
-        nextAssignments[nameKey] = state.missions;
+        if (nameKey) nextAssignments[nameKey] = state.missions;
+        var nextPoints = Object.assign({}, cur.playerPoints || {}, state.playerPoints || {});
+        if (nameKey) nextPoints[nameKey] = state.missionPoints;
         var nextSelfies = Object.assign({}, cur.playerSelfies || {}, state.playerSelfies || {});
         if (nameKey) {
           if (state.selfieDataUrl) {
@@ -706,6 +527,7 @@
           players: state.players,
           playerSelfies: nextSelfies,
           missionAssignments: nextAssignments,
+          playerPoints: nextPoints,
           masterChat: state.masterChat,
           shieldedPlayers: state.shieldedPlayers,
           martyrShieldedPlayers: state.martyrShieldedPlayers,
@@ -716,8 +538,7 @@
           updatedAt: Date.now()
         }, extra || {}), { merge: true });
         state.syncStatus = 'Cloud Firestore attivo';
-      } catch (err) {
-        console.error('Errore sync giocatore su Firestore:', err);
+      } catch (_e) {
         state.syncStatus = 'Locale (controlla regole Firestore)';
       }
     }
@@ -735,10 +556,7 @@
             canvas.width = w;
             canvas.height = h;
             var ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve(String(ev.target.result || ''));
-              return;
-            }
+            if (!ctx) return resolve(String(ev.target.result || ''));
             ctx.drawImage(img, 0, 0, w, h);
             resolve(canvas.toDataURL('image/jpeg', quality));
           };
@@ -755,21 +573,16 @@
       var nameKey = String(state.playerName || '').trim().toLowerCase();
       state.selfieDataUrl = cleanPhoto;
       if (nameKey) {
-        if (cleanPhoto) {
-          state.playerSelfies[nameKey] = cleanPhoto;
-        } else {
-          delete state.playerSelfies[nameKey];
-        }
+        if (cleanPhoto) state.playerSelfies[nameKey] = cleanPhoto;
+        else delete state.playerSelfies[nameKey];
       }
       state.players = syncSelfieIntoPlayersList(state.players, nameKey, cleanPhoto);
-
       try {
         var accRaw = localStorage.getItem(ACCESS_KEY);
         var accObj = accRaw ? JSON.parse(accRaw) : {};
         accObj.selfieDataUrl = cleanPhoto;
         localStorage.setItem(ACCESS_KEY, JSON.stringify(accObj));
       } catch (_e) {}
-
       await pushRoomUpdate();
       render();
     }
@@ -782,8 +595,7 @@
         await applyPlayerSelfie(compressed);
         state.banner = { text: 'Selfie salvato e sincronizzato con la stanza.', type: 'success' };
         render();
-      } catch (err) {
-        console.error('Errore salvataggio selfie giocatore:', err);
+      } catch (_e) {
         state.banner = { text: 'Impossibile caricare il selfie. Riprova.', type: 'error' };
         render();
       }
@@ -805,18 +617,23 @@
       render();
     };
 
+    window.toggleMissionsVisibility = function () {
+      state.missionsVisible = !state.missionsVisible;
+      render();
+    };
+
     window.toggleMissionDone = async function (slotIndex) {
       if (!state.assignedRoleKey) {
-        state.banner = { text: 'Attendi che il Master ti assegni un ruolo prima di completare missioni.', type: 'error' };
+        state.banner = { text: 'Attendi che il Master ti assegni un ruolo prima di segnalare missioni.', type: 'error' };
         render();
         return;
       }
       var target = state.missions[slotIndex];
       if (!target) return;
-      target.done = !target.done;
-      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+      target.playerClaimedDone = !target.playerClaimedDone;
+      target.done = target.playerClaimedDone || target.masterApproved;
 
-      var statusLabel = target.done ? 'COMPLETATA' : 'NON COMPLETATA';
+      var statusLabel = target.playerClaimedDone ? 'SEGNALATA AL MASTER' : 'ANNULLATA';
       var notif = {
         id: 'notif_' + Date.now(),
         fromMaster: false,
@@ -828,25 +645,30 @@
       state.masterChat = state.masterChat.concat([notif]).slice(-150);
 
       state.banner = {
-        text: 'Missione "' + target.title + '" segnata come ' + (target.done ? 'FATTA' : 'NON FATTA') + ' e comunicata al Master.',
-        type: target.done ? 'success' : 'info'
+        text: target.playerClaimedDone
+          ? 'Missione "' + target.title + '" segnalata al Master per la conferma.'
+          : 'Segnalazione per "' + target.title + '" ritirata.',
+        type: target.playerClaimedDone ? 'success' : 'info'
       };
 
       await pushRoomUpdate();
       render();
     };
 
-    window.setHunterTarget = function (name) {
-      state.hunterTargetName = name;
-    };
+    function spendOneMissionPoint() {
+      if (state.missionPoints <= 0) return false;
+      state.missionPoints = Math.max(0, state.missionPoints - 1);
+      var nameKey = String(state.playerName || '').trim().toLowerCase();
+      if (nameKey) state.playerPoints[nameKey] = state.missionPoints;
+      return true;
+    }
 
-    window.setHunterRole = function (roleKey) {
-      state.hunterTargetRole = roleKey;
-    };
+    window.setHunterTarget = function (name) { state.hunterTargetName = name; };
+    window.setHunterRole = function (roleKey) { state.hunterTargetRole = roleKey; };
 
     window.hunterAskQuestion = async function () {
       if (state.missionPoints <= 0) {
-        state.banner = { text: 'Non hai punti missione disponibili per fare una domanda automatica (completa una missione con "Fatto").', type: 'error' };
+        state.banner = { text: 'Non hai punti missione disponibili per fare una domanda automatica.', type: 'error' };
         render();
         return;
       }
@@ -858,16 +680,10 @@
         render();
         return;
       }
-
+      spendOneMissionPoint();
       var actualRole = targetPlayer.assignedRoleKey || '';
       var isMatch = actualRole === state.hunterTargetRole;
       var roleLabel = (ROLE_DETAILS[state.hunterTargetRole] && ROLE_DETAILS[state.hunterTargetRole].name) || state.hunterTargetRole;
-
-      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
-      if (doneIdx !== -1) {
-        state.missions[doneIdx].done = false;
-      }
-      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
 
       state.hunterLastAnswer = {
         yes: isMatch,
@@ -883,7 +699,6 @@
         createdAt: Date.now()
       };
       state.masterChat = state.masterChat.concat([notif]).slice(-150);
-
       await pushRoomUpdate();
       render();
     };
@@ -898,11 +713,7 @@
         var n = String(state.tripleNames[i] || '').trim().toLowerCase();
         var r = state.tripleRoles[i];
         var found = state.players.find(function (p) { return String(p.name || '').trim().toLowerCase() === n; });
-        return {
-          name: state.tripleNames[i] || ('Giocatore ' + (i + 1)),
-          role: r,
-          ok: Boolean(found && found.assignedRoleKey === r)
-        };
+        return { name: state.tripleNames[i] || ('Giocatore ' + (i + 1)), role: r, ok: Boolean(found && found.assignedRoleKey === r) };
       });
       var allRight = results.every(function (x) { return x.ok; });
       state.actionResultText = allRight
@@ -922,24 +733,7 @@
       render();
     };
 
-    window.triggerQuickAbility = async function (label) {
-      state.actionResultText = label + ' — Azione registrata e comunicata al Master.';
-      var notif = {
-        id: 'ab_' + Date.now(),
-        fromMaster: false,
-        senderName: state.playerName,
-        playerName: state.playerName,
-        text: '[ABILITÀ] ' + state.playerName + ': ' + label,
-        createdAt: Date.now()
-      };
-      state.masterChat = state.masterChat.concat([notif]).slice(-150);
-      await pushRoomUpdate();
-      render();
-    };
-
-    window.updateChatDraft = function (v) {
-      chatDraft = String(v || '');
-    };
+    window.updateChatDraft = function (v) { chatDraft = String(v || ''); };
 
     window.sendPlayerChat = async function () {
       var inp = document.getElementById('player-chat-input');
@@ -959,17 +753,8 @@
       render();
     };
 
-    window.goToRoles = function () {
-      window.location.href = 'ruoli.html';
-    };
-
-    window.goToMissionsCatalog = function () {
-      window.location.href = 'missioni.html';
-    };
-
-    window.goToAccess = function () {
-      window.location.href = 'index.html';
-    };
+    window.goToRoles = function () { window.location.href = 'ruoli.html'; };
+    window.goToAccess = function () { window.location.href = 'index.html'; };
 
     function escapeHtml(value) {
       return String(value == null ? '' : value)
@@ -986,29 +771,15 @@
       'Piccolo Prestito (Molto semplice) — Chiedi in prestito un oggetto qualunque (es. penna o accendino) e restituiscilo entro due minuti.'
     ];
 
-    function spendOneMissionPoint() {
-      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
-      if (doneIdx === -1) return false;
-      state.missions[doneIdx].done = false;
-      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
-      return true;
-    }
-
     function isPlayerSabotaged(name) {
       var k = String(name || '').trim().toLowerCase();
-      return (state.sabotagedPlayers || []).some(function (s) {
-        return String(s || '').trim().toLowerCase() === k;
-      });
+      return (state.sabotagedPlayers || []).some(function (s) { return String(s || '').trim().toLowerCase() === k; });
     }
 
     function removePlayerFromShields(name) {
       var k = String(name || '').trim().toLowerCase();
-      state.shieldedPlayers = (state.shieldedPlayers || []).filter(function (s) {
-        return String(s || '').trim().toLowerCase() !== k;
-      });
-      state.martyrShieldedPlayers = (state.martyrShieldedPlayers || []).filter(function (s) {
-        return String(s || '').trim().toLowerCase() !== k;
-      });
+      state.shieldedPlayers = (state.shieldedPlayers || []).filter(function (s) { return String(s || '').trim().toLowerCase() !== k; });
+      state.martyrShieldedPlayers = (state.martyrShieldedPlayers || []).filter(function (s) { return String(s || '').trim().toLowerCase() !== k; });
     }
 
     window.requestAbilityConfirm = function (actionKind, targetName, extra) {
@@ -1017,11 +788,7 @@
         render();
         return;
       }
-      state.confirmPrompt = {
-        actionKind: actionKind,
-        targetName: targetName || '',
-        extra: extra || {}
-      };
+      state.confirmPrompt = { actionKind: actionKind, targetName: targetName || '', extra: extra || {} };
       render();
     };
 
@@ -1034,13 +801,11 @@
       var prompt = state.confirmPrompt;
       state.confirmPrompt = null;
       if (!prompt) return;
-
       if (!spendOneMissionPoint()) {
         state.banner = { text: 'Nessun punto missione disponibile.', type: 'error' };
         render();
         return;
       }
-
       var kind = prompt.actionKind;
       var target = prompt.targetName || '';
 
@@ -1048,24 +813,16 @@
         if (isPlayerSabotaged(state.playerName)) {
           state.actionResultText = 'Hai speso 1 punto missione per assegnare lo Scudo Protettivo (valido per 1 notte) a ' + target + '.';
           state.masterChat = state.masterChat.concat([{
-            id: 'grd_' + Date.now(),
-            fromMaster: false,
-            senderName: state.playerName,
-            playerName: state.playerName,
+            id: 'grd_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
             text: '[GUARDIA · SABOTATA SILENZIOSAMENTE] ' + state.playerName + ' ha speso 1 pt su ' + target + ', ma lo scudo NON è stato applicato per sabotaggio.',
             createdAt: Date.now()
           }]).slice(-150);
           state.banner = { text: 'Azione completata (1 punto missione speso).', type: 'info' };
         } else {
-          if (!state.shieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
-            state.shieldedPlayers.push(target);
-          }
+          if (!state.shieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) state.shieldedPlayers.push(target);
           state.actionResultText = 'Scudo Protettivo (dura 1 notte) assegnato a ' + target + ' (-1 punto missione).';
           state.masterChat = state.masterChat.concat([{
-            id: 'grd_' + Date.now(),
-            fromMaster: false,
-            senderName: state.playerName,
-            playerName: state.playerName,
+            id: 'grd_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
             text: '[GUARDIA] ' + state.playerName + ' assegna Scudo (1 notte) a ' + target + ' (-1 pt missione).',
             createdAt: Date.now()
           }]).slice(-150);
@@ -1075,54 +832,36 @@
         var picked = ASSASSIN_LOW_DIFF_MISSIONS[Math.floor(Math.random() * ASSASSIN_LOW_DIFF_MISSIONS.length)];
         state.actionResultText = 'Missione degli Assassini (bassa difficoltà) rivelata: ' + picked;
         state.masterChat = state.masterChat.concat([{
-          id: 'inv_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
+          id: 'inv_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
           text: '[INVESTIGATORE] ' + state.playerName + ' ha speso 1 pt missione per ottenere una missione Assassini a bassa difficoltà.',
           createdAt: Date.now()
         }]).slice(-150);
         state.banner = { text: 'Nuova missione Assassini a bassa difficoltà sbloccata (-1 punto missione).', type: 'success' };
       } else if (kind === 'martire_rileva') {
         var pObj = state.players.find(function (p) { return String(p.name || '').toLowerCase() === target.toLowerCase(); });
-        var rName = (pObj && pObj.assignedRoleKey && ROLE_DETAILS[pObj.assignedRoleKey])
-          ? ROLE_DETAILS[pObj.assignedRoleKey].name
-          : 'Ruolo non ancora assegnato';
+        var rName = (pObj && pObj.assignedRoleKey && ROLE_DETAILS[pObj.assignedRoleKey]) ? ROLE_DETAILS[pObj.assignedRoleKey].name : 'Ruolo non ancora assegnato';
         state.actionResultText = 'Rilevazione del Martire: il ruolo di ' + target + ' è ' + rName + ' (-1 punto missione).';
         state.masterChat = state.masterChat.concat([{
-          id: 'mrt_det_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
+          id: 'mrt_det_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
           text: '[MARTIRE · RILEVA RUOLO] ' + state.playerName + ' verifica ' + target + ' -> ' + rName + ' (-1 pt missione).',
           createdAt: Date.now()
         }]).slice(-150);
         state.banner = { text: state.actionResultText, type: 'success' };
       } else if (kind === 'martire_scudo') {
-        if (!state.martyrShieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
-          state.martyrShieldedPlayers.push(target);
-        }
+        if (!state.martyrShieldedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) state.martyrShieldedPlayers.push(target);
         state.actionResultText = 'Scudo del Martire assegnato a ' + target + ': resta attivo finché non viene colpito dall’Assassino o dal Sabotatore (-1 punto missione).';
         state.masterChat = state.masterChat.concat([{
-          id: 'mrt_shd_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
+          id: 'mrt_shd_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
           text: '[MARTIRE · SCUDO PERSISTENTE] ' + state.playerName + ' protegge ' + target + ' fino a colpo di Assassino o Sabotatore (-1 pt missione).',
           createdAt: Date.now()
         }]).slice(-150);
         state.banner = { text: state.actionResultText, type: 'success' };
       } else if (kind === 'sabotatore_annulla') {
-        if (!state.sabotagedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) {
-          state.sabotagedPlayers.push(target);
-        }
+        if (!state.sabotagedPlayers.some(function (x) { return String(x).toLowerCase() === target.toLowerCase(); })) state.sabotagedPlayers.push(target);
         removePlayerFromShields(target);
         state.actionResultText = 'Hai sabotato ' + target + ': se userà la sua abilità, spenderà il punto ma l’effetto verrà annullato senza che lo sappia (-1 punto missione).';
         state.masterChat = state.masterChat.concat([{
-          id: 'sab_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
+          id: 'sab_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
           text: '[SABOTATORE · MALUS SILENZIOSO] ' + state.playerName + ' sabota ' + target + ' (-1 pt missione).',
           createdAt: Date.now()
         }]).slice(-150);
@@ -1134,25 +873,16 @@
     };
 
     function hasSecretTraitorInRoom() {
-      return state.players.some(function (p) {
-        return p && p.assignedRoleKey === 'traditore_segreto';
-      });
+      return state.players.some(function (p) { return p && p.assignedRoleKey === 'traditore_segreto'; });
     }
 
     function isPlayerShielded(name) {
       var k = String(name || '').trim().toLowerCase();
-      return (state.shieldedPlayers || []).some(function (s) {
-        return String(s || '').trim().toLowerCase() === k;
-      });
+      return (state.shieldedPlayers || []).some(function (s) { return String(s || '').trim().toLowerCase() === k; });
     }
 
-    window.setAssassinTarget1 = function (val) {
-      state.assassinTarget1 = String(val || '');
-    };
-
-    window.setAssassinTarget2 = function (val) {
-      state.assassinTarget2 = String(val || '');
-    };
+    window.setAssassinTarget1 = function (val) { state.assassinTarget1 = String(val || ''); };
+    window.setAssassinTarget2 = function (val) { state.assassinTarget2 = String(val || ''); };
 
     window.assassinExecuteStrike = async function () {
       if (state.assignedRoleKey !== 'assassino') return;
@@ -1162,14 +892,11 @@
         return;
       }
       if (state.assassinUsedSinceOval) {
-        state.banner = { text: 'Hai già usato l’abilità dell’Assassino in questo ciclo: attendi o avvia un giro di Tavolo Ovale per sbloccarla di nuovo.', type: 'error' };
+        state.banner = { text: 'Hai già usato l’abilità dell’Assassino in questo ciclo: attendi un giro di Tavolo Ovale.', type: 'error' };
         render();
         return;
       }
-
-      var candidates = state.players.filter(function (p) {
-        return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase();
-      });
+      var candidates = state.players.filter(function (p) { return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase(); });
       var t1 = state.assassinTarget1 || (candidates[0] && candidates[0].name) || '';
       var hasST = hasSecretTraitorInRoom();
       var t2 = state.assassinTarget2 || (candidates[1] && candidates[1].name) || '';
@@ -1185,44 +912,28 @@
         return;
       }
 
-      var doneIdx = state.missions.findIndex(function (m) { return Boolean(m.done); });
-      if (doneIdx !== -1) state.missions[doneIdx].done = false;
-      state.missionPoints = state.missions.filter(function (m) { return Boolean(m.done); }).length;
+      spendOneMissionPoint();
       state.assassinUsedSinceOval = true;
 
       if (hasST) {
-        state.pendingAssassinPair = {
-          assassinName: state.playerName,
-          targetA: t1,
-          targetB: t2,
-          createdAt: Date.now()
-        };
-        state.actionResultText = 'Hai indicato 2 bersagli (' + t1 + ' e ' + t2 + ') e speso 1 punto missione. Il Traditore Segreto deciderà chi eliminare (abilità bloccata fino al prossimo Tavolo Ovale).';
+        state.pendingAssassinPair = { assassinName: state.playerName, targetA: t1, targetB: t2, createdAt: Date.now() };
+        state.actionResultText = 'Hai indicato 2 bersagli (' + t1 + ' e ' + t2 + ') e speso 1 punto missione. Il Traditore Segreto deciderà chi eliminare.';
         state.masterChat = state.masterChat.concat([{
-          id: 'ass_pair_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
-          text: '[ASSASSINO · SCELTA DOPPIA] ' + state.playerName + ' indica ' + t1 + ' e ' + t2 + ' (1 pt missione speso; in attesa della scelta del Traditore Segreto).',
+          id: 'ass_pair_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
+          text: '[ASSASSINO · SCELTA DOPPIA] ' + state.playerName + ' indica ' + t1 + ' e ' + t2 + ' (1 pt missione speso).',
           createdAt: Date.now()
         }]).slice(-150);
-        state.banner = { text: 'Scelta inviata al Traditore Segreto. Riutilizzo bloccato fino al prossimo Tavolo Ovale.', type: 'info' };
       } else {
         var shielded = isPlayerShielded(t1);
         state.actionResultText = shielded
-          ? ('Colpo su ' + t1 + ' PARATO dallo Scudo Protettivo! (1 pt missione speso; abilità bloccata fino al prossimo Tavolo Ovale).')
-          : ('Colpo eseguito su ' + t1 + '! Giocatore eliminato (1 pt missione speso; abilità bloccata fino al prossimo Tavolo Ovale).');
+          ? ('Colpo su ' + t1 + ' PARATO dallo Scudo Protettivo! (1 pt missione speso).')
+          : ('Colpo eseguito su ' + t1 + '! Giocatore eliminato (1 pt missione speso).');
         state.masterChat = state.masterChat.concat([{
-          id: 'ass_hit_' + Date.now(),
-          fromMaster: false,
-          senderName: state.playerName,
-          playerName: state.playerName,
+          id: 'ass_hit_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
           text: '[ASSASSINO] ' + state.playerName + ' -> ' + t1 + ': ' + (shielded ? 'PARATO DA SCUDO' : 'ELIMINATO') + ' (1 pt missione speso).',
           createdAt: Date.now()
         }]).slice(-150);
-        state.banner = { text: state.actionResultText, type: shielded ? 'info' : 'success' };
       }
-
       await pushRoomUpdate();
       render();
     };
@@ -1236,16 +947,32 @@
         ? ('Hai scelto ' + chosenName + ' tra ' + pairInfo.targetA + ' e ' + pairInfo.targetB + ', ma era protetto da Scudo!')
         : ('Hai scelto ' + chosenName + ' tra ' + pairInfo.targetA + ' e ' + pairInfo.targetB + ': bersaglio eliminato!');
       state.masterChat = state.masterChat.concat([{
-        id: 'st_pick_' + Date.now(),
-        fromMaster: false,
-        senderName: state.playerName,
-        playerName: state.playerName,
-        text: '[TRADITORE SEGRETO] ' + state.playerName + ' sceglie di eliminare ' + chosenName + ' (coppia ' + pairInfo.targetA + ' / ' + pairInfo.targetB + ') -> ' + (shielded ? 'PARATO DA SCUDO' : 'ELIMINATO'),
+        id: 'st_pick_' + Date.now(), fromMaster: false, senderName: state.playerName, playerName: state.playerName,
+        text: '[TRADITORE SEGRETO] ' + state.playerName + ' sceglie ' + chosenName + ' -> ' + (shielded ? 'PARATO DA SCUDO' : 'ELIMINATO'),
         createdAt: Date.now()
       }]).slice(-150);
       await pushRoomUpdate();
       render();
     };
+
+    function renderPhaseBanner() {
+      var idx = Number(state.phaseIndex || 0);
+      if (idx < 0 || idx >= GAME_PHASES.length) idx = 0;
+      var ph = GAME_PHASES[idx];
+      var cycle = Number(state.cycleCount || 1);
+      return (
+        '<section class="card card-indigo" id="player-current-phase-banner">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow eyebrow-indigo">Fase Attuale · Ciclo #' + cycle + '</span>' +
+              '<h2 style="margin-top:2px;">' + ph.step + '. ' + escapeHtml(ph.title) + '</h2>' +
+              '<p class="subtext">' + escapeHtml(ph.tip) + '</p>' +
+            '</div>' +
+            '<span class="badge badge-Indigo">Fase ' + ph.step + ' / ' + GAME_PHASES.length + '</span>' +
+          '</div>' +
+        '</section>'
+      );
+    }
 
     function renderRoleAbilitySection(roleKey) {
       if (!roleKey || !ROLE_DETAILS[roleKey]) return '';
@@ -1256,35 +983,29 @@
           var sel = String(state.hunterTargetName).toLowerCase() === String(p.name).toLowerCase() ? ' selected' : '';
           return '<option value="' + escapeHtml(p.name) + '"' + sel + '>' + escapeHtml(p.name) + '</option>';
         }).join('');
-
         var roleOpts = Object.keys(ROLE_DETAILS).map(function (rk) {
           var sel = state.hunterTargetRole === rk ? ' selected' : '';
           return '<option value="' + rk + '"' + sel + '>' + escapeHtml(ROLE_DETAILS[rk].name) + '</option>';
         }).join('');
-
         var ansHtml = state.hunterLastAnswer
           ? '<div class="answer-box ' + (state.hunterLastAnswer.yes ? 'answer-yes' : 'answer-no') + '">' + escapeHtml(state.hunterLastAnswer.text) + '</div>'
           : '';
-
         var tripleRows = [0, 1, 2].map(function (idx) {
           var rOpts = Object.keys(ROLE_DETAILS).map(function (rk) {
             return '<option value="' + rk + '"' + (state.tripleRoles[idx] === rk ? ' selected' : '') + '>' + escapeHtml(ROLE_DETAILS[rk].name) + '</option>';
           }).join('');
           return (
             '<div class="ability-grid">' +
-              '<input type="text" value="' + escapeHtml(state.tripleNames[idx]) + '" oninput="setTripleField(\'name\', ' + idx + ', this.value)" placeholder="Nome giocatore ' + (idx + 1) + '..." />' +
-              '<select onchange="setTripleField(\'role\', ' + idx + ', this.value)">' + rOpts + '</select>' +
+              '<input type="text" value="' + escapeHtml(state.tripleNames[idx]) + '" oninput="setTripleField('name', ' + idx + ', this.value)" placeholder="Nome giocatore ' + (idx + 1) + '..." />' +
+              '<select onchange="setTripleField('role', ' + idx + ', this.value)">' + rOpts + '</select>' +
             '</div>'
           );
         }).join('');
 
         return (
           '<div class="ability-box">' +
-            '<div class="header-row">' +
-              '<strong>Abilità Automatica Cacciatore</strong>' +
-              '<span class="badge badge-Neutro">Punti missione disponibili: ' + state.missionPoints + '</span>' +
-            '</div>' +
-            '<p class="subtext">Se hai punti missione (missioni segnate come Fatto), premi <strong>Domanda</strong>: scegli giocatore e ruolo e ottieni subito <strong>SÌ</strong> o <strong>NO</strong>.</p>' +
+            '<div class="header-row"><strong>Abilità Automatica Cacciatore</strong><span class="badge badge-Neutro">Punti disponibili: ' + state.missionPoints + '</span></div>' +
+            '<p class="subtext">Con punti disponibili puoi chiedere se un giocatore ha un ruolo e ottenere subito <strong>SÌ</strong> o <strong>NO</strong>.</p>' +
             '<div class="ability-grid">' +
               '<select onchange="setHunterTarget(this.value)">' + playerOpts + '</select>' +
               '<select onchange="setHunterRole(this.value)">' + roleOpts + '</select>' +
@@ -1301,29 +1022,17 @@
       }
 
       if (roleKey === 'assassino') {
-        var targets = state.players.filter(function (p) {
-          return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase();
-        });
+        var targets = state.players.filter(function (p) { return String(p.name || '').trim().toLowerCase() !== state.playerName.toLowerCase(); });
         var hasST = hasSecretTraitorInRoom();
         var curT1 = state.assassinTarget1 || (targets[0] && targets[0].name) || '';
         var curT2 = state.assassinTarget2 || (targets[1] && targets[1].name) || '';
-        var opts1 = targets.map(function (p) {
-          return '<option value="' + escapeHtml(p.name) + '"' + (curT1 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>';
-        }).join('');
-        var opts2 = targets.map(function (p) {
-          return '<option value="' + escapeHtml(p.name) + '"' + (curT2 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>';
-        }).join('');
+        var opts1 = targets.map(function (p) { return '<option value="' + escapeHtml(p.name) + '"' + (curT1 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>'; }).join('');
+        var opts2 = targets.map(function (p) { return '<option value="' + escapeHtml(p.name) + '"' + (curT2 === p.name ? ' selected' : '') + '>' + escapeHtml(p.name) + (isPlayerShielded(p.name) ? ' [Scudo]' : '') + '</option>'; }).join('');
         var canUse = state.missionPoints > 0 && !state.assassinUsedSinceOval && targets.length > 0;
-
         return (
           '<div class="ability-box">' +
-            '<div class="header-row">' +
-              '<strong>Abilità Assassino</strong>' +
-              '<span class="badge badge-Traditori">Punti missione: ' + state.missionPoints + ' · ' + (state.assassinUsedSinceOval ? 'In attesa Tavolo Ovale' : 'Pronta') + '</span>' +
-            '</div>' +
-            '<p class="subtext">' + (hasST
-              ? 'In partita c’è il <strong>Traditore Segreto</strong>: scegli <strong>2 persone</strong> e sarà lui a decidere chi eliminare (esclusi protetti da Scudo). Costa 1 punto missione e si riattiva dopo un giro di <strong>Tavolo Ovale</strong>.'
-              : 'Puoi colpire chi vuoi (tranne chi è protetto da Scudo). Costa 1 punto missione e si riattiva dopo un giro di <strong>Tavolo Ovale</strong>.') + '</p>' +
+            '<div class="header-row"><strong>Abilità Assassino</strong><span class="badge badge-Traditori">Punti: ' + state.missionPoints + ' · ' + (state.assassinUsedSinceOval ? 'In attesa Tavolo Ovale' : 'Pronta') + '</span></div>' +
+            '<p class="subtext">' + (hasST ? 'In partita c’è il <strong>Traditore Segreto</strong>: scegli <strong>2 persone</strong>.' : 'Puoi colpire chi vuoi (tranne chi ha Scudo).') + '</p>' +
             '<div class="ability-grid">' +
               '<select onchange="setAssassinTarget1(this.value)">' + opts1 + '</select>' +
               (hasST ? '<select onchange="setAssassinTarget2(this.value)">' + opts2 + '</select>' : '') +
@@ -1336,115 +1045,62 @@
       if (roleKey === 'traditore_segreto') {
         var pairBox = '';
         if (state.pendingAssassinPair && state.pendingAssassinPair.targetA && state.pendingAssassinPair.targetB) {
+          var safeA = escapeHtml(state.pendingAssassinPair.targetA).replace(/'/g, "\'");
+          var safeB = escapeHtml(state.pendingAssassinPair.targetB).replace(/'/g, "\'");
           pairBox =
             '<div class="answer-box answer-yes">' +
-              '<div style="margin-bottom:8px;">L’Assassino (' + escapeHtml(state.pendingAssassinPair.assassinName || 'Assassino') + ') ha indicato due bersagli: scegli chi eliminare:</div>' +
+              '<div style="margin-bottom:8px;">L’Assassino ha indicato due bersagli: scegli chi eliminare:</div>' +
               '<div class="btn-row">' +
-                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + escapeHtml(state.pendingAssassinPair.targetA).replace(/'/g, "\\'") + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetA) + '</button>' +
-                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget(\'' + escapeHtml(state.pendingAssassinPair.targetB).replace(/'/g, "\\'") + '\')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetB) + '</button>' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget('' + safeA + '')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetA) + '</button>' +
+                '<button type="button" class="btn-gold" onclick="secretTraitorPickTarget('' + safeB + '')">Elimina ' + escapeHtml(state.pendingAssassinPair.targetB) + '</button>' +
               '</div>' +
             '</div>';
         }
-        return (
-          '<div class="ability-box">' +
-            '<strong>Potere del Ruolo (Traditore Segreto)</strong>' +
-            '<p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' +
-            (pairBox || '<p class="subtext">Nessuna doppia scelta dell’Assassino in attesa al momento.</p>') +
-          '</div>'
-        );
+        return '<div class="ability-box"><strong>Potere del Ruolo (Traditore Segreto)</strong><p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' + (pairBox || '<p class="subtext">Nessuna doppia scelta in attesa.</p>') + '</div>';
       }
 
       var confirmBox = '';
       if (state.confirmPrompt) {
         confirmBox =
           '<div class="answer-box answer-yes" style="margin-bottom:8px;">' +
-            '<div style="margin-bottom:8px;">Sei sicuro? Verrà speso <strong>1 punto missione</strong>' +
-              (state.confirmPrompt.targetName ? ' su <strong>' + escapeHtml(state.confirmPrompt.targetName) + '</strong>' : '') + '.</div>' +
-            '<div class="btn-row">' +
-              '<button type="button" class="btn-emerald" onclick="confirmAbilityExecution()">Sì</button>' +
-              '<button type="button" class="btn-ghost" onclick="cancelAbilityConfirm()">No</button>' +
-            '</div>' +
+            '<div style="margin-bottom:8px;">Sei sicuro? Verrà speso <strong>1 punto missione</strong>' + (state.confirmPrompt.targetName ? ' su <strong>' + escapeHtml(state.confirmPrompt.targetName) + '</strong>' : '') + '.</div>' +
+            '<div class="btn-row"><button type="button" class="btn-emerald" onclick="confirmAbilityExecution()">Sì</button><button type="button" class="btn-ghost" onclick="cancelAbilityConfirm()">No</button></div>' +
           '</div>';
       }
 
       if (roleKey === 'guardia') {
         var gButtons = state.players.map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\\'");
-          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'guardia_scudo\',\'' + safeN + '\')">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('guardia_scudo','' + safeN + '')">Scudo (1 notte): ' + escapeHtml(p.name) + '</button>';
         }).join('');
-        return (
-          '<div class="ability-box">' +
-            '<div class="header-row"><strong>Abilità Guardia (Scudo di 1 Notte)</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
-            '<p class="subtext">Premi il nome del giocatore a cui assegnare lo Scudo Protettivo (dura solo una notte, costa 1 punto missione).</p>' +
-            confirmBox +
-            '<div class="btn-row">' + (gButtons || '<span class="subtext">Nessun giocatore disponibile.</span>') + '</div>' +
-          '</div>'
-        );
+        return '<div class="ability-box"><div class="header-row"><strong>Abilità Guardia</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + gButtons + '</div></div>';
       }
 
       if (roleKey === 'investigatore') {
-        return (
-          '<div class="ability-box">' +
-            '<div class="header-row"><strong>Abilità Investigatore</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
-            '<p class="subtext">Spendi 1 punto missione per ottenere una missione degli Assassini abbastanza semplice da svolgere.</p>' +
-            confirmBox +
-            '<div class="btn-row"><button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'investigatore_missione\',\'\')">Ottieni Missione Assassini (Bassa Difficoltà)</button></div>' +
-          '</div>'
-        );
+        return '<div class="ability-box"><div class="header-row"><strong>Abilità Investigatore</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row"><button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('investigatore_missione','')">Ottieni Missione Assassini (Bassa Difficoltà)</button></div></div>';
       }
 
       if (roleKey === 'martire') {
-        var mRevealBtns = state.players.filter(function (p) {
-          return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase();
-        }).map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\\'");
-          return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'martire_rileva\',\'' + safeN + '\')">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
+        var mRevealBtns = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-indigo" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_rileva','' + safeN + '')">Rileva ruolo: ' + escapeHtml(p.name) + '</button>';
         }).join('');
         var mShieldBtns = state.players.map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\\'");
-          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'martire_scudo\',\'' + safeN + '\')">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-emerald" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('martire_scudo','' + safeN + '')">Scudo persistente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
-        return (
-          '<div class="ability-box">' +
-            '<div class="header-row"><strong>Abilità Martire</strong><span class="badge badge-Fedeli">Punti missione: ' + state.missionPoints + '</span></div>' +
-            '<p class="subtext">Ottieni punti subendo missioni. Con 1 punto puoi rilevare il ruolo di un giocatore o dargli uno Scudo attivo finché non viene colpito dall’Assassino o dal Sabotatore.</p>' +
-            confirmBox +
-            '<div class="btn-row">' + mRevealBtns + '</div>' +
-            '<div class="btn-row">' + mShieldBtns + '</div>' +
-          '</div>'
-        );
+        return '<div class="ability-box"><div class="header-row"><strong>Abilità Martire</strong><span class="badge badge-Fedeli">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + mRevealBtns + '</div><div class="btn-row">' + mShieldBtns + '</div></div>';
       }
 
       if (roleKey === 'sabotatore') {
-        var sButtons = state.players.filter(function (p) {
-          return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase();
-        }).map(function (p) {
-          var safeN = escapeHtml(p.name).replace(/'/g, "\\'");
-          return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm(\'sabotatore_annulla\',\'' + safeN + '\')">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
+        var sButtons = state.players.filter(function (p) { return String(p.name || '').toLowerCase() !== state.playerName.toLowerCase(); }).map(function (p) {
+          var safeN = escapeHtml(p.name).replace(/'/g, "\'");
+          return '<button type="button" class="btn-gold" ' + (state.missionPoints <= 0 ? 'disabled' : '') + ' onclick="requestAbilityConfirm('sabotatore_annulla','' + safeN + '')">Sabota silenziosamente: ' + escapeHtml(p.name) + '</button>';
         }).join('');
-        return (
-          '<div class="ability-box">' +
-            '<div class="header-row"><strong>Abilità Sabotatore</strong><span class="badge badge-Traditori">Punti missione: ' + state.missionPoints + '</span></div>' +
-            '<p class="subtext">Spendi 1 punto missione per annullare l’abilità del bersaglio: spenderà comunque il punto ma l’effetto non avverrà, senza che il malus venga mai svelato.</p>' +
-            confirmBox +
-            '<div class="btn-row">' + sButtons + '</div>' +
-          '</div>'
-        );
+        return '<div class="ability-box"><div class="header-row"><strong>Abilità Sabotatore</strong><span class="badge badge-Traditori">Punti: ' + state.missionPoints + '</span></div>' + confirmBox + '<div class="btn-row">' + sButtons + '</div></div>';
       }
 
-      var extraBtn = '';
-      if (roleKey === 'mediatore') {
-        extraBtn = '<span class="badge badge-Fedeli">Voto Extra +1 Attivo alla Tavola Rotonda</span>';
-      }
-
-      return (
-        '<div class="ability-box">' +
-          '<strong>Potere del Ruolo (' + escapeHtml(role.name) + ')</strong>' +
-          '<p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' +
-          confirmBox +
-          (extraBtn ? '<div class="btn-row">' + extraBtn + '</div>' : '') +
-        '</div>'
-      );
+      return '<div class="ability-box"><strong>Potere del Ruolo (' + escapeHtml(role.name) + ')</strong><p class="subtext">' + escapeHtml(role.powerDesc) + '</p>' + confirmBox + '</div>';
     }
 
     function renderAvatarHtml() {
@@ -1452,6 +1108,79 @@
         return '<img src="' + state.selfieDataUrl + '" alt="Selfie di ' + escapeHtml(state.playerName) + '" class="avatar" />';
       }
       return '<div class="avatar">' + escapeHtml(state.playerName.slice(0, 1).toUpperCase() || 'G') + '</div>';
+    }
+
+    function renderVisibleShieldBanner() {
+      var meKey = String(state.playerName || '').trim().toLowerCase();
+      var hasNightShield = (state.shieldedPlayers || []).some(function (n) { return String(n || '').trim().toLowerCase() === meKey; });
+      var hasMartyrShield = (state.martyrShieldedPlayers || []).some(function (n) { return String(n || '').trim().toLowerCase() === meKey; });
+
+      if (hasNightShield || hasMartyrShield) {
+        var badges = [];
+        var details = [];
+        if (hasNightShield) { badges.push('<span class="badge badge-Fedeli">Scudo Guardia · 1 Notte</span>'); details.push('protezione notturna attiva per 1 notte'); }
+        if (hasMartyrShield) { badges.push('<span class="badge badge-Neutro">Scudo Martire · Persistente</span>'); details.push('protezione del Martire attiva finché non colpito da Assassino o Sabotatore'); }
+        return (
+          '<section class="shield-box" id="player-visible-shield-box">' +
+            '<div><div class="shield-title">🛡️ Scudo Protettivo Attivo e Visibile</div><p class="subtext" style="color:#d1fae5;margin-top:3px;">Sei attualmente protetto: ' + escapeHtml(details.join(' · ')) + '.</p></div>' +
+            '<div class="btn-row">' + badges.join('') + '</div>' +
+          '</section>'
+        );
+      }
+      return (
+        '<section class="shield-box shield-inactive" id="player-visible-shield-box">' +
+          '<div><div class="shield-title" style="color:var(--muted);">🛡️ Stato Scudo Protettivo: Nessuno Scudo Attivo</div><p class="subtext" style="margin-top:2px;">Se la Guardia o il Martire ti assegna uno Scudo, comparirà qui.</p></div>' +
+          '<span class="badge" style="background:var(--surface-2);color:var(--muted);border-color:var(--border);">Scudo Assente</span>' +
+        '</section>'
+      );
+    }
+
+    function renderMissionsSection(roleObj, faction, missions) {
+      var bodyHtml = '';
+      if (!state.missionsVisible) {
+        bodyHtml = '<div style="padding:12px;border-radius:10px;background:var(--bg);border:1px dashed rgba(229,184,92,0.35);color:var(--muted);font-size:13px;margin-top:12px;">Missioni nascoste per evitare sbirciate. Premi <strong>Mostra Missioni</strong> per aprirle.</div>';
+      } else if (!roleObj) {
+        bodyHtml = '<div style="padding:12px;border-radius:10px;background:var(--bg);color:var(--muted);font-size:13px;margin-top:12px;">Il Master non ha ancora assegnato il tuo ruolo e le tue 5 missioni.</div>';
+      } else if (state.assignedRoleKey === 'martire') {
+        bodyHtml = '<div style="padding:12px;border-radius:10px;background:var(--bg);color:var(--muted);font-size:13px;margin-top:12px;">Il Martire non ha missioni standard: guadagna punti subendo missioni altrui.</div>';
+      } else {
+        bodyHtml = '<div class="mission-list">' + missions.map(function (m, idx) {
+          var rowClass = m.masterApproved ? 'approved' : (m.playerClaimedDone ? 'claimed' : '');
+          var statusHtml = m.masterApproved
+            ? '<span style="color:var(--emerald);">Confermata dal Master ✓ (+' + Number(m.points || 1) + ' pt)</span>'
+            : (m.playerClaimedDone
+                ? '<span style="color:var(--gold);">Segnalata al Master (in attesa di conferma)</span>'
+                : '<span style="color:var(--muted);">Da completare</span>');
+          return (
+            '<div class="mission-row ' + rowClass + '">' +
+              '<div>' +
+                '<div class="mission-title">' + m.slot + '. ' + escapeHtml(m.title) + ' <span style="font-size:11px;color:var(--muted);">(' + escapeHtml(m.type) + ' · ' + (m.repeatable ? 'Ripetibile' : 'Singola') + ')</span></div>' +
+                '<div class="mission-desc">' + escapeHtml(m.desc) + '</div>' +
+                '<div class="mission-status">' + statusHtml + '</div>' +
+              '</div>' +
+              '<button type="button" class="' + (m.playerClaimedDone ? 'btn-emerald' : 'btn-gold') + '" onclick="toggleMissionDone(' + idx + ')">' +
+                (m.playerClaimedDone ? 'Segnalata ✓' : 'Segnala Fatta') +
+              '</button>' +
+            '</div>'
+          );
+        }).join('') + '</div>';
+      }
+
+      return (
+        '<section class="card">' +
+          '<div class="header-row">' +
+            '<div>' +
+              '<span class="eyebrow">Obiettivi della Partita · Punti Confermati: <strong style="color:var(--emerald);">' + state.missionPoints + '</strong></span>' +
+              '<h2>Le Tue 5 Missioni Segrete</h2>' +
+            '</div>' +
+            '<div class="btn-row">' +
+              '<span class="badge badge-' + faction + '">Segnalate: ' + missions.filter(function (x) { return x.playerClaimedDone || x.masterApproved; }).length + ' / 5</span>' +
+              '<button type="button" class="btn-ghost" onclick="toggleMissionsVisibility()">' + (state.missionsVisible ? 'Nascondi Missioni' : 'Mostra Missioni') + '</button>' +
+            '</div>' +
+          '</div>' +
+          bodyHtml +
+        '</section>'
+      );
     }
 
     function render() {
@@ -1463,89 +1192,17 @@
       var missions = ensureFiveMissions(state.missions, faction, null);
       state.missions = missions;
 
-      function getActiveShieldsForMe() {
-        var meKey = String(state.playerName || '').trim().toLowerCase();
-        var hasNightShield = (state.shieldedPlayers || []).some(function (n) {
-          return String(n || '').trim().toLowerCase() === meKey;
-        });
-        var hasMartyrShield = (state.martyrShieldedPlayers || []).some(function (n) {
-          return String(n || '').trim().toLowerCase() === meKey;
-        });
-        return {
-          hasNightShield: hasNightShield,
-          hasMartyrShield: hasMartyrShield,
-          anyShield: hasNightShield || hasMartyrShield
-        };
-      }
-
-      function renderVisibleShieldBanner() {
-        var sh = getActiveShieldsForMe();
-        var badges = [];
-        if (sh.hasNightShield) badges.push('<span class="badge badge-Fedeli">Scudo Guardia · 1 Notte</span>');
-        if (sh.hasMartyrShield) badges.push('<span class="badge badge-Gold" style="background:rgba(229,184,92,0.16);color:var(--gold);border-color:rgba(229,184,92,0.45);">Scudo Martire · Persistente</span>');
-
-        if (sh.anyShield) {
-          var details = [];
-          if (sh.hasNightShield) details.push('protezione notturna attiva per 1 notte');
-          if (sh.hasMartyrShield) details.push('protezione del Martire attiva finché non vieni colpito da Assassino o Sabotatore');
-          return (
-            '<section class="shield-box" id="player-visible-shield-box">' +
-              '<div>' +
-                '<div class="shield-title">🛡️ Scudo Protettivo Attivo e Visibile</div>' +
-                '<p class="subtext" style="color:#d1fae5;margin-top:3px;">Sei attualmente protetto: ' + escapeHtml(details.join(' · ')) + '.</p>' +
-              '</div>' +
-              '<div class="btn-row">' + badges.join('') + '</div>' +
-            '</section>'
-          );
-        }
-
-        return (
-          '<section class="shield-box shield-inactive" id="player-visible-shield-box">' +
-            '<div>' +
-              '<div class="shield-title" style="color:var(--muted);">🛡️ Stato Scudo Protettivo: Nessuno Scudo Attivo</div>' +
-              '<p class="subtext" style="margin-top:2px;">Se la Guardia o il Martire ti assegna uno Scudo, comparirà qui in modo ben visibile.</p>' +
-            '</div>' +
-            '<span class="badge" style="background:var(--surface-2);color:var(--muted);border-color:var(--border);">Scudo Assente</span>' +
-          '</section>'
-        );
-      }
-
-      var bannerHtml = state.banner
-        ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>'
-        : '';
-
-      var actionBannerHtml = state.actionResultText
-        ? '<div class="banner banner-info">' + escapeHtml(state.actionResultText) + '</div>'
-        : '';
+      var bannerHtml = state.banner ? '<div class="banner banner-' + state.banner.type + '">' + escapeHtml(state.banner.text) + '</div>' : '';
+      var actionBannerHtml = state.actionResultText ? '<div class="banner banner-info">' + escapeHtml(state.actionResultText) + '</div>' : '';
 
       var privateCardHtml = roleObj
         ? (state.privateCardOpen
             ? '<div style="margin-top:12px;background:var(--bg);border:1px solid rgba(62,201,140,0.4);border-radius:12px;padding:14px;">' +
-                '<div class="header-row">' +
-                  '<div>' +
-                    '<span class="eyebrow">Ruolo Assegnato</span>' +
-                    '<h2 style="font-size:21px;">' + escapeHtml(roleObj.name) + '</h2>' +
-                  '</div>' +
-                  '<span class="badge badge-' + roleObj.faction + '">' + escapeHtml(roleObj.faction) + '</span>' +
-                '</div>' +
+                '<div class="header-row"><div><span class="eyebrow">Ruolo Assegnato</span><h2 style="font-size:21px;">' + escapeHtml(roleObj.name) + '</h2></div><span class="badge badge-' + roleObj.faction + '">' + escapeHtml(roleObj.faction) + '</span></div>' +
                 '<p class="subtext" style="color:#e5e7eb;margin-top:8px;">' + escapeHtml(roleObj.powerDesc) + '</p>' +
               '</div>'
-            : '<p class="subtext">Ruolo assegnato dal Master. Clicca <strong>Mostra / Nascondi Scheda</strong> per consultarlo in segreto.</p>')
+            : '<p class="subtext">Ruolo assegnato dal Master. Clicca <strong>Mostra Scheda</strong> per consultarlo in segreto.</p>')
         : '<p class="subtext">Bloccata finché il Master non ti assegna un ruolo sulla stanza <strong>' + escapeHtml(state.roomCode) + '</strong>.</p>';
-
-      var missionsHtml = missions.map(function (m, idx) {
-        return (
-          '<div class="mission-row ' + (m.done ? 'done' : '') + '">' +
-            '<div>' +
-              '<div class="mission-title">' + m.slot + '. ' + escapeHtml(m.title) + ' ' + (m.done ? '<span class="badge badge-Fedeli">Fatta</span>' : '') + '</div>' +
-              '<div class="mission-desc">' + escapeHtml(m.desc) + '</div>' +
-            '</div>' +
-            '<button type="button" class="' + (m.done ? 'btn-emerald' : 'btn-gold') + '" onclick="toggleMissionDone(' + idx + ')">' +
-              (m.done ? 'Fatto ✓' : 'Fatto') +
-            '</button>' +
-          '</div>'
-        );
-      }).join('');
 
       var myMsgs = state.masterChat.filter(function (msg) {
         return !msg.playerName || String(msg.playerName).toLowerCase() === state.playerName.toLowerCase() || msg.fromMaster;
@@ -1553,16 +1210,12 @@
 
       var msgsHtml = myMsgs.length
         ? myMsgs.map(function (msg) {
-            return (
-              '<div class="msg-card">' +
-                '<div class="msg-head"><strong>' + escapeHtml(msg.senderName || (msg.fromMaster ? 'Master' : state.playerName)) + '</strong><span></span></div>' +
-                '<p class="msg-body">' + escapeHtml(msg.text) + '</p>' +
-              '</div>'
-            );
+            return '<div class="msg-card"><div class="msg-head"><strong>' + escapeHtml(msg.senderName || (msg.fromMaster ? 'Master' : state.playerName)) + '</strong><span></span></div><p class="msg-body">' + escapeHtml(msg.text) + '</p></div>';
           }).join('')
         : '<p class="subtext">Nessun messaggio ancora in chat.</p>';
 
       root.innerHTML =
+        renderPhaseBanner() +
         '<header class="card">' +
           '<div class="header-row">' +
             '<div class="profile-head">' +
@@ -1570,29 +1223,19 @@
               '<div>' +
                 '<span class="eyebrow">Plancia Giocatore · ' + escapeHtml(state.syncStatus) + '</span>' +
                 '<h1>' + escapeHtml(state.playerName) + '</h1>' +
-                '<p class="subtext">Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">SYNC-' + escapeHtml(state.roomCode) + '</strong></p>' +
+                '<p class="subtext">Stanza: <strong>' + escapeHtml(state.roomCode) + '</strong> · ID Sync: <strong class="mono">SYNC-' + escapeHtml(state.roomCode) + '</strong> · Punti: <strong style="color:var(--emerald);">' + state.missionPoints + '</strong></p>' +
               '</div>' +
             '</div>' +
             '<div class="btn-row">' +
-              '<button type="button" class="btn-indigo" onclick="window.location.href=\'abilita.html\'">Scheda Abilità</button>' +
               '<button type="button" class="btn-gold" onclick="goToRoles()">Tutti i Ruoli</button>' +
               '<button type="button" class="btn-ghost" onclick="goToAccess()">Cambia Stanza</button>' +
             '</div>' +
           '</div>' +
           '<div class="selfie-bar">' +
-            '<p class="subtext" style="margin:0;">' +
-              (isValidAvatarSrc(state.selfieDataUrl)
-                ? 'Selfie attivo e sincronizzato con la stanza e la TV.'
-                : 'Nessun selfie impostato: scatta o carica la tua foto per la stanza e la TV.') +
-            '</p>' +
+            '<p class="subtext" style="margin:0;">' + (isValidAvatarSrc(state.selfieDataUrl) ? 'Selfie attivo e sincronizzato con la stanza e la TV.' : 'Nessun selfie impostato: scatta o carica la tua foto per la stanza e la TV.') + '</p>' +
             '<div class="btn-row">' +
-              '<label class="btn-gold" style="cursor:pointer;">' +
-                (isValidAvatarSrc(state.selfieDataUrl) ? 'Cambia Selfie' : 'Scatta / Carica Selfie') +
-                '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="handlePlayerSelfieChange(this)" />' +
-              '</label>' +
-              (isValidAvatarSrc(state.selfieDataUrl)
-                ? '<button type="button" class="btn-ghost" onclick="clearPlayerSelfie()">Rimuovi Selfie</button>'
-                : '') +
+              '<label class="btn-gold" style="cursor:pointer;">' + (isValidAvatarSrc(state.selfieDataUrl) ? 'Cambia Selfie' : 'Scatta / Carica Selfie') + '<input type="file" accept="image/*" capture="user" style="display:none;" onchange="handlePlayerSelfieChange(this)" /></label>' +
+              (isValidAvatarSrc(state.selfieDataUrl) ? '<button type="button" class="btn-ghost" onclick="clearPlayerSelfie()">Rimuovi Selfie</button>' : '') +
             '</div>' +
           '</div>' +
         '</header>' +
@@ -1601,34 +1244,19 @@
         actionBannerHtml +
         '<section class="card card-gold">' +
           '<div class="header-row">' +
-            '<div>' +
-              '<span class="eyebrow">Identità Segreta</span>' +
-              '<h2>Scheda Privata e Abilità</h2>' +
-            '</div>' +
-            '<button type="button" class="btn-indigo" onclick="togglePrivateCard()">' +
-              (roleObj ? (state.privateCardOpen ? 'Nascondi Scheda' : 'Mostra Scheda') : 'In attesa del ruolo') +
-            '</button>' +
+            '<div><span class="eyebrow">Identità Segreta</span><h2>Scheda Privata e Abilità</h2></div>' +
+            '<button type="button" class="btn-indigo" onclick="togglePrivateCard()">' + (roleObj ? (state.privateCardOpen ? 'Nascondi Scheda' : 'Mostra Scheda') : 'In attesa del ruolo') + '</button>' +
           '</div>' +
           privateCardHtml +
           renderRoleAbilitySection(state.assignedRoleKey) +
         '</section>' +
-        '<section class="card">' +
-          '<div class="header-row">' +
-            '<div>' +
-              '<span class="eyebrow">Obiettivi della Partita</span>' +
-              '<h2>Le Tue 5 Missioni</h2>' +
-            '</div>' +
-            '<span class="badge badge-' + faction + '">Completate: ' + missions.filter(function (x) { return x.done; }).length + ' / 5</span>' +
-          '</div>' +
-          '<p class="subtext">Premi <strong>Fatto</strong> accanto a una missione per notificare subito al Master se hai completato quella missione.</p>' +
-          '<div class="mission-list">' + missionsHtml + '</div>' +
-        '</section>' +
+        renderMissionsSection(roleObj, faction, missions) +
         '<section class="card">' +
           '<span class="eyebrow">Tavolo e Master</span>' +
           '<h2>Notifiche e Chat con il Master</h2>' +
           '<div class="chat-box">' + msgsHtml + '</div>' +
           '<div class="chat-form">' +
-            '<input id="player-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="updateChatDraft(this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();sendPlayerChat();}" placeholder="Scrivi al Master..." />' +
+            '<input id="player-chat-input" type="text" value="' + escapeHtml(chatDraft) + '" oninput="updateChatDraft(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();sendPlayerChat();}" placeholder="Scrivi al Master..." />' +
             '<button type="button" class="btn-gold" onclick="sendPlayerChat()">Invia</button>' +
           '</div>' +
         '</section>';
@@ -1653,195 +1281,5 @@
       });
     }
   </script>
-
-<script>
-(function () {
-  var ROOM_PREFIX = 'ombre_stanza_sync_';
-  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-  var missionsVisible = false;
-
-  function getAccessInfo() {
-    try {
-      var raw = localStorage.getItem(ACCESS_KEY);
-      if (raw) {
-        var p = JSON.parse(raw);
-        return {
-          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase(),
-          playerName: String(p.playerName || '').trim()
-        };
-      }
-    } catch (_e) {}
-    return { roomCode: 'TAVOLO1', playerName: '' };
-  }
-
-  function loadRoom() {
-    var info = getAccessInfo();
-    try {
-      var raw = localStorage.getItem(ROOM_PREFIX + info.roomCode);
-      return raw ? JSON.parse(raw) : { players: [], missionAssignments: {}, playerPoints: {} };
-    } catch (_e) {
-      return { players: [], missionAssignments: {}, playerPoints: {} };
-    }
-  }
-
-  function saveRoom(data) {
-    var info = getAccessInfo();
-    data.updatedAt = Date.now();
-    try {
-      localStorage.setItem(ROOM_PREFIX + info.roomCode, JSON.stringify(data));
-    } catch (_e) {}
-  }
-
-  window.togglePlayerMissionsVisibility = function () {
-    missionsVisible = !missionsVisible;
-    renderPlayerMissionsBox();
-  };
-
-  window.playerClaimMissionDone = function (slotIdx) {
-    var info = getAccessInfo();
-    var pKey = info.playerName.toLowerCase();
-    if (!pKey) return;
-    var data = loadRoom();
-    data.missionAssignments = data.missionAssignments || {};
-    var list = Array.isArray(data.missionAssignments[pKey]) ? data.missionAssignments[pKey] : [];
-    if (list[slotIdx]) {
-      list[slotIdx].playerClaimedDone = !list[slotIdx].playerClaimedDone;
-      data.missionAssignments[pKey] = list;
-      saveRoom(data);
-      renderPlayerMissionsBox();
-    }
-  };
-
-  function renderPlayerMissionsBox() {
-    var host = document.getElementById('player-secret-missions-panel');
-    if (!host) return;
-    var info = getAccessInfo();
-    var pKey = info.playerName.toLowerCase();
-    var data = loadRoom();
-    data.missionAssignments = data.missionAssignments || {};
-    data.playerPoints = data.playerPoints || {};
-    var missions = pKey && Array.isArray(data.missionAssignments[pKey]) ? data.missionAssignments[pKey] : [];
-    var pts = pKey ? Number(data.playerPoints[pKey] || 0) : 0;
-
-    var bodyHtml = '';
-    if (!missionsVisible) {
-      bodyHtml = '<div style="padding:12px;border-radius:10px;background:#0c0e14;border:1px dashed rgba(229,184,92,0.35);color:#9ca3af;font-size:13px;">Missioni nascoste per evitare sbirciate. Premi <strong>Mostra Missioni</strong> per aprirle.</div>';
-    } else if (!missions.length) {
-      bodyHtml = '<div style="padding:12px;border-radius:10px;background:#0c0e14;color:#9ca3af;font-size:13px;">Il Master non ha ancora assegnato le tue 5 missioni.</div>';
-    } else {
-      bodyHtml = '<div style="display:flex;flex-direction:column;gap:8px;">' + missions.map(function (m, idx) {
-        var statusTxt = m.masterApproved
-          ? '<span style="color:#3ec98c;font-weight:700;">Confermata dal Master ✓</span>'
-          : (m.playerClaimedDone
-              ? '<span style="color:#e5b85c;font-weight:700;">Segnalata al Master (in attesa)</span>'
-              : '<span style="color:#9ca3af;">Da completare</span>');
-        return '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:10px;background:#0c0e14;border:1px solid rgba(255,255,255,0.12);">' +
-          '<div style="max-width:72%;">' +
-            '<div style="font-size:13px;font-weight:700;color:#fff;">' + m.slot + '. ' + m.title + ' <span style="font-size:11px;color:#9ca3af;">(' + (m.repeatable ? 'Ripetibile' : 'Singola') + ' · ' + m.type + ')</span></div>' +
-            '<div style="font-size:12px;color:#d1d5db;margin-top:2px;">' + m.desc + '</div>' +
-            '<div style="font-size:11px;margin-top:4px;">' + statusTxt + '</div>' +
-          '</div>' +
-          '<button type="button" onclick="playerClaimMissionDone(' + idx + ')" style="padding:7px 11px;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:12px;background:' + (m.playerClaimedDone ? '#3ec98c' : '#e5b85c') + ';color:#0c0e14;">' + (m.playerClaimedDone ? 'Segnalata ✓' : 'Segnala Fatta') + '</button>' +
-        '</div>';
-      }).join('') + '</div>';
-    }
-
-    host.innerHTML =
-      '<div style="max-width:960px;margin:18px auto 36px;padding:0 16px;">' +
-        '<div style="border:1px solid rgba(229,184,92,0.35);border-radius:16px;padding:18px;background:#151924;">' +
-          '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Le Tue Missioni Segrete</div>' +
-              '<h3 style="margin:2px 0 0;font-size:17px;color:#fff;">Punti Attuali: <span style="color:#3ec98c;">' + pts + '</span></h3>' +
-            '</div>' +
-            '<button type="button" onclick="togglePlayerMissionsVisibility()" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(229,184,92,0.45);background:#1d2230;color:#e5b85c;font-weight:700;font-size:12px;cursor:pointer;">' + (missionsVisible ? 'Nascondi Missioni' : 'Mostra Missioni') + '</button>' +
-          '</div>' +
-          bodyHtml +
-        '</div>' +
-      '</div>';
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var wrap = document.createElement('div');
-    wrap.id = 'player-secret-missions-panel';
-    document.body.appendChild(wrap);
-    renderPlayerMissionsBox();
-    setInterval(renderPlayerMissionsBox, 2000);
-  });
-})();
-</script>
-
-
-<script>
-(function () {
-  var ROOM_PREFIX = 'ombre_stanza_sync_';
-  var ACCESS_KEY = 'ombre_accesso_tavolo_v1';
-
-  var GAME_PHASES = [
-    { step: 1, title: 'Cerimonia dei Ruoli', tip: 'Ricevi e consulta la tua scheda privata in segreto.' },
-    { step: 2, title: 'Interludio Ludico', tip: 'Gioca al tavolo, osserva i comportamenti e porta avanti le tue missioni.' },
-    { step: 3, title: 'Notte (Primo Assassinio)', tip: 'Silenzio al tavolo: fase del primo colpo notturno.' },
-    { step: 4, title: 'Risveglio', tip: 'Scopri cosa è accaduto durante la notte.' },
-    { step: 5, title: 'Interludio Ludico', tip: 'Nuovo momento di gioco al tavolo, missioni e confronti.' },
-    { step: 6, title: 'Tavolo Ovale', tip: 'Confronto collettivo: preparati alla discussione e alle decisioni del tavolo.' },
-    { step: 7, title: 'Notte (Assassino)', tip: 'Nuova fase notturna: il ciclo prosegue fino alla conclusione.' }
-  ];
-
-  function getAccessInfo() {
-    try {
-      var raw = localStorage.getItem(ACCESS_KEY);
-      if (raw) {
-        var p = JSON.parse(raw);
-        return {
-          roomCode: String(p.roomCode || 'TAVOLO1').trim().toUpperCase(),
-          playerName: String(p.playerName || '').trim()
-        };
-      }
-    } catch (_e) {}
-    return { roomCode: 'TAVOLO1', playerName: '' };
-  }
-
-  function loadRoom() {
-    var info = getAccessInfo();
-    try {
-      var raw = localStorage.getItem(ROOM_PREFIX + info.roomCode);
-      return raw ? JSON.parse(raw) : { phaseIndex: 0, cycleCount: 1 };
-    } catch (_e) {
-      return { phaseIndex: 0, cycleCount: 1 };
-    }
-  }
-
-  function renderPlayerPhaseBanner() {
-    var host = document.getElementById('player-current-phase-banner');
-    if (!host) return;
-    var data = loadRoom();
-    var idx = Number(data.phaseIndex || 0);
-    if (idx < 0 || idx >= GAME_PHASES.length) idx = 0;
-    var ph = GAME_PHASES[idx];
-    var cycle = Number(data.cycleCount || 1);
-
-    host.innerHTML =
-      '<div style="max-width:960px;margin:16px auto 0;padding:0 16px;">' +
-        '<div style="border:1px solid rgba(124,140,255,0.4);border-radius:14px;padding:14px 18px;background:#151924;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">' +
-          '<div>' +
-            '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#7c8cff;">Fase Attuale · Ciclo #' + cycle + '</div>' +
-            '<div style="font-size:17px;font-weight:800;color:#fff;margin-top:2px;">' + ph.step + '. ' + ph.title + '</div>' +
-            '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">' + ph.tip + '</div>' +
-          '</div>' +
-          '<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(124,140,255,0.16);color:#7c8cff;border:1px solid rgba(124,140,255,0.35);">Fase ' + ph.step + ' / 7</span>' +
-        '</div>' +
-      '</div>';
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var wrap = document.createElement('div');
-    wrap.id = 'player-current-phase-banner';
-    document.body.insertBefore(wrap, document.body.firstChild);
-    renderPlayerPhaseBanner();
-    setInterval(renderPlayerPhaseBanner, 2000);
-  });
-})();
-</script>
-
 </body>
 </html>
