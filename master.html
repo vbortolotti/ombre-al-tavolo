@@ -217,348 +217,38 @@
     var CATALOG_URL = 'catalogo_missioni_ombre_al_tavolo.json';
 
     var FALLBACK_CATALOG = [
-      {
-            "id": "CN-01",
-            "faction": "Traditori",
-            "title": "Abbraccio al Volo",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Abbraccia un altro giocatore (o dagli una pacca amichevole sulla spalla) durante una pausa o un cambio turno."
-      },
-      {
-            "id": "CN-02",
-            "faction": "Fedeli",
-            "title": "Cinque al Tavolo",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Batti il cinque a un giocatore dopo una battuta, un tiro o una mossa riuscita."
-      },
-      {
-            "id": "CN-03",
-            "faction": "Traditori",
-            "title": "Il Prestito Leggero",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Chiedi in prestito un oggetto innocuo (es. una penna, un fazzolettino, un dado) e restituiscilo entro pochi minuti."
-      },
-      {
-            "id": "CN-04",
-            "faction": "Fedeli",
-            "title": "Stretta d'Intesa",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Stringi la mano a un giocatore dicendo qualcosa di cordiale o incoraggiante."
-      },
-      {
-            "id": "CN-05",
-            "faction": "Traditori",
-            "title": "Passaggio Discreto",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Fai passare un oggetto di uso comune (es. un bicchiere, un tovagliolo, un mazzo) a un giocatore senza attirare l'attenzione sul gesto."
-      },
-      {
-            "id": "CN-06",
-            "faction": "Traditori",
-            "title": "Gomito sul Tavolo",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Appoggia l'avambraccio o il gomito vicino a quello di un altro giocatore durante una discussione per almeno 15 secondi."
-      },
-      {
-            "id": "CN-07",
-            "faction": "Neutro",
-            "title": "Scambio di Posto",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Scambia temporaneamente posto o sedia con un altro giocatore per un giro o una mano."
-      },
-      {
-            "id": "CN-08",
-            "faction": "Traditori",
-            "title": "Colpetto di Avviso",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Dai un leggero tocco sul braccio o sul tavolo a un giocatore proprio mentre sta per parlare o agire."
-      },
-      {
-            "id": "CN-09",
-            "faction": "Neutro",
-            "title": "Catena di Contatto",
-            "difficulty": "Difficile",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Entro lo stesso giro, tocca amichevolmente (spalla, mano o braccio) tre giocatori diversi senza sembrare insistente."
-      },
-      {
-            "id": "CN-10",
-            "faction": "Fedeli",
-            "title": "Appoggio Ombra",
-            "difficulty": "Difficile",
-            "repeatable": false,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "Resta a contatto leggero (es. gomito a gomito o spalla a spalla) con un giocatore mentre accusa qualcun altro al tavolo."
-      },
-      {
-            "id": "CN-11",
-            "faction": "Neutro",
-            "title": "stretta di mano",
-            "difficulty": "Difficile",
-            "repeatable": true,
-            "type": "Contatto",
-            "active": true,
-            "points": 1,
-            "description": "stringi la mano a due giocatori insieme"
-      },
-      {
-            "id": "VB-01",
-            "faction": "Traditori",
-            "title": "La Kamchatka Chiama",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Inserisci in modo naturale in una frase l'espressione \"andiamo a conquistare la Kamchatka\" (o la parola \"Kamchatka\")."
-      },
-      {
-            "id": "VB-02",
-            "faction": "Fedeli",
-            "title": "Domanda da Giornalista",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Fai una domanda diretta a un giocatore iniziando con \"Secondo te, perché...\"."
-      },
-      {
-            "id": "VB-03",
-            "faction": "Fedeli",
-            "title": "Complimento di Passaggio",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Fai un complimento sincero o leggero a un giocatore (es. sull'ironia, sullo stile o su una giocata)."
-      },
-      {
-            "id": "VB-04",
-            "faction": "Fedeli",
-            "title": "Ripetizione a Specchio",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Ripeti esattamente l'ultima parola o breve espressione usata da un altro giocatore confermandola."
-      },
-      {
-            "id": "VB-05",
-            "faction": "Traditori",
-            "title": "Parola d'Ordine Nascosta",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Fai pronunciare a un giocatore una parola comune scelta da te (tra \"mistero\", \"destinazione\", \"ovvio\",\"supernetural\") durante il discorso."
-      },
-      {
-            "id": "VB-06",
-            "faction": "Traditori",
-            "title": "L'Avvocato del Diavolo",
-            "difficulty": "Media",
-            "repeatable": true,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Difendi a parole una tesi o una persona che nessuno stava difendendo in quel momento che non centra nel gioco."
-      },
-      {
-            "id": "VB-07",
-            "faction": "Fedeli",
-            "title": "Doppia Citazione",
-            "difficulty": "Media",
-            "repeatable": true,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "In un singolo intervento, fai dire a due giocatori diversi una citazione a film o serier tv"
-      },
-      {
-            "id": "VB-08",
-            "faction": "Neutro",
-            "title": "Cambio di Binario",
-            "difficulty": "Media",
-            "repeatable": true,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Cambia il discorso in un'altra direzione senza che nessun'altro se ne accorga"
-      },
-      {
-            "id": "VB-09",
-            "faction": "Neutro",
-            "title": "c'era una volta",
-            "difficulty": "Difficile",
-            "repeatable": true,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Fai dire a un giocatore una filastrocca o un pezzo di fiaba"
-      },
-      {
-            "id": "VB-10",
-            "faction": "Fedeli",
-            "title": "Coro Involontario",
-            "difficulty": "Difficile",
-            "repeatable": false,
-            "type": "Verbale",
-            "active": true,
-            "points": 1,
-            "description": "Fai dire \"sì\" o \"esatto\" o \"ok\" a tre giocatori diversi nell'arco di due minuti."
-      },
-      {
-            "id": "RZ-01",
-            "faction": "Neutro",
-            "title": "Il Dolce Circola",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Fatti passare uno snack, un dolce o qualcosa da mangiare/bere da un altro giocatore."
-      },
-      {
-            "id": "RZ-02",
-            "faction": "Fedeli",
-            "title": "Giro di Calici",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Offriti di riempire i bicchieri o i calici ad almeno la metà dei giocatori al tavolo."
-      },
-      {
-            "id": "RZ-03",
-            "faction": "Neutro",
-            "title": "Risata Contagiosa",
-            "difficulty": "Facile",
-            "repeatable": true,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Fai ridere o sorridere apertamente la metà del party con una battuta o un'osservazione."
-      },
-      {
-            "id": "RZ-04",
-            "faction": "Neutro",
-            "title": "Conferma a Cenni",
-            "difficulty": "Facile",
-            "repeatable": false,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Ottieni un cenno d'intesa con la testa (sì o no) da un giocatore dopo averlo guardato."
-      },
-      {
-            "id": "RZ-05",
-            "faction": "Traditori",
-            "title": "Il Brindisi Silenzioso",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Fai alzare o avvicinare il bicchiere a un altro giocatore per un brindisi senza dire \"cin cin\" o \"brindisi\"."
-      },
-      {
-            "id": "RZ-06",
-            "faction": "Fedeli",
-            "title": "scusi i piatti sono li dietro",
-            "difficulty": "Media",
-            "repeatable": true,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "fai alzare almeno due persone in un unico passaggio"
-      },
-      {
-            "id": "RZ-07",
-            "faction": "Traditori",
-            "title": "Passami Quello",
-            "difficulty": "Media",
-            "repeatable": false,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Fatti porgere o spostare da un giocatore un oggetto che è più vicino a lui che a te."
-      },
-      {
-            "id": "RZ-08",
-            "faction": "Neutro",
-            "title": "imitatore",
-            "difficulty": "Difficile",
-            "repeatable": true,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "fai si che un altro giocatore ripeta una tua azione senza dirgli di rifarla"
-      },
-      {
-            "id": "RZ-09",
-            "faction": "Traditori",
-            "title": "reazione opposta",
-            "difficulty": "Difficile",
-            "repeatable": false,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "fai si che due giocatori dicano due cose opposte (non serve che lo dicano subito lo possono dire anche durante il corso della serata)"
-      },
-      {
-            "id": "RZ-10",
-            "faction": "Neutro",
-            "title": "Doppio Servizio",
-            "difficulty": "Difficile",
-            "repeatable": true,
-            "type": "Reazione",
-            "active": true,
-            "points": 1,
-            "description": "Fatti passare qualcosa da un giocatore tramite un altro giocatore se nel passaggio vi è un'altra persona allora puoi prendere un punto extra"
-      }
-];
+      { "id": "CN-01", "faction": "Traditori", "title": "Abbraccio al Volo", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Abbraccia un altro giocatore (o dagli una pacca amichevole sulla spalla) durante una pausa o un cambio turno." },
+      { "id": "CN-02", "faction": "Fedeli", "title": "Cinque al Tavolo", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Batti il cinque a un giocatore dopo una battuta, un tiro o una mossa riuscita." },
+      { "id": "CN-03", "faction": "Traditori", "title": "Il Prestito Leggero", "difficulty": "Facile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "Chiedi in prestito un oggetto innocuo (es. una penna, un fazzolettino, un dado) e restituiscilo entro pochi minuti." },
+      { "id": "CN-04", "faction": "Fedeli", "title": "Stretta d'Intesa", "difficulty": "Facile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Stringi la mano a un giocatore dicendo qualcosa di cordiale o incoraggiante." },
+      { "id": "CN-05", "faction": "Traditori", "title": "Passaggio Discreto", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Fai passare un oggetto di uso comune (es. un bicchiere, un tovagliolo, un mazzo) a un giocatore senza attirare l'attenzione sul gesto." },
+      { "id": "CN-06", "faction": "Traditori", "title": "Gomito sul Tavolo", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Appoggia l'avambraccio o il gomito vicino a quello di un altro giocatore durante una discussione per almeno 15 secondi." },
+      { "id": "CN-07", "faction": "Neutro", "title": "Scambio di Posto", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Scambia temporaneamente posto o sedia con un altro giocatore per un giro o una mano." },
+      { "id": "CN-08", "faction": "Traditori", "title": "Colpetto di Avviso", "difficulty": "Media", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Dai un leggero tocco sul braccio o sul tavolo a un giocatore proprio mentre sta per parlare o agire." },
+      { "id": "CN-09", "faction": "Neutro", "title": "Catena di Contatto", "difficulty": "Difficile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Entro lo stesso giro, tocca amichevolmente (spalla, mano o braccio) tre giocatori diversi senza sembrare insistente." },
+      { "id": "CN-10", "faction": "Fedeli", "title": "Appoggio Ombra", "difficulty": "Difficile", "repeatable": false, "type": "Contatto", "active": true, "points": 1, "description": "Resta a contatto leggero (es. gomito a gomito o spalla a spalla) con un giocatore mentre accusa qualcun altro al tavolo." },
+      { "id": "CN-11", "faction": "Neutro", "title": "stretta di mano", "difficulty": "Difficile", "repeatable": true, "type": "Contatto", "active": true, "points": 1, "description": "stringi la mano a due giocatori insieme" },
+      { "id": "VB-01", "faction": "Traditori", "title": "La Kamchatka Chiama", "difficulty": "Facile", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Inserisci in modo naturale in una frase l'espressione \"andiamo a conquistare la Kamchatka\" (o la parola \"Kamchatka\")." },
+      { "id": "VB-02", "faction": "Fedeli", "title": "Domanda da Giornalista", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai una domanda diretta a un giocatore iniziando con \"Secondo te, perché...\"." },
+      { "id": "VB-03", "faction": "Fedeli", "title": "Complimento di Passaggio", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai un complimento sincero o leggero a un giocatore (es. sull'ironia, sullo stile o su una giocata)." },
+      { "id": "VB-04", "faction": "Fedeli", "title": "Ripetizione a Specchio", "difficulty": "Facile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Ripeti esattamente l'ultima parola o breve espressione usata da un altro giocatore confermandola." },
+      { "id": "VB-05", "faction": "Traditori", "title": "Parola d'Ordine Nascosta", "difficulty": "Media", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai pronunciare a un giocatore una parola comune scelta da te (tra \"mistero\", \"destinazione\", \"ovvio\",\"supernetural\") durante il discorso." },
+      { "id": "VB-06", "faction": "Traditori", "title": "L'Avvocato del Diavolo", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Difendi a parole una tesi o una persona che nessuno stava difendendo in quel momento che non centra nel gioco." },
+      { "id": "VB-07", "faction": "Fedeli", "title": "Doppia Citazione", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "In un singolo intervento, fai dire a due giocatori diversi una citazione a film o serier tv" },
+      { "id": "VB-08", "faction": "Neutro", "title": "Cambio di Binario", "difficulty": "Media", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Cambia il discorso in un'altra direzione senza che nessun'altro se ne accorga" },
+      { "id": "VB-09", "faction": "Neutro", "title": "c'era una volta", "difficulty": "Difficile", "repeatable": true, "type": "Verbale", "active": true, "points": 1, "description": "Fai dire a un giocatore una filastrocca o un pezzo di fiaba" },
+      { "id": "VB-10", "faction": "Fedeli", "title": "Coro Involontario", "difficulty": "Difficile", "repeatable": false, "type": "Verbale", "active": true, "points": 1, "description": "Fai dire \"sì\" o \"esatto\" o \"ok\" a tre giocatori diversi nell'arco di due minuti." },
+      { "id": "RZ-01", "faction": "Neutro", "title": "Il Dolce Circola", "difficulty": "Facile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fatti passare uno snack, un dolce o qualcosa da mangiare/bere da un altro giocatore." },
+      { "id": "RZ-02", "faction": "Fedeli", "title": "Giro di Calici", "difficulty": "Facile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Offriti di riempire i bicchieri o i calici ad almeno la metà dei giocatori al tavolo." },
+      { "id": "RZ-03", "faction": "Neutro", "title": "Risata Contagiosa", "difficulty": "Facile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Fai ridere o sorridere apertamente la metà del party con una battuta o un'osservazione." },
+      { "id": "RZ-04", "faction": "Neutro", "title": "Conferma a Cenni", "difficulty": "Facile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Ottieni un cenno d'intesa con la testa (sì o no) da un giocatore dopo averlo guardato." },
+      { "id": "RZ-05", "faction": "Traditori", "title": "Il Brindisi Silenzioso", "difficulty": "Media", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fai alzare o avvicinare il bicchiere a un altro giocatore per un brindisi senza dire \"cin cin\" o \"brindisi\"." },
+      { "id": "RZ-06", "faction": "Fedeli", "title": "scusi i piatti sono li dietro", "difficulty": "Media", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "fai alzare almeno due persone in un unico passaggio" },
+      { "id": "RZ-07", "faction": "Traditori", "title": "Passami Quello", "difficulty": "Media", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "Fatti porgere o spostare da un giocatore un oggetto che è più vicino a lui che a te." },
+      { "id": "RZ-08", "faction": "Neutro", "title": "imitatore", "difficulty": "Difficile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "fai si che un altro giocatore ripeta una tua azione senza dirgli di rifarla" },
+      { "id": "RZ-09", "faction": "Traditori", "title": "reazione opposta", "difficulty": "Difficile", "repeatable": false, "type": "Reazione", "active": true, "points": 1, "description": "fai si che due giocatori dicano due cose opposte (non serve che lo dicano subito lo possono dire anche durante il corso della serata)" },
+      { "id": "RZ-10", "faction": "Neutro", "title": "Doppio Servizio", "difficulty": "Difficile", "repeatable": true, "type": "Reazione", "active": true, "points": 1, "description": "Fatti passare qualcosa da un giocatore tramite un altro giocatore se nel passaggio vi è un'altra persona allora puoi prendere un punto extra" }
+    ];
 
     var ROLE_CATALOG = {
       assassino: { name: 'Assassino', faction: 'Traditori', mainType: 'Contatto', summary: 'Ogni missione completata sblocca un colpo con cui può eliminare un giocatore (5 missioni, 3 ripetibili, contatto; no Traditori tranne Traditore Segreto).' },
@@ -704,6 +394,7 @@
         masterChat: [],
         traitorChat: [],
         ovalActive: false,
+        ovalSessionTick: 0,
         ovalRunoffActive: false,
         ovalRunoffCandidates: [],
         ovalVotes: [],
@@ -758,6 +449,7 @@
               base.missionAssignments = Object.assign({}, roomParsed.missionAssignments);
             }
             if (typeof roomParsed.ovalActive === 'boolean') base.ovalActive = roomParsed.ovalActive;
+            if (typeof roomParsed.ovalSessionTick === 'number') base.ovalSessionTick = roomParsed.ovalSessionTick;
             if (typeof roomParsed.ovalRunoffActive === 'boolean') base.ovalRunoffActive = roomParsed.ovalRunoffActive;
             if (Array.isArray(roomParsed.ovalRunoffCandidates)) base.ovalRunoffCandidates = roomParsed.ovalRunoffCandidates;
             if (Array.isArray(roomParsed.ovalVotes)) base.ovalVotes = roomParsed.ovalVotes;
@@ -782,27 +474,6 @@
     var missionSingleView = false;
     var missionSingleIndex = 0;
     var collapsedMissionPlayers = {};
-
-    window.masterConnectTv = function () {
-      var code = encodeURIComponent(state.roomCode || 'TAVOLO1');
-      var tvUrl = '';
-      try {
-        tvUrl = new URL('tv.html?stanza=' + code, window.location.href).href;
-      } catch (_e) {
-        tvUrl = 'tv.html?stanza=' + code;
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(tvUrl).catch(function () {});
-      }
-      state.banner = {
-        text: 'Link TV per la stanza ' + state.roomCode + ' pronto (copiato negli appunti): ' + tvUrl,
-        type: 'info'
-      };
-      try {
-        window.open(tvUrl, '_blank', 'noopener');
-      } catch (_e) {}
-      render();
-    };
 
     window.masterClearChat = async function () {
       var isTraitor = state.chatTab === 'traitors';
@@ -871,6 +542,7 @@
         masterChat: state.masterChat,
         traitorChat: state.traitorChat,
         ovalActive: state.ovalActive,
+        ovalSessionTick: state.ovalSessionTick,
         ovalRunoffActive: state.ovalRunoffActive,
         ovalRunoffCandidates: state.ovalRunoffCandidates,
         ovalVotes: state.ovalVotes,
@@ -940,6 +612,7 @@
       if (Array.isArray(data.masterChat)) state.masterChat = data.masterChat;
       if (Array.isArray(data.traitorChat)) state.traitorChat = data.traitorChat;
       if (typeof data.ovalActive === 'boolean') state.ovalActive = data.ovalActive;
+      if (typeof data.ovalSessionTick === 'number') state.ovalSessionTick = data.ovalSessionTick;
       if (typeof data.ovalRunoffActive === 'boolean') state.ovalRunoffActive = data.ovalRunoffActive;
       if (Array.isArray(data.ovalRunoffCandidates)) state.ovalRunoffCandidates = data.ovalRunoffCandidates;
       if (Array.isArray(data.ovalVotes)) state.ovalVotes = data.ovalVotes;
@@ -1371,14 +1044,32 @@
     }
 
     window.masterToggleOvalSession = async function (open) {
+      var isOpen = Boolean(open);
+      var tick = isOpen ? Date.now() : 0;
       await syncPatchToCloud({
-        ovalActive: Boolean(open),
-        chatDisabled: Boolean(open),
-        ovalVotes: open ? [] : (state.ovalVotes || []),
+        ovalActive: isOpen,
+        ovalSessionTick: tick,
+        phaseIndex: isOpen ? 5 : 4,
+        chatDisabled: isOpen,
+        ovalVotes: isOpen ? [] : (state.ovalVotes || []),
         revealedVoteIndex: 0,
         ovalRunoffActive: false,
         ovalRunoffCandidates: []
       });
+      if (isOpen) {
+        state.banner = {
+          text: 'Tavolo Ovale aperto: stato sincronizzato e giocatori reindirizzati a tavolo-ovale.html.',
+          type: 'success'
+        };
+        try {
+          window.open('tavolo-ovale.html?stanza=' + encodeURIComponent(state.roomCode), '_blank', 'noopener');
+        } catch (_e) {}
+      } else {
+        state.banner = {
+          text: 'Tavolo Ovale chiuso.',
+          type: 'info'
+        };
+      }
       render();
     };
 
@@ -1550,8 +1241,8 @@
             '<div style="display:flex;align-items:center;gap:12px;">' +
               masterAvatarHtml +
               '<div>' +
-                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo su TV</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
-                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge della regia TV e nella sfilata iniziale.</div>' +
+                '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e5b85c;">Selfie del Master · ' + (masterSelfie ? '<span style="color:#3ec98c;">Attivo</span>' : '<span style="color:#9ca3af;">Non impostato</span>') + '</div>' +
+                '<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Usato nei badge di regia e nella sfilata iniziale.</div>' +
               '</div>' +
             '</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
@@ -1571,9 +1262,7 @@
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
               '<button type="button" onclick="masterToggleOvalSession(true)" style="padding:9px 13px;border-radius:10px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Apri Tavolo Ovale</button>' +
               '<button type="button" onclick="masterToggleOvalSession(false)" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Chiudi Tavolo Ovale</button>' +
-              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Apri Tavolo Ovale</a>' +
-              '<a href="tv.html?stanza=' + encodeURIComponent(state.roomCode) + '" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(62,201,140,0.45);background:rgba(62,201,140,0.14);color:#3ec98c;font-weight:700;font-size:12px;text-decoration:none;">Apri Schermo TV</a>' +
-              '<button type="button" onclick="masterConnectTv()" style="padding:9px 13px;border-radius:10px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Collega alla TV</button>' +
+              '<a href="tavolo-ovale.html" target="_blank" style="padding:9px 13px;border-radius:10px;border:1px solid rgba(124,140,255,0.45);background:rgba(124,140,255,0.14);color:#7c8cff;font-weight:700;font-size:12px;text-decoration:none;">Vai a Tavolo Ovale</a>' +
             '</div>' +
           '</div>' +
           '<div class="subpanel">' +
@@ -1588,7 +1277,7 @@
           '</div>' +
           '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">' +
             '<button type="button" onclick="masterRevealPrevVote()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Voto Precedente</button>' +
-            '<button type="button" onclick="masterRevealNextVote()" style="padding:8px 12px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Rivela Prossimo Voto su TV</button>' +
+            '<button type="button" onclick="masterRevealNextVote()" style="padding:8px 12px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Rivela Prossimo Voto</button>' +
             '<button type="button" onclick="masterStartRunoff()" ' + (tied.length === 2 ? '' : 'disabled ') + 'style="padding:8px 12px;border-radius:9px;border:none;background:#e5b85c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Ballottaggio (Parità)</button>' +
             '<button type="button" onclick="masterClearRunoff()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#f3f4f6;font-weight:700;font-size:12px;cursor:pointer;">Annulla Ballottaggio</button>' +
             '<button type="button" onclick="masterResetOvalVotes()" style="padding:8px 12px;border-radius:9px;border:1px solid rgba(224,82,96,0.45);background:rgba(224,82,96,0.14);color:#e05260;font-weight:700;font-size:12px;cursor:pointer;">Azzera Voti</button>' +
@@ -1601,8 +1290,8 @@
             '<button type="button" onclick="masterSetTvMode(\'win_fedeli\')" style="padding:8px 11px;border-radius:9px;border:none;background:#3ec98c;color:#0c0e14;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Fedeli</button>' +
             '<button type="button" onclick="masterSetTvMode(\'win_traditori\')" style="padding:8px 11px;border-radius:9px;border:none;background:#e05260;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Traditori</button>' +
             '<button type="button" onclick="masterSetTvMode(\'win_solitario\')" style="padding:8px 11px;border-radius:9px;border:none;background:#7c8cff;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Vittoria Solitaria</button>' +
-            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video TV' : 'Pausa Video TV') + '</button>' +
-            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by TV</button>' +
+            '<button type="button" onclick="masterToggleTvVideoPlay()" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(229,184,92,0.45);background:' + (isPaused ? '#e5b85c' : '#1d2230') + ';color:' + (isPaused ? '#0c0e14' : '#e5b85c') + ';font-weight:700;font-size:12px;cursor:pointer;">' + (isPaused ? 'Riprendi Video' : 'Pausa Video') + '</button>' +
+            '<button type="button" onclick="masterSetTvMode(\'idle\')" style="padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.16);background:#1d2230;color:#9ca3af;font-weight:700;font-size:12px;cursor:pointer;">Stand-by</button>' +
           '</div>' +
         '</section>'
       );
